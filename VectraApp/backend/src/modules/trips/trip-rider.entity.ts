@@ -5,7 +5,7 @@ import {
     JoinColumn,
     PrimaryColumn,
 } from 'typeorm';
-import { UserEntity } from '../users/user.entity';
+import { UserEntity } from '../Authentication/users/user.entity';
 import { TripEntity } from './trip.entity';
 import { GeoPoint } from '../../common/types/geo-point.type';
 

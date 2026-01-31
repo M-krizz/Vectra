@@ -7,7 +7,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { UserEntity } from '../users/user.entity';
+import { UserEntity } from '../Authentication/users/user.entity';
 import { GeoPoint } from '../../common/types/geo-point.type';
 
 export enum RideRequestStatus {
@@ -76,4 +76,3 @@ export class RideRequestEntity {
     @JoinColumn({ name: 'rider_user_id' })
     rider!: UserEntity;
 }
-

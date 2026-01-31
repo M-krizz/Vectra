@@ -8,7 +8,7 @@ import {
     OneToMany,
     JoinColumn,
 } from 'typeorm';
-import { UserEntity } from '../users/user.entity';
+import { UserEntity } from '../Authentication/users/user.entity';
 import { TripRiderEntity } from './trip-rider.entity';
 import { TripEventEntity } from './trip-event.entity';
 
