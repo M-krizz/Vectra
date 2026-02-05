@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as bcrypt from 'bcrypt';
@@ -10,7 +10,59 @@ const otpCooldownKey = (identifier: string) => `otp_cooldown:${identifier}`;
 
 @Injectable()
 export class OtpService {
+    private readonly logger = new Logger(OtpService.name);
+
     constructor(@Inject(REDIS) private readonly redis: Redis) { }
+
+    /**
+     * Send OTP via Fast2SMS (Quick SMS Route)
+     */
+    private async sendSmsViaFast2Sms(phone: string, otp: string): Promise<boolean> {
+        const apiKey = process.env.FAST2SMS_API_KEY;
+        if (!apiKey) {
+            this.logger.warn('Fast2SMS API key not configured, skipping SMS send');
+            return false;
+        }
+
+        // Clean phone number (remove +91 or leading 0)
+        let cleanPhone = phone.replace(/^\+91/, '').replace(/^0/, '');
+        // Ensure it's 10 digits
+        if (cleanPhone.length !== 10) {
+            this.logger.error(`Invalid phone number format: ${phone}`);
+            return false;
+        }
+
+        try {
+            const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+                method: 'POST',
+                headers: {
+                    'authorization': apiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    route: 'q',  // Quick SMS route (no DLT template required)
+                    message: `Your Vectra verification code is: ${otp}. Valid for 5 minutes.`,
+                    language: 'english',
+                    flash: 0,
+                    numbers: cleanPhone,
+                }),
+            });
+
+            const result = await response.json() as { return: boolean; message: string; request_id?: string };
+            this.logger.log(`Fast2SMS Response: ${JSON.stringify(result)}`);
+
+            if (result.return) {
+                this.logger.log(`OTP sent successfully to ${cleanPhone}`);
+                return true;
+            } else {
+                this.logger.error(`Fast2SMS error: ${result.message}`);
+                return false;
+            }
+        } catch (error) {
+            this.logger.error(`Failed to send SMS: ${error}`);
+            return false;
+        }
+    }
 
     /**
      * Request OTP - stores hashed OTP in Redis with rate limiting
@@ -38,13 +90,20 @@ export class OtpService {
         await this.redis.del(otpAttemptsKey(identifier));
         await this.redis.set(otpCooldownKey(identifier), '1', 'EX', cooldownSeconds);
 
-        // For dev: return OTP in response for easy testing
+        // Send OTP via SMS if enabled and channel is phone
         const isDev = (process.env.NODE_ENV || 'development') !== 'production';
+        const smsEnabled = process.env.FAST2SMS_ENABLED === 'true';
+
+        if (channel === 'phone' && smsEnabled) {
+            await this.sendSmsViaFast2Sms(identifier, code);
+        }
+
         return {
             success: true,
             channel,
             identifier,
             expiresInSeconds: ttlSeconds,
+            // Return OTP in dev mode for testing (remove in production)
             ...(isDev ? { devOtp: code } : {}),
         };
     }
