@@ -1,6 +1,10 @@
 # Backend CI Pipeline for Vectra
+<<<<<<< HEAD
+# Runs on push/PR to main and backend-related branches
+=======
 # Runs on push/PR to main and any backend-related branch
 # Covers: lint, format check, build, unit tests, e2e tests, and ML service
+>>>>>>> origin/main
 
 name: Backend CI
 
@@ -47,8 +51,8 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      - name: Check formatting (Prettier)--ignore-unknown
-        run: npx prettier --check "src/**/*.ts" "test/**/*.ts"
+      - name: Check formatting (Prettier)
+        run: npx prettier --check "src/**/*.ts" --ignore-unknown
 
   # ──────────────────────────────────────────────
   # Build
