@@ -47,7 +47,7 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      - name: Check formatting (Prettier)
+      - name: Check formatting (Prettier)--ignore-unknown
         run: npx prettier --check "src/**/*.ts" "test/**/*.ts"
 
   # ──────────────────────────────────────────────
