@@ -1,42 +1,42 @@
-import { IsString, IsOptional, IsIn, ValidateIf, IsEmail, IsMobilePhone } from 'class-validator';
+import { IsString, IsOptional, ValidateIf, IsEmail } from "class-validator";
 
 export class CreateRiderDto {
-    @ValidateIf((o) => !o.phone)
-    @IsEmail()
-    email?: string;
+  @ValidateIf((o) => !o.phone)
+  @IsEmail()
+  email?: string;
 
-    @ValidateIf((o) => !o.email)
-    @IsString()
-    phone?: string;
+  @ValidateIf((o) => !o.email)
+  @IsString()
+  phone?: string;
 
-    @IsString()
-    fullName!: string;
+  @IsString()
+  fullName!: string;
 
-    @IsOptional()
-    @IsString()
-    password?: string;
+  @IsOptional()
+  @IsString()
+  password?: string;
 }
 
 export class CreateDriverDto {
-    @ValidateIf((o) => !o.phone)
-    @IsEmail()
-    email?: string;
+  @ValidateIf((o) => !o.phone)
+  @IsEmail()
+  email?: string;
 
-    @ValidateIf((o) => !o.email)
-    @IsString()
-    phone?: string;
+  @ValidateIf((o) => !o.email)
+  @IsString()
+  phone?: string;
 
-    @IsString()
-    fullName!: string;
+  @IsString()
+  fullName!: string;
 
-    @IsOptional()
-    @IsString()
-    password?: string;
+  @IsOptional()
+  @IsString()
+  password?: string;
 
-    @IsString()
-    licenseNumber!: string;
+  @IsString()
+  licenseNumber!: string;
 
-    @IsOptional()
-    @IsString()
-    licenseState?: string;
+  @IsOptional()
+  @IsString()
+  licenseState?: string;
 }

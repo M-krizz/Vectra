@@ -1,23 +1,23 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
-import { UserRole } from '../../users/user.entity';
+import { IsString, IsOptional, IsIn } from "class-validator";
+import { UserRole } from "../../users/user.entity";
 
 export class SuspendUserDto {
-    @IsString()
-    targetUserId!: string;
+  @IsString()
+  targetUserId!: string;
 
-    @IsOptional()
-    @IsString()
-    reason?: string;
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
 
 export class ChangeRoleDto {
-    @IsString()
-    targetUserId!: string;
+  @IsString()
+  targetUserId!: string;
 
-    @IsIn(['RIDER', 'DRIVER', 'ADMIN', 'COMMUNITY_ADMIN'])
-    newRole!: UserRole;
+  @IsIn(["RIDER", "DRIVER", "ADMIN", "COMMUNITY_ADMIN"])
+  newRole!: UserRole;
 
-    @IsOptional()
-    @IsString()
-    reason?: string;
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
