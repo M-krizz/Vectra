@@ -6,27 +6,27 @@ import {
   Body,
   UseGuards,
   Req,
-} from "@nestjs/common";
-import { DriversService } from "./drivers.service";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { Roles } from "../common/roles.decorator";
-import { RolesGuard } from "../common/roles.guard";
-import { UserRole } from "../users/user.entity";
-import { VehicleEntity } from "./vehicle.entity";
+} from '@nestjs/common';
+import { DriversService } from './drivers.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../common/roles.decorator';
+import { RolesGuard } from '../common/roles.guard';
+import { UserRole } from '../users/user.entity';
+import { VehicleEntity } from './vehicle.entity';
 
-@Controller("api/v1/drivers")
+@Controller('api/v1/drivers')
 @UseGuards(JwtAuthGuard)
 export class DriversController {
   constructor(private readonly driversService: DriversService) {}
 
-  @Get("profile")
+  @Get('profile')
   @Roles(UserRole.DRIVER)
   @UseGuards(RolesGuard)
   getProfile(@Req() req: { user: { userId: string } }) {
     return this.driversService.getProfile(req.user.userId);
   }
 
-  @Patch("license")
+  @Patch('license')
   @Roles(UserRole.DRIVER)
   @UseGuards(RolesGuard)
   updateLicense(
@@ -40,7 +40,7 @@ export class DriversController {
     );
   }
 
-  @Post("online")
+  @Post('online')
   @Roles(UserRole.DRIVER)
   @UseGuards(RolesGuard)
   setOnline(
@@ -50,14 +50,14 @@ export class DriversController {
     return this.driversService.setOnlineStatus(req.user.userId, dto.online);
   }
 
-  @Get("vehicles")
+  @Get('vehicles')
   @Roles(UserRole.DRIVER)
   @UseGuards(RolesGuard)
   getVehicles(@Req() req: { user: { userId: string } }) {
     return this.driversService.getVehicles(req.user.userId);
   }
 
-  @Post("vehicles")
+  @Post('vehicles')
   @Roles(UserRole.DRIVER)
   @UseGuards(RolesGuard)
   addVehicle(

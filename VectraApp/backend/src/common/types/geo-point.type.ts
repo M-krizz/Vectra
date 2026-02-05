@@ -10,7 +10,7 @@
  * };
  */
 export type GeoPoint = {
-  type: "Point";
+  type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
 };
 
@@ -19,7 +19,7 @@ export type GeoPoint = {
  */
 export function createGeoPoint(latitude: number, longitude: number): GeoPoint {
   return {
-    type: "Point",
+    type: 'Point',
     coordinates: [longitude, latitude], // GeoJSON: lng first, lat second
   };
 }

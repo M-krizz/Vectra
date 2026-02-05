@@ -3,18 +3,18 @@ import {
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
-} from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import { Repository, IsNull } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
-import * as bcrypt from "bcrypt";
-import { UserEntity, UserRole } from "../users/user.entity";
-import { RefreshTokenEntity } from "./refresh-token.entity";
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Repository, IsNull } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { UserEntity, UserRole } from '../users/user.entity';
+import { RefreshTokenEntity } from './refresh-token.entity';
 import {
   DriverProfileEntity,
   DriverStatus,
-} from "../drivers/driver-profile.entity";
-import { OtpService } from "./otp.service";
+} from '../drivers/driver-profile.entity';
+import { OtpService } from './otp.service';
 
 @Injectable()
 export class AuthService {
@@ -31,8 +31,8 @@ export class AuthService {
     @InjectRepository(DriverProfileEntity)
     private profilesRepo: Repository<DriverProfileEntity>,
   ) {
-    this.accessExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
-    this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+    this.accessExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
+    this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
     this.refreshHashRounds = Number(
       process.env.REFRESH_TOKEN_HASH_SALT_ROUNDS || 12,
     );
@@ -43,16 +43,16 @@ export class AuthService {
     if (!m) return 15 * 60; // default 15m
     const n = Number(m[1]);
     const unit = m[2];
-    if (unit === "s") return n;
-    if (unit === "m") return n * 60;
-    if (unit === "h") return n * 3600;
+    if (unit === 's') return n;
+    if (unit === 'm') return n * 60;
+    if (unit === 'h') return n * 3600;
     return n * 86400; // d
   }
 
   /**
    * Request OTP for phone or email
    */
-  async requestOtp(channel: "phone" | "email", identifier: string) {
+  async requestOtp(channel: 'phone' | 'email', identifier: string) {
     return this.otpService.requestOtp(channel, identifier);
   }
 
@@ -68,10 +68,10 @@ export class AuthService {
   ) {
     const verified = await this.otpService.verifyOtp(identifier, code);
     if (!verified) {
-      throw new UnauthorizedException("Invalid OTP.");
+      throw new UnauthorizedException('Invalid OTP.');
     }
 
-    const isEmail = identifier.includes("@");
+    const isEmail = identifier.includes('@');
     let user = await this.usersRepo.findOne({
       where: isEmail ? { email: identifier } : { phone: identifier },
     });
@@ -98,7 +98,7 @@ export class AuthService {
         where: { userId: user.id },
       });
       if (!profile || profile.status !== DriverStatus.VERIFIED) {
-        throw new ForbiddenException("Driver account not verified");
+        throw new ForbiddenException('Driver account not verified');
       }
     }
 
@@ -130,18 +130,18 @@ export class AuthService {
     otp?: string,
   ) {
     if ((!email && !phone) || (!password && !otp)) {
-      throw new BadRequestException("Provide email/phone and password or otp");
+      throw new BadRequestException('Provide email/phone and password or otp');
     }
 
     const user = await this.usersRepo.findOne({
       where: email ? { email } : { phone },
     });
-    if (!user) throw new UnauthorizedException("Invalid credentials");
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     // Check if user is suspended
     if (user.isSuspended) {
       throw new ForbiddenException(
-        `Account suspended: ${user.suspensionReason || "Contact support"}`,
+        `Account suspended: ${user.suspensionReason || 'Contact support'}`,
       );
     }
 
@@ -151,22 +151,22 @@ export class AuthService {
         where: { userId: user.id },
       });
       if (!profile || profile.status !== DriverStatus.VERIFIED) {
-        throw new ForbiddenException("Driver account not verified");
+        throw new ForbiddenException('Driver account not verified');
       }
     }
 
     if (password) {
       if (!user.passwordHash)
-        throw new UnauthorizedException("Invalid credentials");
+        throw new UnauthorizedException('Invalid credentials');
       const ok = await bcrypt.compare(password, user.passwordHash);
-      if (!ok) throw new UnauthorizedException("Invalid credentials");
+      if (!ok) throw new UnauthorizedException('Invalid credentials');
       return user;
     }
 
     if (otp) {
-      const target = phone || email || "";
+      const target = phone || email || '';
       const verified = await this.otpService.verifyOtp(target, otp);
-      if (!verified) throw new UnauthorizedException("Invalid OTP");
+      if (!verified) throw new UnauthorizedException('Invalid OTP');
       if (!user.isVerified) {
         user.isVerified = true;
         await this.usersRepo.save(user);
@@ -174,7 +174,7 @@ export class AuthService {
       return user;
     }
 
-    throw new BadRequestException("Invalid login flow");
+    throw new BadRequestException('Invalid login flow');
   }
 
   /**
@@ -236,15 +236,15 @@ export class AuthService {
     const record = await this.refreshRepo.findOne({
       where: { id: refreshTokenId },
     });
-    if (!record) throw new UnauthorizedException("Invalid refresh token");
+    if (!record) throw new UnauthorizedException('Invalid refresh token');
 
     if (record.revokedAt) {
-      throw new UnauthorizedException("Refresh token revoked");
+      throw new UnauthorizedException('Refresh token revoked');
     }
 
     if (record.expiresAt.getTime() < Date.now()) {
       await this.refreshRepo.delete({ id: record.id });
-      throw new UnauthorizedException("Refresh token expired");
+      throw new UnauthorizedException('Refresh token expired');
     }
 
     const match = await bcrypt.compare(refreshTokenRaw, record.tokenHash);
@@ -255,7 +255,7 @@ export class AuthService {
         { revokedAt: new Date() },
       );
       throw new UnauthorizedException(
-        "Invalid refresh token (revoked all sessions)",
+        'Invalid refresh token (revoked all sessions)',
       );
     }
 
@@ -264,7 +264,7 @@ export class AuthService {
     await this.refreshRepo.save(record);
 
     const user = await this.usersRepo.findOne({ where: { id: record.userId } });
-    if (!user) throw new UnauthorizedException("User not found");
+    if (!user) throw new UnauthorizedException('User not found');
 
     return await this.createSessionAndTokens(
       user,
@@ -280,7 +280,7 @@ export class AuthService {
     const record = await this.refreshRepo.findOne({ where: { id: tokenId } });
     if (!record) return false;
     if (userId && record.userId !== userId) {
-      throw new UnauthorizedException("Not allowed");
+      throw new UnauthorizedException('Not allowed');
     }
     record.revokedAt = new Date();
     await this.refreshRepo.save(record);
@@ -317,7 +317,7 @@ export class AuthService {
    */
   async getMe(userId: string) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
-    if (!user) throw new UnauthorizedException("User not found");
+    if (!user) throw new UnauthorizedException('User not found');
     return {
       id: user.id,
       role: user.role,

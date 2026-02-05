@@ -5,19 +5,19 @@ import {
   IsNotEmpty,
   ValidateIf,
   IsIn,
-} from "class-validator";
+} from 'class-validator';
 
 export class RequestOtpDto {
-  @IsIn(["phone", "email"])
-  channel!: "phone" | "email";
+  @IsIn(['phone', 'email'])
+  channel!: 'phone' | 'email';
 
   @IsString()
   @IsNotEmpty()
   identifier!: string;
 
   @IsOptional()
-  @IsIn(["RIDER", "DRIVER", "ADMIN"])
-  roleHint?: "RIDER" | "DRIVER" | "ADMIN";
+  @IsIn(['RIDER', 'DRIVER', 'ADMIN'])
+  roleHint?: 'RIDER' | 'DRIVER' | 'ADMIN';
 }
 
 export class VerifyOtpDto {
