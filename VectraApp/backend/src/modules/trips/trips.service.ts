@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { TripEntity } from "./trip.entity";
-import { TripEventEntity } from "./trip-event.entity";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { TripEntity } from './trip.entity';
+import { TripEventEntity } from './trip-event.entity';
 
 @Injectable()
 export class TripsService {
@@ -16,17 +16,17 @@ export class TripsService {
   async getTrip(id: string) {
     const trip = await this.tripRepo.findOne({
       where: { id },
-      relations: ["driver", "tripRiders", "tripRiders.rider"],
+      relations: ['driver', 'tripRiders', 'tripRiders.rider'],
     });
 
     if (!trip) {
-      throw new NotFoundException("Trip not found");
+      throw new NotFoundException('Trip not found');
     }
 
     // Fetch latest location event
     const latestLocation = await this.eventRepo.findOne({
-      where: { tripId: id, eventType: "DRIVER_LOCATION" },
-      order: { createdAt: "DESC" },
+      where: { tripId: id, eventType: 'DRIVER_LOCATION' },
+      order: { createdAt: 'DESC' },
     });
 
     return {
@@ -42,7 +42,7 @@ export class TripsService {
   ): Promise<void> {
     const event = this.eventRepo.create({
       tripId: id,
-      eventType: "DRIVER_LOCATION",
+      eventType: 'DRIVER_LOCATION',
       metadata: { lat, lng },
     });
     await this.eventRepo.save(event);

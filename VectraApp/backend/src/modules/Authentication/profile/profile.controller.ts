@@ -7,12 +7,12 @@ import {
   Body,
   UseGuards,
   Req,
-} from "@nestjs/common";
-import { ProfileService } from "./profile.service";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { UpdateProfileDto, PrivacySettingsDto } from "./dto/profile.dto";
+} from '@nestjs/common';
+import { ProfileService } from './profile.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateProfileDto, PrivacySettingsDto } from './dto/profile.dto';
 
-@Controller("api/v1/profile")
+@Controller('api/v1/profile')
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
@@ -30,7 +30,7 @@ export class ProfileController {
     return this.profileService.updateProfile(req.user.userId, dto);
   }
 
-  @Patch("privacy")
+  @Patch('privacy')
   updatePrivacy(
     @Req() req: { user: { userId: string } },
     @Body() dto: PrivacySettingsDto,
@@ -38,7 +38,7 @@ export class ProfileController {
     return this.profileService.updatePrivacy(req.user.userId, dto);
   }
 
-  @Post("deactivate")
+  @Post('deactivate')
   deactivateAccount(@Req() req: { user: { userId: string } }) {
     return this.profileService.deactivateAccount(req.user.userId);
   }
@@ -48,7 +48,7 @@ export class ProfileController {
     return this.profileService.deleteAccount(req.user.userId);
   }
 
-  @Get("export")
+  @Get('export')
   exportData(@Req() req: { user: { userId: string } }) {
     return this.profileService.exportUserData(req.user.userId);
   }

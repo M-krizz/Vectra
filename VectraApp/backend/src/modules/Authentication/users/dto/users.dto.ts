@@ -1,4 +1,4 @@
-import { IsString, IsOptional, ValidateIf, IsEmail } from "class-validator";
+import { IsString, IsOptional, ValidateIf, IsEmail } from 'class-validator';
 
 export class CreateRiderDto {
   @ValidateIf((o: CreateRiderDto) => !o.phone)

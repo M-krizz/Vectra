@@ -1,13 +1,13 @@
-import { Injectable, ConflictException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import * as bcrypt from "bcrypt";
-import { UserEntity, UserRole } from "./user.entity";
-import { CreateRiderDto, CreateDriverDto } from "./dto/users.dto";
+import { Injectable, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { UserEntity, UserRole } from './user.entity';
+import { CreateRiderDto, CreateDriverDto } from './dto/users.dto';
 import {
   DriverProfileEntity,
   DriverStatus,
-} from "../drivers/driver-profile.entity";
+} from '../drivers/driver-profile.entity';
 
 @Injectable()
 export class UsersService {
@@ -33,7 +33,7 @@ export class UsersService {
     const existing = await this.usersRepo.findOne({
       where: [{ email: dto.email }, { phone: dto.phone }],
     });
-    if (existing) throw new ConflictException("User already exists");
+    if (existing) throw new ConflictException('User already exists');
 
     const user = this.usersRepo.create({
       email: dto.email || null,
@@ -50,7 +50,7 @@ export class UsersService {
     const existing = await this.usersRepo.findOne({
       where: [{ email: dto.email }, { phone: dto.phone }],
     });
-    if (existing) throw new ConflictException("User already exists");
+    if (existing) throw new ConflictException('User already exists');
 
     const user = this.usersRepo.create({
       email: dto.email || null,

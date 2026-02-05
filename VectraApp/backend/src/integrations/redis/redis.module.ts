@@ -1,7 +1,7 @@
-import { Global, Module } from "@nestjs/common";
-import Redis from "ioredis";
+import { Global, Module } from '@nestjs/common';
+import Redis from 'ioredis';
 
-export const REDIS = "REDIS_CLIENT";
+export const REDIS = 'REDIS_CLIENT';
 
 @Global()
 @Module({
@@ -10,7 +10,7 @@ export const REDIS = "REDIS_CLIENT";
       provide: REDIS,
       useFactory: () => {
         return new Redis({
-          host: process.env.REDIS_HOST || "localhost",
+          host: process.env.REDIS_HOST || 'localhost',
           port: Number(process.env.REDIS_PORT || 6379),
           maxRetriesPerRequest: 3,
         });

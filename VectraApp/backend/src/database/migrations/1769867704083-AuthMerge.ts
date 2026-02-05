@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AuthMerge1769867704083 implements MigrationInterface {
-  name = "AuthMerge1769867704083";
+  name = 'AuthMerge1769867704083';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create new enums

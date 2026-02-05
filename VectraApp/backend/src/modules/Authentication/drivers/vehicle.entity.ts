@@ -6,63 +6,63 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-} from "typeorm";
-import { UserEntity } from "../users/user.entity";
+} from 'typeorm';
+import { UserEntity } from '../users/user.entity';
 
-@Entity({ name: "vehicles" })
+@Entity({ name: 'vehicles' })
 export class VehicleEntity {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column("uuid", { name: "driver_user_id" })
+  @Column('uuid', { name: 'driver_user_id' })
   driverUserId!: string;
 
   // ===== Vehicle Info =====
-  @Column({ type: "varchar", length: 50, name: "vehicle_type" })
+  @Column({ type: 'varchar', length: 50, name: 'vehicle_type' })
   vehicleType!: string;
 
-  @Column({ type: "varchar", length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   make!: string | null;
 
-  @Column({ type: "varchar", length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   model!: string | null;
 
-  @Column({ type: "int", nullable: true })
+  @Column({ type: 'int', nullable: true })
   year!: number | null;
 
-  @Column({ type: "varchar", length: 30, nullable: true })
+  @Column({ type: 'varchar', length: 30, nullable: true })
   color!: string | null;
 
-  @Column({ type: "varchar", length: 20, unique: true, name: "plate_number" })
+  @Column({ type: 'varchar', length: 20, unique: true, name: 'plate_number' })
   plateNumber!: string;
 
   // ===== Capacity =====
-  @Column({ type: "int", name: "seating_capacity" })
+  @Column({ type: 'int', name: 'seating_capacity' })
   seatingCapacity!: number;
 
   // ===== Environmental =====
   @Column({
-    type: "numeric",
+    type: 'numeric',
     precision: 10,
     scale: 2,
     nullable: true,
-    name: "emission_factor_g_per_km",
+    name: 'emission_factor_g_per_km',
   })
   emissionFactorGPerKm!: number | null;
 
   // ===== Status =====
-  @Column({ type: "boolean", default: true, name: "is_active" })
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive!: boolean;
 
   // ===== Timestamps =====
-  @CreateDateColumn({ type: "timestamptz", name: "created_at" })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: "timestamptz", name: "updated_at" })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
   // ===== Relations =====
-  @ManyToOne(() => UserEntity, (user) => user.vehicles, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "driver_user_id" })
+  @ManyToOne(() => UserEntity, (user) => user.vehicles, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'driver_user_id' })
   driver!: UserEntity;
 }

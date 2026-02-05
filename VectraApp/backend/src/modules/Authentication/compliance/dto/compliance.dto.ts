@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsEnum } from "class-validator";
-import { DocumentType } from "../document.entity";
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { DocumentType } from '../document.entity';
 
 export class PresignRequestDto {
   @IsEnum(DocumentType)
