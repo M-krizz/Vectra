@@ -1,10 +1,5 @@
 # Backend CI Pipeline for Vectra
-<<<<<<< HEAD
 # Runs on push/PR to main and backend-related branches
-=======
-# Runs on push/PR to main and any backend-related branch
-# Covers: lint, format check, build, unit tests, e2e tests, and ML service
->>>>>>> origin/main
 
 name: Backend CI
 
