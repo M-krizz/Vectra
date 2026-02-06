@@ -33,7 +33,7 @@ dotenv.config();
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: false, // ✅ IMPORTANT: migrations control the schema
+      synchronize: true, // Auto-create tables
     }),
 
     // Authentication (users, drivers, admin, rbac, profile, compliance)
@@ -56,4 +56,4 @@ dotenv.config();
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
