@@ -1,6 +1,6 @@
 import { IsEmail, IsOptional, MaxLength, Matches, Validate, IsArray, ArrayNotEmpty } from 'class-validator';
-import { IsEmailOrPhone } from '../../common/validators/email-or-phone.validator';
-import { IsLicenseNumber } from '../../common/validators/license-number.validator';
+import { IsEmailOrPhone } from '../../common/validator/email-or-phone.validator';
+import { IsLicenseNumber } from '../../common/validator/license-number.validator';
 
 export class CreateDriverDto {
   @IsOptional()

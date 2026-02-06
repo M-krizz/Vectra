@@ -1,5 +1,5 @@
 import { IsEmail, IsOptional, Length, Matches, MaxLength, Validate } from 'class-validator';
-import { IsEmailOrPhone } from '../../common/validators/email-or-phone.validator';
+import { IsEmailOrPhone } from '../../common/validator/email-or-phone.validator';
 
 export class CreateRiderDto {
   @IsOptional()
