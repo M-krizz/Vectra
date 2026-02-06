@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { DriverProfileEntity } from './driver-profile.entity';
-import { DriverLocationHistoryEntity } from './driver-location-history.entity';
+import { LocationCronService } from './cron/location.cron.ts';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([DriverProfileEntity, DriverLocationHistoryEntity])],
-    controllers: [],
-    providers: [],
-    exports: [TypeOrmModule],
+    imports: [
+        TypeOrmModule.forFeature([DriverProfileEntity, DriverLocationHistoryEntity]),
+        RedisModule,
+        RideRequestsModule,
+    ],
+    controllers: [DriversController],
+    providers: [DriversService, LocationCronService],
+    exports: [DriversService],
 })
 export class DriversModule { }

@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import Redis from 'ioredis';
+import { RedisService } from './redis.service';
 
 export const REDIS = 'REDIS_CLIENT';
 
@@ -16,7 +17,8 @@ export const REDIS = 'REDIS_CLIENT';
                 });
             },
         },
+        RedisService,
     ],
-    exports: [REDIS],
+    exports: [REDIS, RedisService],
 })
 export class RedisModule { }

@@ -3,6 +3,8 @@ import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
 
+import { ScheduleModule } from '@nestjs/schedule';
+
 // Global modules
 import { RedisModule } from './integrations/redis/redis.module';
 
@@ -14,6 +16,7 @@ import { RideRequestsModule } from './modules/ride_requests/ride-requests.module
 import { TripsModule } from './modules/trips/trips.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 dotenv.config();
 
@@ -21,6 +24,9 @@ dotenv.config();
     imports: [
         // Global Redis connection
         RedisModule,
+
+        // Cron Scheduling
+        ScheduleModule.forRoot(),
 
         // Database connection
         TypeOrmModule.forRoot({
@@ -42,6 +48,7 @@ dotenv.config();
         RideRequestsModule,
         TripsModule,
         AdminModule,
+        ChatModule,
     ],
     controllers: [],
     providers: [
