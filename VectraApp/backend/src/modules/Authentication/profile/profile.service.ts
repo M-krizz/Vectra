@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, IsNull } from "typeorm";
-import { UserEntity } from "../users/user.entity";
-import { UpdateProfileDto, PrivacySettingsDto } from "./dto/profile.dto";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
+import { UserEntity } from '../users/user.entity';
+import { UpdateProfileDto, PrivacySettingsDto } from './dto/profile.dto';
 
 @Injectable()
 export class ProfileService {
@@ -14,7 +14,7 @@ export class ProfileService {
     const user = await this.usersRepo.findOne({
       where: { id: userId, deletedAt: IsNull() },
     });
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundException('User not found');
     return user;
   }
 

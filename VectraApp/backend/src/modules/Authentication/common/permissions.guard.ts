@@ -1,8 +1,8 @@
-import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { RbacService, Permission } from "../rbac/rbac.service";
-import { PERMISSIONS_KEY } from "./permissions.decorator";
-import { AuthenticatedRequest } from "./authenticated-request.interface";
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { RbacService, Permission } from '../rbac/rbac.service';
+import { PERMISSIONS_KEY } from './permissions.decorator';
+import { AuthenticatedRequest } from './authenticated-request.interface';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {

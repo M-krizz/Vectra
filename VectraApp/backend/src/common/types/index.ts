@@ -1,1 +1,1 @@
-export * from "./geo-point.type";
+export * from './geo-point.type';

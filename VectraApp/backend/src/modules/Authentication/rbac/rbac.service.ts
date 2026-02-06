@@ -1,70 +1,70 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Permission types for RBAC
  */
 export type Permission =
-  | "ride:book"
-  | "ride:see_requests"
-  | "ride:accept"
-  | "profile:view"
-  | "profile:edit"
-  | "payments:view"
-  | "carbon:dashboard"
-  | "navigation:use"
-  | "earnings:view"
-  | "availability:toggle"
-  | "user:manage"
-  | "system:config"
-  | "incident:resolve"
-  | "financial:view"
-  | "fare:adjust"
-  | "user:suspend"
-  | "payout:process"
-  | "leaderboard:manage";
+  | 'ride:book'
+  | 'ride:see_requests'
+  | 'ride:accept'
+  | 'profile:view'
+  | 'profile:edit'
+  | 'payments:view'
+  | 'carbon:dashboard'
+  | 'navigation:use'
+  | 'earnings:view'
+  | 'availability:toggle'
+  | 'user:manage'
+  | 'system:config'
+  | 'incident:resolve'
+  | 'financial:view'
+  | 'fare:adjust'
+  | 'user:suspend'
+  | 'payout:process'
+  | 'leaderboard:manage';
 
 @Injectable()
 export class RbacService {
   private readonly logger = new Logger(RbacService.name);
 
   public static readonly Roles = {
-    RIDER: "RIDER",
-    DRIVER: "DRIVER",
-    ADMIN: "ADMIN",
-    COMMUNITY_ADMIN: "COMMUNITY_ADMIN",
+    RIDER: 'RIDER',
+    DRIVER: 'DRIVER',
+    ADMIN: 'ADMIN',
+    COMMUNITY_ADMIN: 'COMMUNITY_ADMIN',
   } as const;
 
   private readonly rolePermissions: Record<string, Permission[]> = {
     [RbacService.Roles.RIDER]: [
-      "ride:book",
-      "profile:view",
-      "profile:edit",
-      "payments:view",
-      "carbon:dashboard",
+      'ride:book',
+      'profile:view',
+      'profile:edit',
+      'payments:view',
+      'carbon:dashboard',
     ],
     [RbacService.Roles.DRIVER]: [
-      "ride:see_requests",
-      "ride:accept",
-      "navigation:use",
-      "earnings:view",
-      "availability:toggle",
-      "profile:view",
-      "profile:edit",
+      'ride:see_requests',
+      'ride:accept',
+      'navigation:use',
+      'earnings:view',
+      'availability:toggle',
+      'profile:view',
+      'profile:edit',
     ],
     [RbacService.Roles.ADMIN]: [
-      "user:manage",
-      "system:config",
-      "incident:resolve",
-      "financial:view",
-      "fare:adjust",
-      "user:suspend",
-      "payout:process",
-      "profile:view",
+      'user:manage',
+      'system:config',
+      'incident:resolve',
+      'financial:view',
+      'fare:adjust',
+      'user:suspend',
+      'payout:process',
+      'profile:view',
     ],
     [RbacService.Roles.COMMUNITY_ADMIN]: [
-      "leaderboard:manage",
-      "carbon:dashboard",
-      "profile:view",
+      'leaderboard:manage',
+      'carbon:dashboard',
+      'profile:view',
     ],
   };
 

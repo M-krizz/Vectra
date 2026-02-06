@@ -4,13 +4,13 @@ import {
   IsString,
   ValidateNested,
   IsOptional,
-} from "class-validator";
-import { Type } from "class-transformer";
-import { RideType } from "../ride-request.entity";
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { RideType } from '../ride-request.entity';
 
 class GeoPointDto {
   @IsNotEmpty()
-  type = "Point" as const;
+  type = 'Point' as const;
 
   @IsNotEmpty()
   coordinates!: number[]; // [longitude, latitude]

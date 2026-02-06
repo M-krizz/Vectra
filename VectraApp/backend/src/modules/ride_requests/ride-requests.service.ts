@@ -1,9 +1,9 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { RideRequestEntity, RideRequestStatus } from "./ride-request.entity";
-import { CreateRideRequestDto } from "./dto/create-ride-request.dto";
-import { GeoPoint } from "../../common/types/geo-point.type";
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RideRequestEntity, RideRequestStatus } from './ride-request.entity';
+import { CreateRideRequestDto } from './dto/create-ride-request.dto';
+import { GeoPoint } from '../../common/types/geo-point.type';
 
 @Injectable()
 export class RideRequestsService {
@@ -43,7 +43,7 @@ export class RideRequestsService {
         riderUserId: userId,
         status: RideRequestStatus.REQUESTED,
       },
-      order: { requestedAt: "DESC" },
+      order: { requestedAt: 'DESC' },
     });
   }
 

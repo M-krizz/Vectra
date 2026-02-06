@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, IsNull } from "typeorm";
-import { UserEntity, UserRole } from "../users/user.entity";
-import { DriverProfileEntity } from "../drivers/driver-profile.entity";
-import { AdminAuditEntity, AdminAction } from "./admin-audit.entity";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
+import { UserEntity, UserRole } from '../users/user.entity';
+import { DriverProfileEntity } from '../drivers/driver-profile.entity';
+import { AdminAuditEntity, AdminAction } from './admin-audit.entity';
 
 @Injectable()
 export class AdminService {
@@ -18,13 +18,13 @@ export class AdminService {
   async listUsers() {
     return this.usersRepo.find({
       where: { deletedAt: IsNull() },
-      order: { createdAt: "DESC" },
+      order: { createdAt: 'DESC' },
     });
   }
 
   async getUserDetails(userId: string) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundException('User not found');
 
     let driverProfile = null;
     if (user.role === UserRole.DRIVER) {
@@ -42,10 +42,10 @@ export class AdminService {
     reason?: string,
   ) {
     const user = await this.usersRepo.findOne({ where: { id: targetUserId } });
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundException('User not found');
 
     user.isSuspended = true;
-    user.suspensionReason = reason ?? "Violation of terms";
+    user.suspensionReason = reason ?? 'Violation of terms';
     await this.usersRepo.save(user);
 
     await this.auditRepo.save({
@@ -60,7 +60,7 @@ export class AdminService {
 
   async reinstateUser(targetUserId: string, adminUserId: string) {
     const user = await this.usersRepo.findOne({ where: { id: targetUserId } });
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundException('User not found');
 
     user.isSuspended = false;
     user.suspensionReason = null;

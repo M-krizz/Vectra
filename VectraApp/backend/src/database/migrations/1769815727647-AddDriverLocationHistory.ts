@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddDriverLocationHistory1769815727647 implements MigrationInterface {
-  name = "AddDriverLocationHistory1769815727647";
+  name = 'AddDriverLocationHistory1769815727647';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
