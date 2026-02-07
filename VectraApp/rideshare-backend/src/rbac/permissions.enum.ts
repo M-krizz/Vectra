@@ -21,4 +21,5 @@ export type Permission =
   | 'fare:adjust'
   | 'user:suspend'
   | 'payout:process'
+  | 'fleet:view'
   ;

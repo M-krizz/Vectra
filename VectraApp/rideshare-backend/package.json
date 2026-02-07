@@ -10,7 +10,7 @@
     "@aws-sdk/client-s3": "^3.500.0",
     "@aws-sdk/s3-request-presigner": "^3.500.0",
     "ioredis": "^5.0.0",
-    "multer": "^1.4.5",
+    "multer": "1.4.5-lts.1",
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
@@ -22,7 +22,10 @@
     "rimraf": "^3.0.2",
     "typeorm": "^0.3.12",
     "bcrypt": "^5.1.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "@nestjs/websockets": "^9.0.0",
+    "@nestjs/platform-socket.io": "^9.0.0",
+    "socket.io": "^4.6.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
