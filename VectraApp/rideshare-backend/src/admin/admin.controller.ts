@@ -16,7 +16,7 @@ import { SuspendUserDto } from './dto/suspend-user.dto';
 @Controller('admin')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) { }
 
   @Permissions('user:manage')
   @Get('users')
@@ -44,5 +44,17 @@ export class AdminController {
   @Post('users/:id/reinstate')
   async reinstate(@Param('id') id: string, @Req() req: any) {
     return this.adminService.reinstateUser(id, req.user);
+  }
+
+  @Permissions('fleet:view')
+  @Get('fleet/status')
+  async getFleetStatus() {
+    return this.adminService.getFleetStatus();
+  }
+
+  @Permissions('fleet:view')
+  @Get('fleet/counters')
+  async getSystemCounters() {
+    return this.adminService.getSystemCounters();
   }
 }
