@@ -8,12 +8,13 @@ import { DriversService } from './drivers.service';
 import { DriversController } from './drivers.controller';
 import { DocumentsService } from '../documents/documents.service';
 import { DocumentsController } from '../documents/documents.controller';
-import { S3Service } from '../storage/s3.service';
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, DriverProfile, Vehicle, Document])],
-  providers: [DriversService, DocumentsService, S3Service],
-  controllers: [DriversController, DocumentsController],
-  exports: [DriversService],
+  providers: [DriversService, DocumentsService, S3Service, UsersService],
+  controllers: [DriversController, DocumentsController, UsersController],
+  exports: [DriversService, UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }

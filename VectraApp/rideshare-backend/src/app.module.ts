@@ -8,6 +8,10 @@ import { RoleChangeAudit } from './rbac/role-change-audit.entity';
 import { ProfileModule } from './profile/profile.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { AvailabilityModule } from './availability/availability.module';
+import { RidesModule } from './rides/rides.module';
+import { LocationModule } from './location/location.module';
+import { ChatModule } from './chat/chat.module';
+import { SafetyModule } from './safety/safety.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -29,6 +33,10 @@ import { AvailabilityModule } from './availability/availability.module';
     TypeOrmModule.forFeature([RoleChangeAudit]),
     ComplianceModule,
     AvailabilityModule,
+    RidesModule,
+    LocationModule,
+    ChatModule,
+    SafetyModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
