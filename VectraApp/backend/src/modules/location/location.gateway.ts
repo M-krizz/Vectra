@@ -26,9 +26,7 @@ export class LocationGateway
   server!: Server;
 
   constructor() {
-    this.redis = new Redis(
-      process.env.REDIS_URL || 'redis://localhost:6379',
-    );
+    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
   }
 
   handleConnection(client: Socket) {
