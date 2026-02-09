@@ -23,7 +23,7 @@ export class SafetyService {
     if (!reportedBy) {
       throw new NotFoundException('User not found');
     }
-    
+
     const incident = this.incidentRepo.create({
       reportedBy,
       description,
