@@ -13,7 +13,6 @@ import { JwtAuthGuard } from '../Authentication/auth/jwt-auth.guard';
 import { RequirePermissions } from '../Authentication/common/permissions.decorator';
 import { PermissionsGuard } from '../Authentication/common/permissions.guard';
 import { AuthenticatedRequest } from '../Authentication/common/authenticated-request.interface';
-import { Permission } from '../Authentication/rbac/rbac.service';
 
 interface ReportIncidentDto {
   description: string;
@@ -36,20 +35,20 @@ export class SafetyController {
   ) {
     // TODO: If rideId provided, fetch ride and pass to service
     return this.safetyService.reportIncident(
-      req.user as any, // Will be properly typed in implementation
+      req.user.userId,
       body.description,
     );
   }
 
   @Get('incidents')
-  @RequirePermissions(Permission.INCIDENT_RESOLVE)
+  @RequirePermissions('incident:resolve')
   @UseGuards(PermissionsGuard)
   async listIncidents() {
     return this.safetyService.listIncidents();
   }
 
   @Patch('incidents/:id/resolve')
-  @RequirePermissions(Permission.INCIDENT_RESOLVE)
+  @RequirePermissions('incident:resolve')
   @UseGuards(PermissionsGuard)
   async resolveIncident(
     @Req() req: AuthenticatedRequest,
@@ -64,7 +63,7 @@ export class SafetyController {
   }
 
   @Get('incidents/:id')
-  @RequirePermissions(Permission.INCIDENT_VIEW)
+  @RequirePermissions('incident:view')
   @UseGuards(PermissionsGuard)
   async getIncident(@Param('id') id: string) {
     return this.safetyService.getIncident(id);
