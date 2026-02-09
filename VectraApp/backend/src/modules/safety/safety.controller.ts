@@ -34,10 +34,7 @@ export class SafetyController {
     @Body() body: ReportIncidentDto,
   ) {
     // TODO: If rideId provided, fetch ride and pass to service
-    return this.safetyService.reportIncident(
-      req.user.userId,
-      body.description,
-    );
+    return this.safetyService.reportIncident(req.user.userId, body.description);
   }
 
   @Get('incidents')
