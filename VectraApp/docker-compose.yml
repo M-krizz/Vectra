@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: vectra_pass
       POSTGRES_DB: vectra_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - vectra_db_data:/var/lib/postgresql/data
 

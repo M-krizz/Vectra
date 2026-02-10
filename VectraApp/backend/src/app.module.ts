@@ -13,6 +13,9 @@ import { AuthenticationModule } from './modules/Authentication';
 // Feature modules
 import { RideRequestsModule } from './modules/ride_requests/ride-requests.module';
 import { TripsModule } from './modules/trips/trips.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { LocationModule } from './modules/location/location.module';
+import { SafetyModule } from './modules/safety/safety.module';
 
 dotenv.config();
 
@@ -42,6 +45,13 @@ dotenv.config();
     // Ride modules
     RideRequestsModule,
     TripsModule,
+
+    // Real-time features
+    ChatModule,
+    LocationModule,
+
+    // Safety
+    SafetyModule,
   ],
   controllers: [],
   providers: [
