@@ -1,0 +1,433 @@
+###############################################################################
+# VECTRA Rideshare Backend API Testing
+# Base URL: http://localhost:3001
+# 
+# Instructions:
+# 1. Install "REST Client" extension in VS Code
+# 2. Run backend server: cd rideshare-backend && npm run start:dev
+# 3. Click "Send Request" above each ### section
+# 4. Variables will be automatically captured from responses
+###############################################################################
+
+@baseUrl = http://localhost:3001
+@riderAccessToken = 
+@driverAccessToken = 
+@adminAccessToken = 
+@refreshTokenId = 
+@refreshToken = 
+@riderId = 
+@driverProfileId = 
+@rideId = 
+@incidentId = 
+
+###############################################################################
+# 1. AUTHENTICATION & USER MANAGEMENT (rideshare-backend)
+###############################################################################
+
+### 1.1 Generate OTP for Email
+POST {{baseUrl}}/auth/otp/generate
+Content-Type: application/json
+
+{
+  "target": "email:test.rider@example.com"
+}
+
+### 1.2 Generate OTP for Phone
+POST {{baseUrl}}/auth/otp/generate
+Content-Type: application/json
+
+{
+  "target": "phone:+1234567890"
+}
+
+### 1.3 Verify OTP
+POST {{baseUrl}}/auth/otp/verify
+Content-Type: application/json
+
+{
+  "target": "email:test.rider@example.com",
+  "otp": "123456"
+}
+
+### 1.4 Register Rider
+# @name registerRider
+POST {{baseUrl}}/auth/register/rider
+Content-Type: application/json
+
+{
+  "fullName": "Test Rider",
+  "email": "test.rider@example.com",
+  "phone": "+1234567890",
+  "password": "SecurePassword123!",
+  "emergencyContacts": [
+    {
+      "name": "Emergency Contact",
+      "phone": "+0987654321",
+      "relationship": "Family"
+    }
+  ]
+}
+
+### 1.5 Register Driver
+# @name registerDriver
+POST {{baseUrl}}/drivers/register
+Content-Type: application/json
+
+{
+  "fullName": "Test Driver",
+  "email": "test.driver@example.com",
+  "phone": "+1234567891",
+  "password": "SecurePassword123!",
+  "licenseNumber": "DL12345678",
+  "licenseState": "CA",
+  "vehicles": [
+    {
+      "make": "Toyota",
+      "model": "Camry",
+      "year": 2022,
+      "color": "Blue",
+      "licensePlate": "ABC123"
+    }
+  ],
+  "emergencyContacts": [
+    {
+      "name": "Emergency Contact Driver",
+      "phone": "+0987654322",
+      "relationship": "Family"
+    }
+  ]
+}
+
+### 1.6 Login as Rider
+# @name loginRider
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test.rider@example.com",
+  "password": "SecurePassword123!",
+  "deviceInfo": "Test Device - Chrome Browser"
+}
+
+### 1.7 Login as Driver
+# @name loginDriver
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test.driver@example.com",
+  "password": "SecurePassword123!",
+  "deviceInfo": "Test Device - Chrome Browser"
+}
+
+### 1.8 Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshTokenId": "{{refreshTokenId}}",
+  "refreshToken": "{{refreshToken}}",
+  "deviceInfo": "Test Device - Chrome Browser",
+  "ip": "127.0.0.1"
+}
+
+### 1.9 Get Active Sessions (Protected)
+GET {{baseUrl}}/auth/sessions
+Authorization: Bearer {{riderAccessToken}}
+
+### 1.10 Revoke Specific Session (Protected)
+DELETE {{baseUrl}}/auth/sessions/{{refreshTokenId}}
+Authorization: Bearer {{riderAccessToken}}
+
+### 1.11 Revoke All Sessions (Protected)
+POST {{baseUrl}}/auth/revoke-all
+Authorization: Bearer {{riderAccessToken}}
+
+### 1.12 Logout (Protected)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "refreshTokenId": "{{refreshTokenId}}"
+}
+
+### 1.13 Get User Permissions (Protected)
+GET {{baseUrl}}/auth/me/permissions
+Authorization: Bearer {{riderAccessToken}}
+
+###############################################################################
+# 2. PROFILE MANAGEMENT (rideshare-backend)
+###############################################################################
+
+### 2.1 Get My Profile (Protected)
+GET {{baseUrl}}/profile/me
+Authorization: Bearer {{riderAccessToken}}
+
+### 2.2 Update Profile (Protected)
+PATCH {{baseUrl}}/profile/me
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "fullName": "Test Rider Updated",
+  "bio": "Updated bio for testing"
+}
+
+### 2.3 Update Privacy Settings (Protected)
+PATCH {{baseUrl}}/profile/privacy
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "shareLocation": false,
+  "shareTrips": true
+}
+
+### 2.4 Deactivate Account (Protected)
+POST {{baseUrl}}/profile/deactivate
+Authorization: Bearer {{riderAccessToken}}
+
+### 2.5 Delete Account (Protected) - CAUTION
+# DELETE {{baseUrl}}/profile/delete
+# Authorization: Bearer {{riderAccessToken}}
+
+### 2.6 Export User Data (Protected)
+GET {{baseUrl}}/profile/export
+Authorization: Bearer {{riderAccessToken}}
+
+###############################################################################
+# 3. RIDE MANAGEMENT (rideshare-backend)
+###############################################################################
+
+### 3.1 Create Ride Request (RIDER only, Protected)
+# @name createRide
+POST {{baseUrl}}/rides/request
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "pickupLat": 37.7749,
+  "pickupLng": -122.4194,
+  "dropoffLat": 37.8049,
+  "dropoffLng": -122.4494,
+  "pickupAddress": "123 Market St, San Francisco, CA",
+  "dropoffAddress": "456 Mission St, San Francisco, CA",
+  "seats": 2
+}
+
+### 3.2 Get Nearby Ride Requests (DRIVER only, Protected)
+GET {{baseUrl}}/rides/nearby?lat=37.7749&lng=-122.4194&radius=5000
+Authorization: Bearer {{driverAccessToken}}
+
+### 3.3 Get Ride Details (Protected)
+GET {{baseUrl}}/rides/{{rideId}}
+Authorization: Bearer {{riderAccessToken}}
+
+###############################################################################
+# 4. DRIVER AVAILABILITY (rideshare-backend)
+###############################################################################
+
+### 4.1 Set Driver Online (Protected)
+POST {{baseUrl}}/availability/online
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "online": true,
+  "deviceInfo": "Mobile App - Android"
+}
+
+### 4.2 Send Heartbeat (Protected)
+POST {{baseUrl}}/availability/heartbeat
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "deviceInfo": "Mobile App - Android"
+}
+
+### 4.3 Set Weekly Schedule (Protected)
+POST {{baseUrl}}/availability/schedule
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "dayOfWeek": 1,
+  "windows": [
+    {
+      "startHour": 9,
+      "startMinute": 0,
+      "endHour": 17,
+      "endMinute": 0
+    }
+  ]
+}
+
+### 4.4 Get Weekly Schedule (Protected)
+GET {{baseUrl}}/availability/schedule
+Authorization: Bearer {{driverAccessToken}}
+
+### 4.5 Add Time Off (Protected)
+POST {{baseUrl}}/availability/timeoff
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "startAt": "2026-02-15T09:00:00Z",
+  "endAt": "2026-02-15T17:00:00Z",
+  "reason": "Personal appointment"
+}
+
+### 4.6 List Time Offs (Protected)
+GET {{baseUrl}}/availability/timeoff
+Authorization: Bearer {{driverAccessToken}}
+
+### 4.7 Remove Time Off (Protected)
+# DELETE {{baseUrl}}/availability/timeoff/{timeOffId}
+# Authorization: Bearer {{driverAccessToken}}
+
+### 4.8 Check Availability (Protected)
+GET {{baseUrl}}/availability/is-available
+Authorization: Bearer {{driverAccessToken}}
+
+###############################################################################
+# 5. SAFETY & INCIDENTS (rideshare-backend)
+###############################################################################
+
+### 5.1 Report Incident (Protected)
+# @name reportIncident
+POST {{baseUrl}}/safety/report
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "description": "Test incident report for safety testing",
+  "rideId": "{{rideId}}"
+}
+
+### 5.2 List All Incidents (Admin Permission Required)
+GET {{baseUrl}}/safety/incidents
+Authorization: Bearer {{adminAccessToken}}
+
+### 5.3 Resolve Incident (Admin Permission Required)
+POST {{baseUrl}}/safety/incidents/{{incidentId}}/resolve
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "resolution": "Incident investigated and resolved"
+}
+
+###############################################################################
+# 6. DOCUMENT MANAGEMENT (rideshare-backend)
+###############################################################################
+
+### 6.1 Get Presigned Upload URL (Public)
+POST {{baseUrl}}/documents/{{driverProfileId}}/presign
+Content-Type: application/json
+
+{
+  "originalName": "driver_license.jpg",
+  "mimeType": "image/jpeg",
+  "size": 102400
+}
+
+### 6.2 Finalize Document Upload (Public)
+POST {{baseUrl}}/documents/{{driverProfileId}}/finalize
+Content-Type: application/json
+
+{
+  "key": "drivers/test-driver/license-123456.jpg",
+  "originalName": "driver_license.jpg",
+  "mimeType": "image/jpeg",
+  "size": 102400,
+  "docType": "LICENSE"
+}
+
+### 6.3 Get Presigned URL (Authenticated)
+POST {{baseUrl}}/driver/documents/{{driverProfileId}}/presign
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "originalName": "insurance.pdf",
+  "mimeType": "application/pdf",
+  "size": 204800
+}
+
+### 6.4 Finalize Document (Authenticated)
+POST {{baseUrl}}/driver/documents/{{driverProfileId}}/finalize
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "key": "drivers/test-driver/insurance-789012.pdf",
+  "originalName": "insurance.pdf",
+  "mimeType": "application/pdf",
+  "size": 204800,
+  "docType": "INSURANCE"
+}
+
+### 6.5 List Driver Documents (Authenticated)
+GET {{baseUrl}}/driver/documents/{{driverProfileId}}
+Authorization: Bearer {{driverAccessToken}}
+
+###############################################################################
+# 7. ADMIN & COMPLIANCE (rideshare-backend)
+###############################################################################
+
+### 7.1 List All Users (Admin Permission)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{adminAccessToken}}
+
+### 7.2 Get User Details (Admin Permission)
+GET {{baseUrl}}/admin/users/{{riderId}}
+Authorization: Bearer {{adminAccessToken}}
+
+### 7.3 Suspend User (Admin Permission)
+POST {{baseUrl}}/admin/users/{{riderId}}/suspend
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "reason": "Testing suspension functionality"
+}
+
+### 7.4 Reinstate User (Admin Permission)
+POST {{baseUrl}}/admin/users/{{riderId}}/reinstate
+Authorization: Bearer {{adminAccessToken}}
+
+### 7.5 Get Fleet Status (Admin Permission)
+GET {{baseUrl}}/admin/fleet/status
+Authorization: Bearer {{adminAccessToken}}
+
+### 7.6 Get System Counters (Admin Permission)
+GET {{baseUrl}}/admin/fleet/counters
+Authorization: Bearer {{adminAccessToken}}
+
+### 7.7 List Pending Compliance Documents (Admin Permission)
+GET {{baseUrl}}/admin/compliance/pending
+Authorization: Bearer {{adminAccessToken}}
+
+### 7.8 Approve/Reject Document (Admin Permission)
+POST {{baseUrl}}/admin/compliance/document/approve
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "documentId": "doc-id-here",
+  "approve": true,
+  "adminNotes": "Document verified and approved"
+}
+
+###############################################################################
+# WebSocket Testing (Manual)
+###############################################################################
+# 
+# Chat Gateway: ws://localhost:3000/chat
+# Location Gateway: ws://localhost:3000/location
+# 
+# Use a WebSocket client tool or browser console to test these connections
+# 
+###############################################################################
