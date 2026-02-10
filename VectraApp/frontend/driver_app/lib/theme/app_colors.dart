@@ -1,43 +1,36 @@
 import 'package:flutter/material.dart';
 
-/// Vectra Commercial Color Palette
 class AppColors {
-  AppColors._();
+  // Primary Colors - Turquoise Theme
+  static const Color primary = Color(0xFF4DBFB8);
+  static const Color primaryDark = Color(0xFF3AA39D);
+  static const Color primaryLight = Color(0xFF6DD4CE);
 
-  // Primary Brand Colors
-  static const voidBlack = Color(0xFF080808);
-  static const deepBlack = Color(0xFF0A0A0A); // Added for screens
-  static const hyperLime = Color(0xFFCCFF00);
-  static const carbonGrey = Color(0xFF1F1F1F);
-  
+  // Background Colors
+  static const Color background = Color(0xFFF5F7FA);
+  static const Color cardBackground = Color(0xFFFFFFFF);
+
+  // Text Colors
+  static const Color textPrimary = Color(0xFF2D3748);
+  static const Color textSecondary = Color(0xFF718096);
+  static const Color textLight = Color(0xFFA0AEC0);
+
   // Accent Colors
-  static const neonGreen = Color(0xFF00FF00);
-  static const deepGreen = Color(0xFF003300);
-  static const skyBlue = Color(0xFF4A90E2); // Added for UI elements
-  
-  // Semantic Colors
-  static const errorRed = Color(0xFFFF3B30);
-  static const successGreen = Color(0xFF34C759);
-  static const warningOrange = Color(0xFFFF9500);
-  static const warningAmber = Color(0xFFF59E0B); // Added for incentives
-  
-  // Opacity Variants
-  static final white10 = Colors.white.withOpacity(0.1);
-  static final white20 = Colors.white.withOpacity(0.2);
-  static final white30 = Colors.white.withOpacity(0.3);
-  static final white50 = Colors.white.withOpacity(0.5);
-  static final white70 = Colors.white.withOpacity(0.7);
-  static final black50 = Colors.black.withOpacity(0.5);
-  
-  // Gradients
-  static const heroGradient = LinearGradient(
-    colors: [hyperLime, voidBlack],
+  static const Color success = Color(0xFF48BB78);
+  static const Color error = Color(0xFFF56565);
+  static const Color warning = Color(0xFFED8936);
+  static const Color info = Color(0xFF4299E1);
+
+  // Neutral Colors
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
+  static const Color grey = Color(0xFFE2E8F0);
+  static const Color greyDark = Color(0xFFCBD5E0);
+
+  // Gradient
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [primary, primaryLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-  );
-  
-  static const backgroundGradient = RadialGradient(
-    colors: [Color(0x2200FF00), voidBlack],
-    radius: 1.4,
   );
 }
