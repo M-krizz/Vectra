@@ -1,57 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'features/auth/presentation/screens/phone_input_screen.dart';
-import 'features/map_home/presentation/screens/driver_dashboard_screen.dart';
-import 'features/auth/presentation/providers/auth_providers.dart';
-import 'features/auth/data/models/auth_tokens.dart'; // For AuthState enum
 import 'theme/app_theme.dart';
-import 'theme/app_colors.dart';
+import 'screens/signin_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Set system UI overlay style for premium feel
+
+  // Set status bar style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF080808),
-      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
     ),
   );
-  
-  runApp(const ProviderScope(child: VectraDriverApp()));
+
+  runApp(const MyApp());
 }
 
-class VectraDriverApp extends ConsumerWidget {
-  const VectraDriverApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authStateData = ref.watch(authProvider);
-    
-    // Determine home screen based on auth state
-    Widget homeScreen;
-    if (authStateData.state == AuthState.authenticated) {
-      homeScreen = const DriverDashboardScreen();
-    } else if (authStateData.state == AuthState.loading || 
-               authStateData.state == AuthState.initial) {
-      homeScreen = const Scaffold(
-        backgroundColor: AppColors.voidBlack,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.hyperLime),
-        ),
-      );
-    } else {
-      homeScreen = const PhoneInputScreen();
-    }
-    
+  Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Vectra',
       debugShowCheckedModeBanner: false,
-      title: 'Vectra Driver',
-      theme: AppTheme.darkTheme,
-      home: homeScreen,
+      theme: AppTheme.lightTheme,
+      home: const SignInScreen(),
     );
   }
 }
