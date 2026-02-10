@@ -168,7 +168,7 @@ class _DriverMapState extends ConsumerState<DriverMap>
         // Map controls
         Positioned(
           right: 16,
-          bottom: 100,
+          bottom: 200,
           child: Column(
             children: [
               _buildMapControl(
@@ -203,7 +203,7 @@ class _DriverMapState extends ConsumerState<DriverMap>
         if (widget.showHeatmap)
           Positioned(
             left: 16,
-            bottom: 100,
+            bottom: 200,
             child: Column(
               children: [
                 _buildLayerToggle(

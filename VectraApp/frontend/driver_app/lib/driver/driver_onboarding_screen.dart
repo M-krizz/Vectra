@@ -1,4 +1,4 @@
-import 'dart:io';
+// Driver onboarding screen - web-compatible (no dart:io)
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,9 +33,9 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   final TextEditingController _vehicleColorController = TextEditingController();
   
   String _selectedVehicleType = 'Sedan';
-  File? _licenseDocument;
-  File? _rcDocument;
-  File? _insuranceDocument;
+  String? _licenseDocument;
+  String? _rcDocument;
+  String? _insuranceDocument;
 
   @override
   void dispose() {
@@ -209,33 +209,29 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
           ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
           const SizedBox(height: 32),
           PremiumTextField(
-            controller: _nameController,
-            label: 'Full Name',
-            hint: 'Enter your full name',
-            prefixIcon: Icons.person_outline,
+            hint: 'Full Name',
+            onChanged: (v) => _nameController.text = v,
+            prefixIcon: const Icon(Icons.person_outline, color: AppColors.hyperLime, size: 20),
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
-            controller: _phoneController,
-            label: 'Phone Number',
             hint: '+91 XXXXX XXXXX',
-            prefixIcon: Icons.phone_outlined,
+            onChanged: (v) => _phoneController.text = v,
+            prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.hyperLime, size: 20),
             keyboardType: TextInputType.phone,
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
-            controller: _emailController,
-            label: 'Email Address',
             hint: 'your.email@example.com',
-            prefixIcon: Icons.email_outlined,
+            onChanged: (v) => _emailController.text = v,
+            prefixIcon: const Icon(Icons.email_outlined, color: AppColors.hyperLime, size: 20),
             keyboardType: TextInputType.emailAddress,
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
-            controller: _licenseController,
-            label: 'License Number',
             hint: 'DL-XXXXXXXXXX',
-            prefixIcon: Icons.badge_outlined,
+            onChanged: (v) => _licenseController.text = v,
+            prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.hyperLime, size: 20),
           ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
         ],
       ),
@@ -287,24 +283,21 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
           const SizedBox(height: 24),
           
           PremiumTextField(
-            controller: _vehicleModelController,
-            label: 'Vehicle Model',
             hint: 'e.g., Honda City',
-            prefixIcon: Icons.directions_car_outlined,
+            onChanged: (v) => _vehicleModelController.text = v,
+            prefixIcon: const Icon(Icons.directions_car_outlined, color: AppColors.hyperLime, size: 20),
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
-            controller: _vehiclePlateController,
-            label: 'License Plate',
             hint: 'KA-01-AB-1234',
-            prefixIcon: Icons.pin_outlined,
+            onChanged: (v) => _vehiclePlateController.text = v,
+            prefixIcon: const Icon(Icons.pin_outlined, color: AppColors.hyperLime, size: 20),
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
-            controller: _vehicleColorController,
-            label: 'Vehicle Color',
             hint: 'e.g., White',
-            prefixIcon: Icons.palette_outlined,
+            onChanged: (v) => _vehicleColorController.text = v,
+            prefixIcon: const Icon(Icons.palette_outlined, color: AppColors.hyperLime, size: 20),
           ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
         ],
       ),
@@ -375,9 +368,9 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
             subtitle: 'Upload a clear photo of your license',
             icon: Icons.badge_outlined,
             file: _licenseDocument,
-            onUpload: (file) {
+            onUpload: (path) {
               setState(() {
-                _licenseDocument = file;
+                _licenseDocument = path;
               });
             },
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
@@ -388,9 +381,9 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
             subtitle: 'Registration certificate',
             icon: Icons.description_outlined,
             file: _rcDocument,
-            onUpload: (file) {
+            onUpload: (path) {
               setState(() {
-                _rcDocument = file;
+                _rcDocument = path;
               });
             },
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
@@ -401,9 +394,9 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
             subtitle: 'Valid vehicle insurance',
             icon: Icons.shield_outlined,
             file: _insuranceDocument,
-            onUpload: (file) {
+            onUpload: (path) {
               setState(() {
-                _insuranceDocument = file;
+                _insuranceDocument = path;
               });
             },
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
@@ -416,8 +409,8 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
     required String title,
     required String subtitle,
     required IconData icon,
-    required File? file,
-    required Function(File) onUpload,
+    required String? file,
+    required Function(String) onUpload,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),

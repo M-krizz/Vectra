@@ -6,11 +6,13 @@ import '../../theme/app_colors.dart';
 /// Neon-glowing OTP input with auto-focus management
 class OtpInput extends StatefulWidget {
   final ValueChanged<String> onCompleted;
+  final ValueChanged<String>? onChanged;
   final int length;
 
   const OtpInput({
     super.key,
     required this.onCompleted,
+    this.onChanged,
     this.length = 4,
   });
 
@@ -50,14 +52,19 @@ class _OtpInputState extends State<OtpInput> {
     super.dispose();
   }
 
+  String get _currentOtp => _controllers.map((c) => c.text).join();
+
   void _onChanged(int index, String value) {
+    // Notify parent of current OTP value
+    widget.onChanged?.call(_currentOtp);
+
     if (value.isNotEmpty) {
       if (index < widget.length - 1) {
         _focusNodes[index + 1].requestFocus();
       } else {
         _focusNodes[index].unfocus();
         // Check if all filled
-        final otp = _controllers.map((c) => c.text).join();
+        final otp = _currentOtp;
         if (otp.length == widget.length) {
           widget.onCompleted(otp);
         }
@@ -67,7 +74,9 @@ class _OtpInputState extends State<OtpInput> {
 
   void _onBackspace(int index) {
     if (_controllers[index].text.isEmpty && index > 0) {
+      _controllers[index - 1].clear();
       _focusNodes[index - 1].requestFocus();
+      widget.onChanged?.call(_currentOtp);
     }
   }
 
@@ -123,36 +132,45 @@ class _OtpInputState extends State<OtpInput> {
                 : [],
       ),
       child: Center(
-        child: TextField(
-          controller: _controllers[index],
-          focusNode: _focusNodes[index],
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.number,
-          maxLength: 1,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-          cursorColor: AppColors.hyperLime,
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            errorBorder: InputBorder.none,
-            disabledBorder: InputBorder.none,
-            counterText: '',
-            contentPadding: EdgeInsets.zero,
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          onChanged: (value) => _onChanged(index, value),
-          onTap: () {
-            if (_controllers[index].text.isNotEmpty) {
-              _controllers[index].clear();
+        child: KeyboardListener(
+          focusNode: FocusNode(),
+          onKeyEvent: (event) {
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.backspace) {
+              _onBackspace(index);
             }
           },
+          child: TextField(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            maxLength: 1,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+            cursorColor: AppColors.hyperLime,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              counterText: '',
+              contentPadding: EdgeInsets.zero,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            onChanged: (value) => _onChanged(index, value),
+            onTap: () {
+              if (_controllers[index].text.isNotEmpty) {
+                _controllers[index].clear();
+              }
+            },
+          ),
         ),
       ),
     ).animate(target: hasFocus ? 1 : 0).scale(

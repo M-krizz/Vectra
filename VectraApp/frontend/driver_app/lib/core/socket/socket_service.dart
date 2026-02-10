@@ -177,6 +177,11 @@ class SocketService {
     });
   }
 
+  /// Public method to trigger a simulated ride request
+  void simulateIncomingRequest() {
+    _simulateRideOffer();
+  }
+
   void _simulateRideOffer() {
     final mockRide = {
       'id': 'ride_${DateTime.now().millisecondsSinceEpoch}',
@@ -184,9 +189,10 @@ class SocketService {
       'riderName': 'Alice Wonderland',
       'riderPhone': '+919876543210',
       'riderRating': 4.8,
-      'pickupLocation': {'lat': 12.9716, 'lng': 77.5946}, // Bangalore
+      // Bangalore coordinates
+      'pickupLocation': {'lat': 12.9716, 'lng': 77.5946}, 
       'pickupAddress': 'MG Road Metro Station, Bangalore',
-      'dropoffLocation': {'lat': 12.9352, 'lng': 77.6245}, // Koramangala
+      'dropoffLocation': {'lat': 12.9352, 'lng': 77.6245}, 
       'dropoffAddress': 'Forum Mall, Koramangala',
       'estimatedFare': 250.0,
       'estimatedDistance': 5.2,

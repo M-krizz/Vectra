@@ -35,8 +35,8 @@ class VectraDriverApp extends ConsumerWidget {
     Widget homeScreen;
     if (authStateData.state == AuthState.authenticated) {
       homeScreen = const DriverDashboardScreen();
-    } else if (authStateData.state == AuthState.loading || 
-               authStateData.state == AuthState.initial) {
+    } else if (authStateData.state == AuthState.initial) {
+      // Only show loading spinner during initial auth check
       homeScreen = const Scaffold(
         backgroundColor: AppColors.voidBlack,
         body: Center(
@@ -48,6 +48,7 @@ class VectraDriverApp extends ConsumerWidget {
     }
     
     return MaterialApp(
+      // key: ValueKey(authStateData.state), // REMOVED: This causes full rebuild and breaks navigation
       debugShowCheckedModeBanner: false,
       title: 'Vectra Driver',
       theme: AppTheme.darkTheme,

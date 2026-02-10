@@ -227,7 +227,7 @@ class _DriverScheduleScreenState extends State<DriverScheduleScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.carbonGrey.withOpacity(0.8),
-        border: const Border(
+        border: Border(
           bottom: BorderSide(color: AppColors.white10),
         ),
       ),

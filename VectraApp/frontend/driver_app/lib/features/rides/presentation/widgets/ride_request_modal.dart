@@ -22,7 +22,7 @@ class RideRequestModal extends StatefulWidget {
 }
 
 class _RideRequestModalState extends State<RideRequestModal> {
-  static const int _timeoutSeconds = 15;
+  static const int _timeoutSeconds = 40;
   int _remainingSeconds = _timeoutSeconds;
   Timer? _timer;
 
@@ -77,53 +77,55 @@ class _RideRequestModalState extends State<RideRequestModal> {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Timer
-              _buildTimer(),
-              const SizedBox(height: 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Timer
+                _buildTimer(),
+                const SizedBox(height: 24),
 
-              // Title
-              Text(
-                'New Ride Request',
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                // Title
+                Text(
+                  'New Ride Request',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Rider info
-              _buildRiderInfo(),
-              const SizedBox(height: 20),
+                // Rider info
+                _buildRiderInfo(),
+                const SizedBox(height: 20),
 
-              // Pickup location
-              _buildLocationCard(
-                icon: Icons.my_location,
-                label: 'Pickup',
-                address: widget.request.pickupAddress,
-                color: AppColors.neonGreen,
-              ),
-              const SizedBox(height: 12),
+                // Pickup location
+                _buildLocationCard(
+                  icon: Icons.my_location,
+                  label: 'Pickup',
+                  address: widget.request.pickupAddress,
+                  color: AppColors.neonGreen,
+                ),
+                const SizedBox(height: 12),
 
-              // Dropoff location
-              _buildLocationCard(
-                icon: Icons.location_on,
-                label: 'Dropoff',
-                address: widget.request.dropoffAddress,
-                color: AppColors.errorRed,
-              ),
-              const SizedBox(height: 20),
+                // Dropoff location
+                _buildLocationCard(
+                  icon: Icons.location_on,
+                  label: 'Dropoff',
+                  address: widget.request.dropoffAddress,
+                  color: AppColors.errorRed,
+                ),
+                const SizedBox(height: 20),
 
-              // Trip details
-              _buildTripDetails(),
-              const SizedBox(height: 24),
+                // Trip details
+                _buildTripDetails(),
+                const SizedBox(height: 24),
 
-              // Action buttons
-              _buildActionButtons(),
-            ],
+                // Action buttons
+                _buildActionButtons(),
+              ],
+            ),
           ),
         ).animate().scale(duration: 300.ms).fadeIn(),
       ),

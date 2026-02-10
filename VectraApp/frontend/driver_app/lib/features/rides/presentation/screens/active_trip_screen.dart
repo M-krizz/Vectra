@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../shared/widgets/otp_input.dart';
+import '../../../../core/utils/map_launcher.dart';
 import '../../data/models/trip.dart';
 import '../providers/ride_request_providers.dart';
 
@@ -16,6 +17,7 @@ class ActiveTripScreen extends ConsumerStatefulWidget {
 
 class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   final TextEditingController _otpController = TextEditingController();
+  String _enteredOtp = '';
 
   @override
   void dispose() {
@@ -26,6 +28,18 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   @override
   Widget build(BuildContext context) {
     final tripState = ref.watch(activeTripProvider);
+
+    // Listen for errors and show SnackBar
+    ref.listen<ActiveTripState>(activeTripProvider, (previous, next) {
+      if (next.error != null && next.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
+    });
 
     if (tripState.trip == null) {
       return Scaffold(
@@ -85,6 +99,8 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               label: 'Pickup',
               address: trip.pickupAddress,
               color: AppColors.neonGreen,
+              lat: trip.pickupLocation.latitude,
+              lng: trip.pickupLocation.longitude,
             ),
             const SizedBox(height: 12),
             _buildLocationCard(
@@ -92,6 +108,8 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               label: 'Dropoff',
               address: trip.dropoffAddress,
               color: AppColors.errorRed,
+              lat: trip.dropoffLocation.latitude,
+              lng: trip.dropoffLocation.longitude,
             ),
             const SizedBox(height: 24),
 
@@ -248,6 +266,8 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     required String label,
     required String address,
     required Color color,
+    required double lat,
+    required double lng,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -291,6 +311,23 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+          IconButton(
+            onPressed: () async {
+              try {
+                await launchGoogleMaps(lat, lng);
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not open Maps: $e'), backgroundColor: AppColors.errorRed),
+                  );
+                }
+              }
+            },
+            icon: Icon(Icons.navigation, color: AppColors.skyBlue),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.skyBlue.withOpacity(0.2),
             ),
           ),
         ],
@@ -354,7 +391,22 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     );
   }
 
+  void _submitOtp(String otp) {
+    if (otp.length == 4) {
+      ref.read(activeTripProvider.notifier).startTrip(otp);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter the complete 4-digit OTP'),
+          backgroundColor: AppColors.warningAmber,
+        ),
+      );
+    }
+  }
+
   Widget _buildOtpSection(Trip trip) {
+    final isLoading = ref.watch(activeTripProvider).isLoading;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -376,9 +428,61 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
           const SizedBox(height: 16),
           OtpInput(
             length: 4,
-            onCompleted: (otp) {
-              ref.read(activeTripProvider.notifier).startTrip(otp);
+            onChanged: (otp) {
+              _enteredOtp = otp;
             },
+            onCompleted: (otp) {
+              _enteredOtp = otp;
+              _submitOtp(otp);
+            },
+          ),
+          const SizedBox(height: 20),
+          // Manual submit button as fallback
+          GestureDetector(
+            onTap: isLoading
+                ? null
+                : () {
+                    _submitOtp(_enteredOtp);
+                  },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: isLoading
+                    ? AppColors.hyperLime.withOpacity(0.3)
+                    : AppColors.hyperLime,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: isLoading
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: AppColors.hyperLime.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              child: isLoading
+                  ? const Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.black,
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      'Verify & Start Trip',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
           ),
         ],
       ),
@@ -393,7 +497,16 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     switch (trip.status) {
       case TripStatus.assigned:
         buttonText = 'Start Navigation';
-        onPressed = () {
+        onPressed = () async {
+          try {
+            await launchGoogleMaps(trip.pickupLocation.latitude, trip.pickupLocation.longitude);
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Could not open Maps: $e'), backgroundColor: AppColors.errorRed),
+              );
+            }
+          }
           ref.read(activeTripProvider.notifier).updateStatus(TripStatus.enRoute);
         };
         break;

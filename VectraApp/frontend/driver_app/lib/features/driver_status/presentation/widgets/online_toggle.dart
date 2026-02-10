@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -5,29 +6,31 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../theme/app_colors.dart';
 import '../providers/driver_status_providers.dart';
 
-/// Online/Offline toggle widget for driver dashboard
+/// Premium Swipe-to-Online Toggle
 class OnlineToggle extends ConsumerStatefulWidget {
   final VoidCallback? onStatusChanged;
 
-  const OnlineToggle({
-    super.key,
-    this.onStatusChanged,
-  });
+  const OnlineToggle({super.key, this.onStatusChanged});
 
   @override
   ConsumerState<OnlineToggle> createState() => _OnlineToggleState();
 }
 
-class _OnlineToggleState extends ConsumerState<OnlineToggle>
-    with SingleTickerProviderStateMixin {
+class _OnlineToggleState extends ConsumerState<OnlineToggle> with SingleTickerProviderStateMixin {
+  double _dragValue = 0.0;
+  bool _isDragging = false;
+  static const double _height = 60.0;
+  static const double _padding = 4.0;
+  
+  // For pulse animation when online
   late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
+       vsync: this,
+       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
   }
 
@@ -37,215 +40,165 @@ class _OnlineToggleState extends ConsumerState<OnlineToggle>
     super.dispose();
   }
 
-  Future<void> _handleToggle() async {
-    final statusNotifier = ref.read(driverStatusProvider.notifier);
-    final currentState = ref.read(driverStatusProvider);
+  void _handleDragUpdate(DragUpdateDetails details, double width) {
+    if (ref.read(driverStatusProvider).isOnline) return; // Only swipe to go ONLINE. Tap to go OFFLINE.
+    
+    setState(() {
+      _isDragging = true;
+      _dragValue = (_dragValue + details.delta.dx).clamp(0.0, width - _height);
+    });
+  }
 
-    // Show restriction message if can't go online
-    if (!currentState.isOnline && currentState.statusRestriction != null) {
-      _showRestrictionDialog(currentState.statusRestriction!);
-      return;
+  void _handleDragEnd(DragEndDetails details, double width) {
+    if (ref.read(driverStatusProvider).isOnline) return;
+
+    final threshold = (width - _height) * 0.7;
+    if (_dragValue > threshold) {
+      _toggleStatus();
     }
+    
+    // Reset drag
+    setState(() {
+      _isDragging = false;
+      _dragValue = 0.0;
+    });
+  }
 
+  Future<void> _toggleStatus() async {
+    final statusNotifier = ref.read(driverStatusProvider.notifier);
     final success = await statusNotifier.toggleStatus();
-
     if (success) {
       widget.onStatusChanged?.call();
-    } else {
-      final newState = ref.read(driverStatusProvider);
-      if (newState.statusRestriction != null) {
-        _showRestrictionDialog(newState.statusRestriction!);
-      } else if (newState.error != null) {
-        _showErrorSnackbar(newState.error!);
-      }
     }
-  }
-
-  void _showRestrictionDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: AppColors.carbonGrey,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.warningOrange, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: AppColors.warningOrange,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Cannot Go Online',
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.dmSans(
-                  color: AppColors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white10,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Got it',
-                    style: GoogleFonts.dmSans(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showErrorSnackbar(String error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          error,
-          style: GoogleFonts.dmSans(),
-        ),
-        backgroundColor: AppColors.errorRed,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final statusState = ref.watch(driverStatusProvider);
-    final isOnline = statusState.isOnline;
+    final isOnline = statusState.isOnline; // True if Online
     final isToggling = statusState.isToggling;
 
-    return GestureDetector(
-      onTap: isToggling ? null : _handleToggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          gradient: isOnline
-              ? const LinearGradient(
-                  colors: [AppColors.hyperLime, AppColors.neonGreen],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isOnline ? null : AppColors.carbonGrey.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isOnline ? Colors.transparent : AppColors.white10,
-            width: 2,
-          ),
-          boxShadow: isOnline
-              ? [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final effectiveDrag = isOnline ? (width - _height) : _dragValue;
+        
+        return GestureDetector(
+          onTap: isOnline ? _toggleStatus : null, // Tap to go Offline
+          child: Container(
+            height: _height,
+            decoration: BoxDecoration(
+              color: isOnline ? AppColors.voidBlack : AppColors.carbonGrey,
+              borderRadius: BorderRadius.circular(_height / 2),
+              border: Border.all(
+                color: isOnline ? AppColors.hyperLime : AppColors.white10,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+                 if (isOnline)
                   BoxShadow(
-                    color: AppColors.hyperLime.withOpacity(0.4),
-                    blurRadius: 30,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 10),
+                    color: AppColors.hyperLime.withOpacity(0.2),
+                    blurRadius: 20,
+                    spreadRadius: 2,
                   ),
-                ]
-              : [],
-        ),
-        child: Column(
-          children: [
-            AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isOnline
-                        ? Colors.black.withOpacity(0.2)
-                        : AppColors.white10,
-                    boxShadow: isOnline
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                  0.3 * _pulseController.value),
-                              blurRadius: 20 * _pulseController.value,
-                              spreadRadius: 5 * _pulseController.value,
-                            ),
-                          ]
-                        : [],
-                  ),
-                  child: isToggling
-                      ? Center(
-                          child: SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: isOnline ? Colors.black : AppColors.white70,
-                            ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Background Text
+                Center(
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: _isDragging || isOnline ? 0.0 : 1.0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'SWIPE TO GO ONLINE',
+                          style: GoogleFonts.outfit(
+                            color: AppColors.white50,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            letterSpacing: 1.2,
                           ),
-                        )
-                      : Icon(
-                          isOnline ? Icons.power_settings_new : Icons.power_off,
-                          size: 40,
-                          color: isOnline ? Colors.black : AppColors.white70,
                         ),
-                );
-              },
+                        const SizedBox(width: 8),
+                        Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.white50),
+                        Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.white30),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Online Text
+                Center(
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: isOnline ? 1.0 : 0.0,
+                    child: Text(
+                      'YOU ARE ONLINE',
+                      style: GoogleFonts.outfit(
+                        color: AppColors.hyperLime,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Knob
+                AnimatedPositioned(
+                  duration: _isDragging ? Duration.zero : const Duration(milliseconds: 300),
+                  curve: Curves.easeOutBack,
+                  left: effectiveDrag,
+                  top: 0,
+                  bottom: 0,
+                  child: GestureDetector(
+                    onHorizontalDragUpdate: (d) => _handleDragUpdate(d, width),
+                    onHorizontalDragEnd: (d) => _handleDragEnd(d, width),
+                    child: Container(
+                      width: _height, // Circle
+                      margin: const EdgeInsets.all(_padding),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isOnline ? AppColors.hyperLime : AppColors.white10,
+                        gradient: isOnline 
+                          ? const LinearGradient(colors: [AppColors.hyperLime, AppColors.neonGreen])
+                          : null,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: isToggling
+                        ? const Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          )
+                        : Icon(
+                            isOnline ? Icons.power_settings_new : Icons.chevron_right,
+                            color: isOnline ? Colors.black : Colors.white,
+                            size: isOnline ? 24 : 32,
+                          ),
+                    ).animate(target: isOnline ? 1 : 0)
+                     .scale(end: const Offset(1.1, 1.1), duration: 200.ms)
+                     .then(delay: 200.ms), // Pulse handled by controller/shadow if needed
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              isOnline ? "You're Online" : "You're Offline",
-              style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isOnline ? Colors.black : Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isOnline
-                  ? 'Ready to accept rides'
-                  : 'Tap to go online and start earning',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.dmSans(
-                fontSize: 14,
-                color: isOnline
-                    ? Colors.black.withOpacity(0.7)
-                    : AppColors.white70,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 200.ms, duration: 600.ms).scale(
-          begin: const Offset(0.95, 0.95),
+          ),
         );
+      },
+    );
   }
 }
