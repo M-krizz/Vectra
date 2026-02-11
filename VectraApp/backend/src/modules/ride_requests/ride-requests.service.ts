@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RideRequestEntity, RideRequestStatus } from './ride-request.entity';
+import { RideRequestEntity } from './ride-request.entity';
+import { RideRequestStatus, VehicleType } from './ride-request.enums';
 import { CreateRideRequestDto } from './dto/create-ride-request.dto';
 import { GeoPoint } from '../../common/types/geo-point.type';
 
@@ -12,7 +13,7 @@ export class RideRequestsService {
   constructor(
     @InjectRepository(RideRequestEntity)
     private readonly rideRequestsRepo: Repository<RideRequestEntity>,
-  ) {}
+  ) { }
 
   async createRequest(
     userId: string,
@@ -25,6 +26,7 @@ export class RideRequestsService {
       pickupAddress: dto.pickupAddress,
       dropAddress: dto.dropAddress,
       rideType: dto.rideType,
+      vehicleType: dto.vehicleType || VehicleType.AUTO, // Default if not provided
       status: RideRequestStatus.REQUESTED,
     });
 
