@@ -22,7 +22,6 @@ class PooledRiderRequest {
     required this.destination,
   });
 }
-
 /// Driver information
 class DriverInfo {
   final String id;

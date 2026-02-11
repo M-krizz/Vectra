@@ -36,7 +36,7 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     on<RideDriverLocationUpdated>(_onDriverLocationUpdated);
     on<RideCompleted>(_onRideCompleted);
     on<RideCancelled>(_onRideCancelled);
-    on<RideArrivalCountdownUpdated>(_onArrivalCountdownUpdated);
+    on<RideCancellationReasonUpdated>(_onCancellationReasonUpdated);
     on<RidePooledRequestsRequested>(_onPooledRequestsRequested);
     on<RidePooledRequestSelected>(_onPooledRequestSelected);
     on<RidePooledAutoConfirmed>(_onPooledAutoConfirmed);
@@ -326,7 +326,6 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     final random = Random();
     return (1000 + random.nextInt(9000)).toString();
   }
-
   void _startDriverMovementSimulation() {
     // Move driver every 2 seconds towards pickup
     _driverMovementTimer?.cancel();

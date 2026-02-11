@@ -95,9 +95,6 @@ class RideCompleted extends RideEvent {
 
 /// Ride cancelled
 class RideCancelled extends RideEvent {
-  final String reason;
-  const RideCancelled(this.reason);
-}
 
 /// Load available pooled rider requests
 class RidePooledRequestsRequested extends RideEvent {
