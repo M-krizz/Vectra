@@ -8,19 +8,9 @@ import {
   Index,
 } from 'typeorm';
 import { UserEntity } from '../Authentication/users/user.entity';
+import { PoolGroupEntity } from '../pooling/pool-group.entity';
 import { GeoPoint } from '../../common/types/geo-point.type';
-
-export enum RideRequestStatus {
-  REQUESTED = 'REQUESTED',
-  MATCHING = 'MATCHING',
-  EXPIRED = 'EXPIRED',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum RideType {
-  SOLO = 'SOLO',
-  POOL = 'POOL',
-}
+import { RideRequestStatus, RideType, VehicleType } from './ride-request.enums';
 
 @Entity({ name: 'ride_requests' })
 export class RideRequestEntity {
@@ -58,12 +48,18 @@ export class RideRequestEntity {
   @Column({ type: 'enum', enum: RideType, name: 'ride_type' })
   rideType!: RideType;
 
+  @Column({ type: 'enum', enum: VehicleType, name: 'vehicle_type', default: VehicleType.AUTO })
+  vehicleType!: VehicleType;
+
   @Column({
     type: 'enum',
     enum: RideRequestStatus,
     default: RideRequestStatus.REQUESTED,
   })
   status!: RideRequestStatus;
+
+  @Column('uuid', { nullable: true, name: 'pool_group_id' })
+  poolGroupId!: string | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'requested_at' })
   requestedAt!: Date;
@@ -77,4 +73,10 @@ export class RideRequestEntity {
   })
   @JoinColumn({ name: 'rider_user_id' })
   rider!: UserEntity;
+
+  @ManyToOne(() => PoolGroupEntity, (pool) => pool.rideRequests, {
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'pool_group_id' })
+  poolGroup!: PoolGroupEntity | null;
 }

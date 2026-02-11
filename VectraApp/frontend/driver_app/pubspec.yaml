@@ -1,0 +1,51 @@
+name: vectra
+description: "Premium ride-sharing app with cinematic UI"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.0
+
+  # UI & Animation
+  flutter_animate: ^4.5.0
+  google_fonts: ^6.1.0
+  cupertino_icons: ^1.0.8
+
+  # Maps
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+
+  # Networking
+  http: ^1.1.0
+  dio: ^5.4.0
+  socket_io_client: ^2.0.3
+
+  # Storage & Security
+  flutter_secure_storage: ^9.0.0
+
+  # Location Services
+  geolocator: ^11.0.0
+  flutter_background_service: ^5.0.5
+
+  # Calendar
+  table_calendar: ^3.0.9
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/future_car.png
