@@ -37,6 +37,11 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     on<RideCompleted>(_onRideCompleted);
     on<RideCancelled>(_onRideCancelled);
     on<RideArrivalCountdownUpdated>(_onArrivalCountdownUpdated);
+    on<RidePooledRequestsRequested>(_onPooledRequestsRequested);
+    on<RidePooledRequestSelected>(_onPooledRequestSelected);
+    on<RidePooledAutoConfirmed>(_onPooledAutoConfirmed);
+    on<RideOTPGenerated>(_onOTPGenerated);
+    on<RideOTPVerified>(_onOTPVerified);
   }
 
   void _onPickupSet(RidePickupSet event, Emitter<RideState> emit) {
@@ -191,6 +196,15 @@ class RideBloc extends Bloc<RideEvent, RideState> {
         etaMinutes: 10,
         capacity: 6,
       ),
+      VehicleOption(
+        id: 'bike',
+        name: 'Bike',
+        description: 'Fast two-wheelers',
+        imageUrl: 'assets/images/bike.png',
+        fare: baseFare + (distanceKm * perKmRate * 0.5),
+        etaMinutes: 2,
+        capacity: 1,
+      ),
     ];
 
     emit(
@@ -289,15 +303,28 @@ class RideBloc extends Bloc<RideEvent, RideState> {
 
   void _onDriverArrived(RideDriverArrived event, Emitter<RideState> emit) {
     _driverMovementTimer?.cancel();
-    _rideProgressTimer?.cancel();
+    // Generate unique OTP for this ride
+    final uniqueOtp = _generateUniqueOTP();
     emit(
-      state.copyWith(status: RideStatus.arrived, estimatedArrivalMinutes: 0),
+      state.copyWith(
+        status: RideStatus.arrived,
+        estimatedArrivalMinutes: 0,
+        riderOtp: uniqueOtp,
+      ),
     );
 
-    // After 5 seconds, auto-start the ride (simulating passenger boarding)
-    _rideProgressTimer = Timer(const Duration(seconds: 5), () {
-      add(const RideStarted());
+    // Auto-verify OTP after 7 seconds (between 5-10s)
+    _rideProgressTimer?.cancel();
+    _rideProgressTimer = Timer(const Duration(seconds: 7), () {
+      // Automatically verify the OTP and start the ride
+      add(RideOTPVerified(uniqueOtp));
     });
+  }
+
+  /// Generate a unique 4-digit OTP for the ride
+  String _generateUniqueOTP() {
+    final random = Random();
+    return (1000 + random.nextInt(9000)).toString();
   }
 
   void _startDriverMovementSimulation() {
@@ -444,5 +471,128 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     _driverMovementTimer?.cancel();
     _rideProgressTimer?.cancel();
     return super.close();
+  }
+
+  /// Load available pooled rider requests
+  Future<void> _onPooledRequestsRequested(
+    RidePooledRequestsRequested event,
+    Emitter<RideState> emit,
+  ) async {
+    // Simulate fetching pooled requests from API
+    // In real app, call API to get available pooled riders
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Mock pooled requests
+    final mockRequests = [
+      PooledRiderRequest(
+        id: 'pool_1',
+        riderId: 'rider_2',
+        riderName: 'Priya Sharma',
+        riderPhone: '+91 9876543210',
+        rating: 4.8,
+        photoUrl: '',
+        pickup:
+            state.pickup ??
+            const PlaceModel(
+              placeId: '',
+              name: 'Unknown',
+              address: '',
+              location: null,
+            ),
+        destination:
+            state.destination ??
+            const PlaceModel(
+              placeId: '',
+              name: 'Destination',
+              address: '',
+              location: null,
+            ),
+      ),
+      PooledRiderRequest(
+        id: 'pool_2',
+        riderId: 'rider_3',
+        riderName: 'Rajesh Patel',
+        riderPhone: '+91 9765432109',
+        rating: 4.6,
+        photoUrl: '',
+        pickup:
+            state.pickup ??
+            const PlaceModel(
+              placeId: '',
+              name: 'Pickup',
+              address: '',
+              location: null,
+            ),
+        destination:
+            state.destination ??
+            const PlaceModel(
+              placeId: '',
+              name: 'Destination',
+              address: '',
+              location: null,
+            ),
+      ),
+    ];
+
+    // Randomly return 0-2 pooled requests (empty list means no pool available)
+    final random = Random();
+    final requestsToShow = random.nextBool()
+        ? mockRequests.cast<PooledRiderRequest>()
+        : <PooledRiderRequest>[];
+
+    emit(state.copyWith(pooledRequests: requestsToShow));
+  }
+
+  /// Handle pooled request selection
+  Future<void> _onPooledRequestSelected(
+    RidePooledRequestSelected event,
+    Emitter<RideState> emit,
+  ) async {
+    emit(state.copyWith(selectedPooledRequest: event.request));
+  }
+
+  /// Auto-confirm pool ride when no pooled requests available
+  Future<void> _onPooledAutoConfirmed(
+    RidePooledAutoConfirmed event,
+    Emitter<RideState> emit,
+  ) async {
+    if (state.pooledRequests.isEmpty) {
+      // No pooled riders available, proceed as solo
+      emit(state.copyWith(rideType: 'solo', clearPooledRequests: true));
+      // Continue with ride request
+      add(const RideRequested());
+    }
+  }
+
+  /// Handle OTP generation for rider
+  Future<void> _onOTPGenerated(
+    RideOTPGenerated event,
+    Emitter<RideState> emit,
+  ) async {
+    // OTP is generated when driver arrives, just update state
+    if (state.riderOtp != null) {
+      emit(state.copyWith(riderOtp: state.riderOtp));
+    }
+  }
+
+  /// Handle driver OTP verification
+  Future<void> _onOTPVerified(
+    RideOTPVerified event,
+    Emitter<RideState> emit,
+  ) async {
+    // Verify that the OTP entered by driver matches the rider's OTP
+    if (state.riderOtp != null && event.otp == state.riderOtp) {
+      // OTP verified successfully
+      emit(state.copyWith(otpVerified: true));
+
+      // Start the ride after OTP verification
+      _rideProgressTimer = Timer(const Duration(milliseconds: 500), () {
+        add(const RideStarted());
+      });
+    } else {
+      // Invalid OTP - show error on driver app (this would be handled in driver app)
+      // For rider, just emit without changes as error is shown on driver side
+      emit(state);
+    }
   }
 }
