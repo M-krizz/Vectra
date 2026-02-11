@@ -25,13 +25,17 @@ class AppRouter {
         final isRegistering = state.matchedLocation == '/register';
         final isSplash = state.matchedLocation == '/';
 
+        print('[Router] 🔀 Redirect called - authState: ${authState.runtimeType}, location: ${state.matchedLocation}');
+
         // If still checking auth status, stay on splash
         if (authState is AuthInitial || authState is AuthLoading) {
+          print('[Router] ⏳ Auth still loading/checking');
           return isSplash ? null : '/';
         }
 
         // If unauthenticated
         if (authState is AuthUnauthenticated) {
+          print('[Router] 🚫 User unauthenticated, redirecting to /login');
           // Allow login and register pages
           if (isLoggingIn || isRegistering) return null;
           return '/login';
@@ -39,13 +43,16 @@ class AppRouter {
 
         // If authenticated
         if (authState is AuthAuthenticated) {
+          print('[Router] ✅ User authenticated, user: ${authState.user.id}');
           // Redirect away from auth pages
           if (isLoggingIn || isRegistering || isSplash) {
+            print('[Router] 🏠 Redirecting to /home');
             return '/home';
           }
           return null;
         }
 
+        print('[Router] ❓ Unknown auth state');
         return null;
       },
       routes: [

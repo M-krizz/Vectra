@@ -406,7 +406,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case RideStatus.driverFound:
         return _buildDriverFoundSheet(context, rideState);
       case RideStatus.arrived:
-        return _buildDriverArrivedSheet(context, rideState);
+        return rideState.riderOtp != null
+            ? _buildOTPDisplaySheet(context, rideState)
+            : _buildDriverArrivedSheet(context, rideState);
       case RideStatus.inProgress:
         return _buildRideInProgressSheet(context, rideState);
       case RideStatus.completed:
@@ -451,6 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Good ${_getGreeting()}!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -468,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.search, color: Colors.grey.shade600),
+                        Icon(Icons.search, color: Colors.black54),
                         const SizedBox(width: 12),
                         Text(
                           rideState.destination?.name ?? 'Where to?',
@@ -476,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontSize: 16,
                             color: rideState.destination != null
                                 ? Colors.black
-                                : Colors.grey.shade600,
+                                : Colors.black54,
                           ),
                         ),
                         const Spacer(),
@@ -497,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Now',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey.shade800,
+                                  color: Colors.black87,
                                 ),
                               ),
                               const Icon(Icons.arrow_drop_down, size: 20),
@@ -591,22 +594,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.route, size: 16, color: Colors.grey.shade600),
+                      Icon(Icons.route, size: 16, color: Colors.black54),
                       const SizedBox(width: 4),
                       Text(
                         rideState.route!.distanceText,
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(color: Colors.black54),
                       ),
                       const SizedBox(width: 16),
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Colors.grey.shade600,
-                      ),
+                      Icon(Icons.access_time, size: 16, color: Colors.black54),
                       const SizedBox(width: 4),
                       Text(
                         rideState.route!.durationText,
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(color: Colors.black54),
                       ),
                     ],
                   ),
@@ -725,7 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Ride Type',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade700,
+                    color: Colors.black87,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -760,7 +759,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icons.person,
                                   color: rideState.rideType == 'solo'
                                       ? Colors.blue
-                                      : Colors.grey.shade600,
+                                      : Colors.black54,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -769,8 +768,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: rideState.rideType == 'solo'
-                                        ? Colors.blue
-                                        : Colors.grey.shade600,
+                                        ? Colors.blue.shade900
+                                        : Colors.black87,
                                   ),
                                 ),
                               ],
@@ -808,7 +807,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icons.people,
                                   color: rideState.rideType == 'pool'
                                       ? Colors.blue
-                                      : Colors.grey.shade600,
+                                      : Colors.black54,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -817,8 +816,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: rideState.rideType == 'pool'
-                                        ? Colors.blue
-                                        : Colors.grey.shade600,
+                                        ? Colors.blue.shade900
+                                        : Colors.black87,
                                   ),
                                 ),
                               ],
@@ -837,9 +836,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: rideState.vehicleOptions.length,
+              itemCount: _getFilteredVehicles(rideState).length,
               itemBuilder: (context, index) {
-                final vehicle = rideState.vehicleOptions[index];
+                final vehicle = _getFilteredVehicles(rideState)[index];
                 final isSelected = rideState.selectedVehicle?.id == vehicle.id;
                 return _buildVehicleOption(
                   context,
@@ -847,13 +846,94 @@ class _HomeScreenState extends State<HomeScreen> {
                   isSelected: isSelected,
                   onTap: () {
                     context.read<RideBloc>().add(RideVehicleSelected(vehicle));
+                    // If pool ride, load pooled requests
+                    if (rideState.rideType == 'pool') {
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        context.read<RideBloc>().add(
+                          const RidePooledRequestsRequested(),
+                        );
+                      });
+                    }
                   },
                 );
               },
             ),
           ),
-          // Payment method selector - Only show after vehicle is selected
-          if (rideState.selectedVehicle != null)
+          // Pooled requests section - Show when pool ride type and vehicle selected
+          if (rideState.rideType == 'pool' && rideState.selectedVehicle != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Available Pool Riders',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (rideState.pooledRequests.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.orange.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.orange.shade800,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'No available pool riders. Ride will proceed solo.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      height: 120,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: rideState.pooledRequests.length,
+                        itemBuilder: (context, index) {
+                          final request = rideState.pooledRequests[index];
+                          final isSelected =
+                              rideState.selectedPooledRequest?.id == request.id;
+                          return _buildPooledRiderCard(
+                            context,
+                            request: request,
+                            isSelected: isSelected,
+                            onTap: () {
+                              _showPooledRideDetailsDialog(
+                                context,
+                                request,
+                                rideState,
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          // Payment method selector - Only show after vehicle is selected and pooled dialog closed
+          if (rideState.selectedVehicle != null &&
+              !(rideState.rideType == 'pool'))
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: GestureDetector(
@@ -1003,7 +1083,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(
                 _getVehicleIcon(vehicle.id),
                 size: 32,
-                color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700,
+                color: isSelected ? Colors.blue.shade700 : Colors.black87,
               ),
             ),
             const SizedBox(width: 16),
@@ -1036,15 +1116,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.person,
-                              size: 12,
-                              color: Colors.grey.shade700,
-                            ),
+                            Icon(Icons.person, size: 12, color: Colors.black87),
                             Text(
                               ' ${vehicle.capacity}',
                               style: TextStyle(
-                                color: Colors.grey.shade700,
+                                color: Colors.black87,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1057,7 +1133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     vehicle.description,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -1112,9 +1188,85 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.local_taxi;
       case 'suv':
         return Icons.airport_shuttle;
+      case 'bike':
+        return Icons.two_wheeler;
       default:
         return Icons.directions_car;
     }
+  }
+
+  /// Filter vehicles based on ride type
+  List<VehicleOption> _getFilteredVehicles(RideState rideState) {
+    if (rideState.rideType == 'pool') {
+      // Pool rides: only cars, no bikes
+      return rideState.vehicleOptions.where((v) => v.id != 'bike').toList();
+    } else {
+      // Solo rides: all vehicles including bikes
+      return rideState.vehicleOptions;
+    }
+  }
+
+  /// Build pooled rider card
+  Widget _buildPooledRiderCard(
+    BuildContext context, {
+    required PooledRiderRequest request,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(12),
+        width: 100,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Avatar
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey.shade300,
+              ),
+              child: Icon(Icons.person, color: Colors.black87, size: 20),
+            ),
+            // Name
+            Text(
+              request.riderName.split(' ')[0],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.black87,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            // Rating
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.star, size: 12, color: Colors.amber),
+                const SizedBox(width: 2),
+                Text(
+                  request.rating.toStringAsFixed(1),
+                  style: const TextStyle(fontSize: 10, color: Colors.black87),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _getPaymentMethodName(String method) {
@@ -1144,7 +1296,11 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text(
               'Select Payment Method',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 16),
             _buildPaymentOption(
@@ -1185,15 +1341,18 @@ class _HomeScreenState extends State<HomeScreen> {
           color: isSelected ? Colors.green.shade50 : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: isSelected ? Colors.green : Colors.grey.shade700,
+        child: Icon(icon, color: isSelected ? Colors.green : Colors.black87),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
         ),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        style: TextStyle(color: Colors.black54, fontSize: 12),
       ),
       trailing: isSelected
           ? const Icon(Icons.check_circle, color: Colors.green)
@@ -1202,6 +1361,356 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _selectedPaymentMethod = value);
         Navigator.pop(context);
       },
+    );
+  }
+
+  /// Show pooled ride details dialog
+  void _showPooledRideDetailsDialog(
+    BuildContext context,
+    PooledRiderRequest request,
+    RideState rideState,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with close button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Pooled Ride Details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Rider info card
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blue.shade200,
+                      ),
+                      child: const Icon(Icons.person, color: Colors.blue),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            request.riderName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${request.rating}/5.0',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Trip details
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Trip Route',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ), // ✅ Now properly closed
+                    const SizedBox(height: 10),
+                    // Pickup location
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Pickup',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              Text(
+                                request.pickup.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Vertical line
+                    Padding(
+                      padding: const EdgeInsets.only(left: 3),
+                      child: Container(
+                        width: 2,
+                        height: 20,
+                        color: Colors.grey.shade300,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Destination location
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Destination',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              Text(
+                                request.destination.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Ride info (number of people, fare, etc)
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Riders',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.orange.shade900,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '2 people',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Vehicle',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.green.shade900,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            rideState.selectedVehicle?.name ?? 'Select',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Fare info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.purple.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Your Fare',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.purple.shade900,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '₹${(rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '0')}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Confirm button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Select this pooled request
+                    context.read<RideBloc>().add(
+                      RidePooledRequestSelected(request),
+                    );
+                    // Close dialog
+                    Navigator.pop(context);
+                    // Proceed with ride request
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      context.read<RideBloc>().add(const RideRequested());
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Confirm Pool Ride',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1238,7 +1747,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               'This usually takes 1-3 minutes',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -1357,7 +1866,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const Icon(Icons.star, size: 16, color: Colors.amber),
                           Text(
                             ' ${driver.rating.toStringAsFixed(1)}',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(color: Colors.black54),
                           ),
                         ],
                       ),
@@ -1392,7 +1901,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     _getVehicleIcon(rideState.selectedVehicle?.id ?? 'sedan'),
                     size: 32,
-                    color: Colors.grey.shade700,
+                    color: Colors.black87,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1524,7 +2033,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const Icon(Icons.star, size: 16, color: Colors.amber),
                           Text(
                             ' ${driver.rating.toStringAsFixed(1)}',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(color: Colors.black54),
                           ),
                         ],
                       ),
@@ -1559,7 +2068,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     _getVehicleIcon(rideState.selectedVehicle?.id ?? 'sedan'),
                     size: 32,
-                    color: Colors.grey.shade700,
+                    color: Colors.black87,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1603,7 +2112,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Text(
               'Please meet your driver at the pickup point',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: Colors.black54),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -1623,6 +2132,249 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 child: const Text('Cancel Ride'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOTPDisplaySheet(BuildContext context, RideState rideState) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // OTP Banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.verified_user,
+                    color: Colors.green.shade700,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Driver Verification',
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Share this OTP with your driver',
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Driver will verify to confirm the ride',
+              style: TextStyle(color: Colors.black54, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            // OTP Display Block
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.blue.shade300, width: 2),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Your OTP',
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Large OTP Display
+                  Text(
+                    rideState.riderOtp!,
+                    style: const TextStyle(
+                      fontSize: 56,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                      letterSpacing: 12,
+                      fontFamily: 'Courier',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.blue.shade700,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Valid for this ride only',
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Driver info
+            if (rideState.driver != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.grey.shade300,
+                      child: const Icon(Icons.person, size: 28),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            rideState.driver!.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            rideState.driver!.vehicleNumber,
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            // Status message
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Auto-starting ride in 7 seconds...',
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Cancel button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  context.read<RideBloc>().add(
+                    const RideCancelled('Ride cancelled by rider'),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  side: const BorderSide(color: Colors.red),
+                ),
+                child: const Text(
+                  'Cancel Ride',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -1717,10 +2469,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Text(
                           '${driver.vehicleColor} ${driver.vehicleModel} • ${driver.vehicleNumber}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: Colors.black54, fontSize: 13),
                         ),
                       ],
                     ),
@@ -1774,10 +2523,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'Heading to',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.black54, fontSize: 12),
                         ),
                         Text(
                           rideState.destination?.name ?? 'Destination',
@@ -1886,7 +2632,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               rideState.cancellationReason ?? 'Your ride has been cancelled',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -1938,7 +2684,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (subtitle.isNotEmpty)
                   Text(
                     subtitle,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(color: Colors.black54, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -2050,7 +2796,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 user?.email ?? '',
                                 style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.grey.shade600),
+                                    ?.copyWith(color: Colors.black54),
                               ),
                             ],
                           ),

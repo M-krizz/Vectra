@@ -1,5 +1,28 @@
 part of 'ride_bloc.dart';
 
+/// Pooled rider request
+class PooledRiderRequest {
+  final String id;
+  final String riderId;
+  final String riderName;
+  final String riderPhone;
+  final double rating;
+  final String photoUrl;
+  final PlaceModel pickup;
+  final PlaceModel destination;
+
+  const PooledRiderRequest({
+    required this.id,
+    required this.riderId,
+    required this.riderName,
+    required this.riderPhone,
+    required this.rating,
+    required this.photoUrl,
+    required this.pickup,
+    required this.destination,
+  });
+}
+
 /// Driver information
 class DriverInfo {
   final String id;
@@ -61,6 +84,7 @@ class RideState {
   final RouteModel? route;
   final List<VehicleOption> vehicleOptions;
   final VehicleOption? selectedVehicle;
+  final String? selectedVehicleType; // 'car', 'bike', etc
   final DriverInfo? driver;
   final String? rideId;
   final double? finalFare;
@@ -69,6 +93,10 @@ class RideState {
   final int? estimatedArrivalMinutes;
   final String? cancellationReason;
   final String rideType; // 'solo' or 'pool'
+  final List<PooledRiderRequest> pooledRequests; // Available pooled riders
+  final PooledRiderRequest? selectedPooledRequest;
+  final String? riderOtp; // Unique OTP generated for rider to show driver
+  final bool otpVerified; // OTP verified by driver successfully
 
   const RideState({
     this.status = RideStatus.initial,
@@ -77,6 +105,7 @@ class RideState {
     this.route,
     this.vehicleOptions = const [],
     this.selectedVehicle,
+    this.selectedVehicleType,
     this.driver,
     this.rideId,
     this.finalFare,
@@ -85,6 +114,10 @@ class RideState {
     this.estimatedArrivalMinutes,
     this.cancellationReason,
     this.rideType = 'solo',
+    this.pooledRequests = const [],
+    this.selectedPooledRequest,
+    this.riderOtp,
+    this.otpVerified = false,
   });
 
   RideState copyWith({
@@ -94,6 +127,7 @@ class RideState {
     RouteModel? route,
     List<VehicleOption>? vehicleOptions,
     VehicleOption? selectedVehicle,
+    String? selectedVehicleType,
     DriverInfo? driver,
     String? rideId,
     double? finalFare,
@@ -102,12 +136,17 @@ class RideState {
     int? estimatedArrivalMinutes,
     String? cancellationReason,
     String? rideType,
+    List<PooledRiderRequest>? pooledRequests,
+    PooledRiderRequest? selectedPooledRequest,
+    String? riderOtp,
+    bool? otpVerified,
     bool clearPickup = false,
     bool clearDestination = false,
     bool clearRoute = false,
     bool clearError = false,
     bool clearDriver = false,
     bool clearSelectedVehicle = false,
+    bool clearPooledRequests = false,
   }) {
     return RideState(
       status: status ?? this.status,
@@ -118,6 +157,7 @@ class RideState {
       selectedVehicle: clearSelectedVehicle
           ? null
           : (selectedVehicle ?? this.selectedVehicle),
+      selectedVehicleType: selectedVehicleType ?? this.selectedVehicleType,
       driver: clearDriver ? null : (driver ?? this.driver),
       rideId: rideId ?? this.rideId,
       finalFare: finalFare ?? this.finalFare,
@@ -127,6 +167,13 @@ class RideState {
           estimatedArrivalMinutes ?? this.estimatedArrivalMinutes,
       cancellationReason: cancellationReason ?? this.cancellationReason,
       rideType: rideType ?? this.rideType,
+      pooledRequests: clearPooledRequests
+          ? []
+          : (pooledRequests ?? this.pooledRequests),
+      selectedPooledRequest:
+          selectedPooledRequest ?? this.selectedPooledRequest,
+      riderOtp: riderOtp ?? this.riderOtp,
+      otpVerified: otpVerified ?? this.otpVerified,
     );
   }
 

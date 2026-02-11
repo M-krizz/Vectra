@@ -98,3 +98,30 @@ class RideCancelled extends RideEvent {
   final String reason;
   const RideCancelled(this.reason);
 }
+
+/// Load available pooled rider requests
+class RidePooledRequestsRequested extends RideEvent {
+  const RidePooledRequestsRequested();
+}
+
+/// Select a pooled rider request
+class RidePooledRequestSelected extends RideEvent {
+  final PooledRiderRequest request;
+  const RidePooledRequestSelected(this.request);
+}
+
+/// Auto-confirm pooled ride after vehicle selection
+class RidePooledAutoConfirmed extends RideEvent {
+  const RidePooledAutoConfirmed();
+}
+
+/// Generate unique OTP for rider to show driver (after driver arrival)
+class RideOTPGenerated extends RideEvent {
+  const RideOTPGenerated();
+}
+
+/// Driver verifies the rider's OTP
+class RideOTPVerified extends RideEvent {
+  final String otp;
+  const RideOTPVerified(this.otp);
+}

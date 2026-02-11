@@ -20,6 +20,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
+    
+    // Add logging to state changes
+    stream.listen((state) {
+      print('[AuthBloc] 📍 State changed: ${state.runtimeType} - $state');
+    });
   }
 
   Future<void> _onAuthCheckRequested(
@@ -50,18 +55,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
+    print('[AuthBloc] 🔐 Login requested for: ${event.email}');
     emit(AuthLoading());
 
     try {
+      print('[AuthBloc] 🔄 Calling authRepository.login()');
       final user = await _authRepository.login(
         email: event.email,
         password: event.password,
       );
+      print('[AuthBloc] ✅ Login successful! User: ${user.id} (${user.fullName})');
+      print('[AuthBloc] 📤 Emitting AuthAuthenticated');
       emit(AuthAuthenticated(user: user));
     } on ApiException catch (e) {
+      print('[AuthBloc] ❌ API Error during login: ${e.message}');
       emit(AuthError(message: e.message));
       emit(AuthUnauthenticated());
     } catch (e) {
+      print('[AuthBloc] ❌ Unexpected error during login: $e');
       emit(AuthError(message: 'An unexpected error occurred'));
       emit(AuthUnauthenticated());
     }
