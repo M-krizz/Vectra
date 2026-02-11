@@ -41,7 +41,7 @@ export class ChatGateway {
         sender,
         content,
       );
-      this.server.to(`ride:${rideId}`).emit('new_message', savedMessage);
+      void this.server.to(`ride:${rideId}`).emit('new_message', savedMessage);
     }
   }
 
@@ -50,6 +50,6 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { rideId: string },
   ) {
-    client.join(`ride:${data.rideId}`);
+    return client.join(`ride:${data.rideId}`);
   }
 }

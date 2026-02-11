@@ -92,8 +92,12 @@ export class AddChatLocationSafety1769872000000 implements MigrationInterface {
 
     // Drop tables
     await queryRunner.query(`DROP TABLE "safety_incidents"`);
-    await queryRunner.query(`DROP TYPE "public"."safety_incidents_severity_enum"`);
-    await queryRunner.query(`DROP TYPE "public"."safety_incidents_status_enum"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."safety_incidents_severity_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE "public"."safety_incidents_status_enum"`,
+    );
     await queryRunner.query(`DROP TABLE "messages"`);
   }
 }
