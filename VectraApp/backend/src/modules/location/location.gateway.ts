@@ -26,9 +26,7 @@ export class LocationGateway
   server!: Server;
 
   constructor() {
-    this.redis = new Redis(
-      process.env.REDIS_URL || 'redis://localhost:6379',
-    );
+    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
   }
 
   handleConnection(client: Socket) {
@@ -62,13 +60,13 @@ export class LocationGateway
 
     // If rideId is present, broadcast to the specific ride room
     if (rideId) {
-      this.server
+      void this.server
         .to(`ride:${rideId}`)
         .emit('location_changed', { lat, lng, driverId });
     }
 
     // Also broadcast to a general "fleet" room for admins
-    this.server
+    void this.server
       .to('admin:fleet')
       .emit('driver_moved', { lat, lng, driverId });
   }
@@ -78,11 +76,11 @@ export class LocationGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { rideId: string },
   ) {
-    client.join(`ride:${data.rideId}`);
+    return client.join(`ride:${data.rideId}`);
   }
 
   @SubscribeMessage('join_fleet')
   handleJoinFleet(@ConnectedSocket() client: Socket) {
-    client.join('admin:fleet');
+    return client.join('admin:fleet');
   }
 }
