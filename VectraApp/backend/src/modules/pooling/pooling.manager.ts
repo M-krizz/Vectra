@@ -32,9 +32,6 @@ export class PoolingManager {
             where: {
                 status: RideRequestStatus.REQUESTED,
                 rideType: RideType.POOL,
-                // We want requests NEWER than 90s ago
-                // TypeORM doesn't have "MoreThan" for dates easily in 'find' without helper, 
-                // but let's query all REQUESTED and filter or use QueryBuilder.
             },
             order: { requestedAt: 'ASC' } // Oldest first
         });
@@ -47,12 +44,6 @@ export class PoolingManager {
             }
 
             // Adaptive Radius: 
-            // Based on how long we've been waiting.
-            // 0-15s: 100m
-            // 15-30s: 200m
-            // ...
-            // 75-90s: 1500m
-
             const elapsedSeconds = (now.getTime() - req.requestedAt.getTime()) / 1000;
             let radius = 100;
             if (elapsedSeconds > 15) radius = 200;
@@ -63,6 +54,7 @@ export class PoolingManager {
 
             try {
                 const candidates = await this.poolingService.findCandidates(req, radius);
+
                 if (candidates.length > 0) {
                     // Try to form a pool
                     const result = await this.poolingService.evaluateGroupings(req, candidates);

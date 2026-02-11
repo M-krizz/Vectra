@@ -6,7 +6,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RideType } from '../ride-request.entity';
+import { RideType, VehicleType } from '../ride-request.enums';
 
 class GeoPointDto {
   @IsNotEmpty()
@@ -38,4 +38,8 @@ export class CreateRideRequestDto {
   @IsNotEmpty()
   @IsEnum(RideType)
   rideType!: RideType;
+
+  @IsOptional()
+  @IsEnum(VehicleType)
+  vehicleType?: VehicleType;
 }
