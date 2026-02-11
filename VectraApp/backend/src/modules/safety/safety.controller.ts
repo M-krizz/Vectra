@@ -26,7 +26,7 @@ interface ResolveIncidentDto {
 @Controller('api/v1/safety')
 @UseGuards(JwtAuthGuard)
 export class SafetyController {
-  constructor(private readonly safetyService: SafetyService) {}
+  constructor(private readonly safetyService: SafetyService) { }
 
   @Post('incidents')
   async reportIncident(
@@ -34,14 +34,7 @@ export class SafetyController {
     @Body() body: ReportIncidentDto,
   ) {
     // TODO: If rideId provided, fetch ride and pass to service
-<<<<<<< HEAD
-    return this.safetyService.reportIncident(
-      req.user.userId,
-      body.description,
-    );
-=======
     return this.safetyService.reportIncident(req.user.userId, body.description);
->>>>>>> bb89dd9f71604b1a3d1d838d78b57a33e2c83d91
   }
 
   @Get('incidents')
