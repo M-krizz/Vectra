@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { RideRequestEntity } from '../../ride_requests/ride-request.entity';
-import { UserEntity } from '../Authentication/users/user.entity';
+import { UserEntity } from '../../Authentication/users/user.entity';
 
 @Entity({ name: 'messages' })
 export class MessageEntity {
