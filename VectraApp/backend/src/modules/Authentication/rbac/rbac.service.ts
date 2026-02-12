@@ -17,6 +17,7 @@ export type Permission =
   | 'user:manage'
   | 'system:config'
   | 'incident:resolve'
+  | 'incident:view'
   | 'financial:view'
   | 'fare:adjust'
   | 'user:suspend'
@@ -55,6 +56,7 @@ export class RbacService {
       'user:manage',
       'system:config',
       'incident:resolve',
+      'incident:view',
       'financial:view',
       'fare:adjust',
       'user:suspend',
