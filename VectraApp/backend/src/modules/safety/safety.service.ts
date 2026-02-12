@@ -12,7 +12,7 @@ export class SafetyService {
     @InjectRepository(IncidentEntity)
     private incidentRepo: Repository<IncidentEntity>,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async reportIncident(
     userId: string,

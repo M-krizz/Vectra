@@ -16,6 +16,7 @@ import { TripsModule } from './modules/trips/trips.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { LocationModule } from './modules/location/location.module';
 import { SafetyModule } from './modules/safety/safety.module';
+import { PoolingModule } from './modules/pooling/pooling.module';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ dotenv.config();
     // Ride modules
     RideRequestsModule,
     TripsModule,
+    PoolingModule,
 
     // Real-time features
     ChatModule,
