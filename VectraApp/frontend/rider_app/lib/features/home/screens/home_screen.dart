@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -274,8 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       builder: (context, rideState) {
-        return Scaffold(
-          body: Stack(
+        return Stack(
             children: [
               // Map
               GoogleMap(
@@ -361,8 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _buildBottomSheet(context, rideState),
               ),
             ],
-          ),
-        );
+          );
       },
     );
   }
@@ -759,11 +757,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icons.person,
                                   color: rideState.rideType == 'solo'
                                       ? Colors.blue
-<<<<<<< HEAD
                                       : Colors.black54,
-=======
-                                      : Colors.grey.shade600,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -772,13 +766,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: rideState.rideType == 'solo'
-<<<<<<< HEAD
                                         ? Colors.blue.shade900
                                         : Colors.black87,
-=======
-                                        ? Colors.blue
-                                        : Colors.grey.shade600,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                                   ),
                                 ),
                               ],
@@ -816,11 +805,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icons.people,
                                   color: rideState.rideType == 'pool'
                                       ? Colors.blue
-<<<<<<< HEAD
                                       : Colors.black54,
-=======
-                                      : Colors.grey.shade600,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -829,13 +814,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: rideState.rideType == 'pool'
-<<<<<<< HEAD
                                         ? Colors.blue.shade900
                                         : Colors.black87,
-=======
-                                        ? Colors.blue
-                                        : Colors.grey.shade600,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                                   ),
                                 ),
                               ],
@@ -854,15 +834,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(horizontal: 20),
-<<<<<<< HEAD
               itemCount: _getFilteredVehicles(rideState).length,
               itemBuilder: (context, index) {
                 final vehicle = _getFilteredVehicles(rideState)[index];
-=======
-              itemCount: rideState.vehicleOptions.length,
-              itemBuilder: (context, index) {
-                final vehicle = rideState.vehicleOptions[index];
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                 final isSelected = rideState.selectedVehicle?.id == vehicle.id;
                 return _buildVehicleOption(
                   context,
@@ -870,7 +844,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   isSelected: isSelected,
                   onTap: () {
                     context.read<RideBloc>().add(RideVehicleSelected(vehicle));
-<<<<<<< HEAD
                     // If pool ride, load pooled requests
                     if (rideState.rideType == 'pool') {
                       Future.delayed(const Duration(milliseconds: 300), () {
@@ -879,14 +852,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       });
                     }
-=======
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                   },
                 );
               },
             ),
           ),
-<<<<<<< HEAD
           // Pooled requests section - Show when pool ride type and vehicle selected
           if (rideState.rideType == 'pool' && rideState.selectedVehicle != null)
             Padding(
@@ -962,10 +932,6 @@ class _HomeScreenState extends State<HomeScreen> {
           // Payment method selector - Only show after vehicle is selected and pooled dialog closed
           if (rideState.selectedVehicle != null &&
               !(rideState.rideType == 'pool'))
-=======
-          // Payment method selector - Only show after vehicle is selected
-          if (rideState.selectedVehicle != null)
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: GestureDetector(
@@ -1060,7 +1026,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: Text(
                     rideState.selectedVehicle != null
-                        ? 'Confirm ${rideState.selectedVehicle!.name} - ₹${rideState.selectedVehicle!.fare.toStringAsFixed(0)}'
+                        ? 'Confirm ${rideState.selectedVehicle!.name} - Γé╣${rideState.selectedVehicle!.fare.toStringAsFixed(0)}'
                         : 'Select a ride',
                     style: const TextStyle(
                       fontSize: 16,
@@ -1085,13 +1051,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          color: isSelected ? Colors.grey.shade100 : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade300,
+            color: isSelected ? Colors.black : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
@@ -1106,20 +1072,16 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Vehicle icon
             Container(
-              width: 60,
-              height: 60,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
+                color: isSelected ? Colors.grey.shade200 : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 _getVehicleIcon(vehicle.id),
-                size: 32,
-<<<<<<< HEAD
-                color: isSelected ? Colors.blue.shade700 : Colors.black87,
-=======
-                color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
+                size: 24,
+                color: isSelected ? Colors.black : Colors.black87,
               ),
             ),
             const SizedBox(width: 16),
@@ -1152,23 +1114,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-<<<<<<< HEAD
                             Icon(Icons.person, size: 12, color: Colors.black87),
                             Text(
                               ' ${vehicle.capacity}',
                               style: TextStyle(
                                 color: Colors.black87,
-=======
-                            Icon(
-                              Icons.person,
-                              size: 12,
-                              color: Colors.grey.shade700,
-                            ),
-                            Text(
-                              ' ${vehicle.capacity}',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1181,11 +1131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     vehicle.description,
-<<<<<<< HEAD
                     style: TextStyle(color: Colors.black54, fontSize: 13),
-=======
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -1212,11 +1158,11 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
+                color: isSelected ? Colors.grey.shade200 : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '₹${vehicle.fare.toStringAsFixed(0)}',
+                'Γé╣${vehicle.fare.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -1240,17 +1186,13 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.local_taxi;
       case 'suv':
         return Icons.airport_shuttle;
-<<<<<<< HEAD
       case 'bike':
         return Icons.two_wheeler;
-=======
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
       default:
         return Icons.directions_car;
     }
   }
 
-<<<<<<< HEAD
   /// Filter vehicles based on ride type
   List<VehicleOption> _getFilteredVehicles(RideState rideState) {
     if (rideState.rideType == 'pool') {
@@ -1325,8 +1267,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-=======
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
   String _getPaymentMethodName(String method) {
     switch (method) {
       case 'cash':
@@ -1354,15 +1294,11 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text(
               'Select Payment Method',
-<<<<<<< HEAD
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
-=======
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
             ),
             const SizedBox(height: 16),
             _buildPaymentOption(
@@ -1403,7 +1339,6 @@ class _HomeScreenState extends State<HomeScreen> {
           color: isSelected ? Colors.green.shade50 : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
         ),
-<<<<<<< HEAD
         child: Icon(icon, color: isSelected ? Colors.green : Colors.black87),
       ),
       title: Text(
@@ -1416,17 +1351,6 @@ class _HomeScreenState extends State<HomeScreen> {
       subtitle: Text(
         subtitle,
         style: TextStyle(color: Colors.black54, fontSize: 12),
-=======
-        child: Icon(
-          icon,
-          color: isSelected ? Colors.green : Colors.grey.shade700,
-        ),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
       ),
       trailing: isSelected
           ? const Icon(Icons.check_circle, color: Colors.green)
@@ -1438,7 +1362,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-<<<<<<< HEAD
   /// Show pooled ride details dialog
   void _showPooledRideDetailsDialog(
     BuildContext context,
@@ -1550,7 +1473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
-                    ), // ✅ Now properly closed
+                    ), // Γ£à Now properly closed
                     const SizedBox(height: 10),
                     // Pickup location
                     Row(
@@ -1736,7 +1659,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      '₹${(rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '0')}',
+                      'Γé╣${(rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '0')}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1789,8 +1712,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-=======
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
   Widget _buildSearchingDriverSheet(BuildContext context, RideState rideState) {
     return Container(
       decoration: BoxDecoration(
@@ -1824,11 +1745,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               'This usually takes 1-3 minutes',
-<<<<<<< HEAD
               style: TextStyle(color: Colors.black54),
-=======
-              style: TextStyle(color: Colors.grey.shade600),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -1910,7 +1827,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '₹${rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '-'}',
+                    'Γé╣${rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '-'}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -1947,11 +1864,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const Icon(Icons.star, size: 16, color: Colors.amber),
                           Text(
                             ' ${driver.rating.toStringAsFixed(1)}',
-<<<<<<< HEAD
                             style: TextStyle(color: Colors.black54),
-=======
-                            style: TextStyle(color: Colors.grey.shade600),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                           ),
                         ],
                       ),
@@ -1986,11 +1899,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     _getVehicleIcon(rideState.selectedVehicle?.id ?? 'sedan'),
                     size: 32,
-<<<<<<< HEAD
                     color: Colors.black87,
-=======
-                    color: Colors.grey.shade700,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -2122,11 +2031,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const Icon(Icons.star, size: 16, color: Colors.amber),
                           Text(
                             ' ${driver.rating.toStringAsFixed(1)}',
-<<<<<<< HEAD
                             style: TextStyle(color: Colors.black54),
-=======
-                            style: TextStyle(color: Colors.grey.shade600),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                           ),
                         ],
                       ),
@@ -2161,11 +2066,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     _getVehicleIcon(rideState.selectedVehicle?.id ?? 'sedan'),
                     size: 32,
-<<<<<<< HEAD
                     color: Colors.black87,
-=======
-                    color: Colors.grey.shade700,
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -2196,7 +2097,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '₹${rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '-'}',
+                      'Γé╣${rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '-'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -2209,11 +2110,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Text(
               'Please meet your driver at the pickup point',
-<<<<<<< HEAD
               style: TextStyle(color: Colors.black54),
-=======
-              style: TextStyle(color: Colors.grey.shade600),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -2241,7 +2138,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-<<<<<<< HEAD
   Widget _buildOTPDisplaySheet(BuildContext context, RideState rideState) {
     return Container(
       decoration: BoxDecoration(
@@ -2485,8 +2381,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-=======
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
   Widget _buildRideInProgressSheet(BuildContext context, RideState rideState) {
     final driver = rideState.driver;
     return Container(
@@ -2572,15 +2466,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          '${driver.vehicleColor} ${driver.vehicleModel} • ${driver.vehicleNumber}',
-<<<<<<< HEAD
+                          '${driver.vehicleColor} ${driver.vehicleModel} ΓÇó ${driver.vehicleNumber}',
                           style: TextStyle(color: Colors.black54, fontSize: 13),
-=======
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 13,
-                          ),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                         ),
                       ],
                     ),
@@ -2595,7 +2482,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '₹${rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '-'}',
+                      'Γé╣${rideState.selectedVehicle?.fare.toStringAsFixed(0) ?? '-'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -2634,14 +2521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'Heading to',
-<<<<<<< HEAD
                           style: TextStyle(color: Colors.black54, fontSize: 12),
-=======
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                         ),
                         Text(
                           rideState.destination?.name ?? 'Destination',
@@ -2712,7 +2592,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Total Fare: ₹${fare.toStringAsFixed(0)}',
+              'Total Fare: Γé╣${fare.toStringAsFixed(0)}',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ],
@@ -2750,11 +2630,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               rideState.cancellationReason ?? 'Your ride has been cancelled',
-<<<<<<< HEAD
               style: TextStyle(color: Colors.black54),
-=======
-              style: TextStyle(color: Colors.grey.shade600),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -2806,11 +2682,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (subtitle.isNotEmpty)
                   Text(
                     subtitle,
-<<<<<<< HEAD
                     style: TextStyle(color: Colors.black54, fontSize: 12),
-=======
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -2859,6 +2731,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showDrawer(BuildContext context) {
+    Scaffold.of(context).openDrawer();
+    return;
+  }
+
+  void _unused_showDrawer(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2922,11 +2799,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Text(
                                 user?.email ?? '',
                                 style: Theme.of(context).textTheme.bodyMedium
-<<<<<<< HEAD
                                     ?.copyWith(color: Colors.black54),
-=======
-                                    ?.copyWith(color: Colors.grey.shade600),
->>>>>>> e5f5b9e9ea495b80d14513e225e3bd499abfd298
                               ),
                             ],
                           ),
@@ -3034,7 +2907,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    // _mapController?.dispose(); // Causes crash on web
     super.dispose();
   }
 }
