@@ -10,6 +10,15 @@ import { ChatService } from './chat.service';
 import { RideRequestsService } from '../ride_requests/ride-requests.service';
 import { UsersService } from '../Authentication/users/users.service';
 
+// Define explicit interfaces to satisfy linting when socket.io types aren't resolving correctly
+interface TypedServer {
+  to: (room: string) => { emit: (ev: string, data: any) => void };
+}
+
+interface TypedSocket {
+  join: (room: string) => void | Promise<void>;
+}
+
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: 'chat',
@@ -22,7 +31,7 @@ export class ChatGateway {
     private chatService: ChatService,
     private rideRequestsService: RideRequestsService,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   @SubscribeMessage('send_message')
   async handleMessage(
@@ -41,7 +50,7 @@ export class ChatGateway {
         sender,
         content,
       );
-      void this.server.to(`ride:${rideId}`).emit('new_message', savedMessage);
+      (this.server as unknown as TypedServer).to(`ride:${rideId}`).emit('new_message', savedMessage);
     }
   }
 
@@ -50,6 +59,6 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { rideId: string },
   ) {
-    return client.join(`ride:${data.rideId}`);
+    return (client as unknown as TypedSocket).join(`ride:${data.rideId}`);
   }
 }

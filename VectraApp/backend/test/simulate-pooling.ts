@@ -1,4 +1,4 @@
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { UserEntity, UserRole, AccountStatus } from '../src/modules/Authentication/users/user.entity';
 import { RideRequestEntity } from '../src/modules/ride_requests/ride-request.entity';
 import { PoolGroupEntity } from '../src/modules/pooling/pool-group.entity';
@@ -34,11 +34,11 @@ async function runSimulation() {
         await SimulationDataSource.initialize();
         console.log('Database Connected.');
 
-        const userRepo = SimulationDataSource.getRepository(UserEntity);
-        const requestRepo = SimulationDataSource.getRepository(RideRequestEntity);
-        const poolRepo = SimulationDataSource.getRepository(PoolGroupEntity);
-        const tripRepo = SimulationDataSource.getRepository(TripEntity);
-        const tripRiderRepo = SimulationDataSource.getRepository(TripRiderEntity);
+        const userRepo: Repository<UserEntity> = SimulationDataSource.getRepository(UserEntity);
+        const requestRepo: Repository<RideRequestEntity> = SimulationDataSource.getRepository(RideRequestEntity);
+        const poolRepo: Repository<PoolGroupEntity> = SimulationDataSource.getRepository(PoolGroupEntity);
+        const tripRepo: Repository<TripEntity> = SimulationDataSource.getRepository(TripEntity);
+        const tripRiderRepo: Repository<TripRiderEntity> = SimulationDataSource.getRepository(TripRiderEntity);
 
         // --- INSTANTIATE SERVICES MANUALLY ---
         const poolingService = new PoolingService(
@@ -55,8 +55,8 @@ async function runSimulation() {
 
         // 1. Create Riders
         console.log('Creating Test Riders...');
-        const riderA = await createOrGetUser(userRepo, 'rider_a_sim@test.com', 'Rider A Sim');
-        const riderB = await createOrGetUser(userRepo, 'rider_b_sim@test.com', 'Rider B Sim');
+        const riderA: UserEntity = await createOrGetUser(userRepo, 'rider_a_sim@test.com', 'Rider A Sim');
+        const riderB: UserEntity = await createOrGetUser(userRepo, 'rider_b_sim@test.com', 'Rider B Sim');
 
         // 2. Create Requests
         const pickup: GeoPoint = { type: 'Point', coordinates: [77.6412, 12.9716] };
@@ -164,7 +164,7 @@ async function runSimulation() {
     }
 }
 
-async function createOrGetUser(repo: any, email: string, name: string) {
+async function createOrGetUser(repo: Repository<UserEntity>, email: string, name: string): Promise<UserEntity> {
     let user = await repo.findOne({ where: { email } });
     if (!user) {
         user = repo.create({
@@ -180,4 +180,7 @@ async function createOrGetUser(repo: any, email: string, name: string) {
     return user;
 }
 
-runSimulation();
+runSimulation().catch(err => {
+    console.error('Unhandled simulation error:', err);
+    process.exit(1);
+});

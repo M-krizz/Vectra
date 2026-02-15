@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository } from 'typeorm';
 import { RideRequestEntity } from '../ride_requests/ride-request.entity';
 import { RideRequestStatus, RideType } from '../ride_requests/ride-request.enums';
 import { PoolingService } from './pooling.service';
@@ -69,7 +69,7 @@ export class PoolingManager {
         }
     }
 
-    private async handleTimeout(req: RideRequestEntity) {
+    private handleTimeout(req: RideRequestEntity): Promise<void> {
         // Per V1: Do not auto-convert to SOLO. Ask user.
         // Emit event: POOL_TIMEOUT_CHOICE_REQUIRED
         this.logger.log(`Request ${req.id} timed out searching for pool. Emitting choice event.`);
@@ -84,5 +84,6 @@ export class PoolingManager {
 
         // req.status = RideRequestStatus.EXPIRED;
         // await this.requestRepo.save(req);
+        return Promise.resolve();
     }
 }

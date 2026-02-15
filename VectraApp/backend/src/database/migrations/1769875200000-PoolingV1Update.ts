@@ -1,4 +1,8 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+interface PgTypeResult {
+    typname: string;
+}
 
 export class PoolingV1Update1769875200000 implements MigrationInterface {
     name = 'PoolingV1Update1769875200000';
@@ -9,13 +13,13 @@ export class PoolingV1Update1769875200000 implements MigrationInterface {
         // 1. Create VehicleType Enum (if not exists)
         // PostgreSQL doesn't support IF NOT EXISTS for TYPE easily, so we can check or just catching error is messier.
         // Better pattern: Check if type exists before creating.
-        const checkType = await queryRunner.query(`SELECT 1 FROM pg_type WHERE typname = 'vehicle_type_enum'`);
+        const checkType = await queryRunner.query(`SELECT 1 FROM pg_type WHERE typname = 'vehicle_type_enum'`) as PgTypeResult[];
         if (checkType.length === 0) {
             await queryRunner.query(`CREATE TYPE "public"."vehicle_type_enum" AS ENUM('BIKE', 'AUTO', 'CAB')`);
         }
 
         // 2. Create PoolStatus Enum
-        const checkPoolStatus = await queryRunner.query(`SELECT 1 FROM pg_type WHERE typname = 'pool_groups_status_enum'`);
+        const checkPoolStatus = await queryRunner.query(`SELECT 1 FROM pg_type WHERE typname = 'pool_groups_status_enum'`) as PgTypeResult[];
         if (checkPoolStatus.length === 0) {
             await queryRunner.query(`CREATE TYPE "public"."pool_groups_status_enum" AS ENUM('FORMING', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'EXPIRED')`);
         }

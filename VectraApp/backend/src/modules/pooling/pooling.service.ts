@@ -1,12 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { RideRequestEntity } from '../ride_requests/ride-request.entity';
 import { RideRequestStatus, RideType, VehicleType } from '../ride_requests/ride-request.enums';
 import { PoolGroupEntity, PoolStatus } from './pool-group.entity';
 import { TripEntity, TripStatus } from '../trips/trip.entity';
 import { TripRiderEntity, TripRiderStatus } from '../trips/trip-rider.entity';
 // import { MlClientService } from '../../integrations/ml-client/ml-client.service'; // TODO: Implement ML Client
+
+export interface PoolingEvaluationResult {
+    riders: RideRequestEntity[];
+    isValid: boolean;
+    score: number;
+    sequence: string[];
+    detourOk: boolean;
+}
 
 @Injectable()
 export class PoolingService {
@@ -65,8 +73,8 @@ export class PoolingService {
      * Evaluate potential pool groupings via Python ML Service
      * strict V1 constraints: Max 3 (Auto) / 4 (Cab), <10% detour, <3min wait
      */
-    async evaluateGroupings(mainRequest: RideRequestEntity, candidates: RideRequestEntity[]) {
-        if (candidates.length === 0) return null;
+    evaluateGroupings(mainRequest: RideRequestEntity, candidates: RideRequestEntity[]): Promise<PoolingEvaluationResult | null> {
+        if (candidates.length === 0) return Promise.resolve(null);
 
         const maxRiders = mainRequest.vehicleType === VehicleType.AUTO ? 3 : 4;
 
@@ -92,13 +100,13 @@ export class PoolingService {
         };
 
         if (mockEvaluation.isValid && mockEvaluation.detourOk) {
-            return {
+            return Promise.resolve({
                 riders: potentialGroup,
                 ...mockEvaluation
-            };
+            });
         }
 
-        return null;
+        return Promise.resolve(null);
     }
 
     /**
