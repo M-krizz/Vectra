@@ -99,4 +99,3 @@ export class LocationGateway
     return (client as unknown as TypedSocket).join('admin:fleet');
   }
 }
- 

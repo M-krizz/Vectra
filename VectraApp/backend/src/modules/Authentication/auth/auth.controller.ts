@@ -122,4 +122,3 @@ export class AuthController {
     return this.authService.getMe(req.user.userId);
   }
 }
- 

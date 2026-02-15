@@ -1,4 +1,5 @@
 # Backend API Reference - Port 3000
+
 **Base URL**: `http://localhost:3000/api/v1`
 
 ---
@@ -6,11 +7,13 @@
 ## 1. AUTHENTICATION ENDPOINTS
 
 ### 1.1 Request OTP
+
 **URL**: `http://localhost:3000/api/v1/auth/request-otp`  
 **Method**: POST  
 **Authentication**: Not required
 
 **Request Body**:
+
 ```json
 {
   "channel": "email",
@@ -19,6 +22,7 @@
 ```
 
 **Response**:
+
 ```json
 {
   "status": "sent",
@@ -29,11 +33,13 @@
 ---
 
 ### 1.2 Register Rider
+
 **URL**: `http://localhost:3000/api/v1/auth/register/rider`  
 **Method**: POST  
 **Authentication**: Not required
 
 **Request Body**:
+
 ```json
 {
   "fullName": "John Doe",
@@ -51,6 +57,7 @@
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -70,11 +77,13 @@
 ---
 
 ### 1.3 Register Driver
+
 **URL**: `http://localhost:3000/api/v1/auth/register/driver`  
 **Method**: POST  
 **Authentication**: Not required
 
 **Request Body**:
+
 ```json
 {
   "fullName": "Driver Smith",
@@ -94,6 +103,7 @@
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -118,11 +128,13 @@
 ---
 
 ### 1.4 Verify OTP
+
 **URL**: `http://localhost:3000/api/v1/auth/verify-otp`  
 **Method**: POST  
 **Authentication**: Not required
 
 **Request Body**:
+
 ```json
 {
   "identifier": "user@example.com",
@@ -131,6 +143,7 @@
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -146,11 +159,13 @@
 ---
 
 ### 1.5 Login
+
 **URL**: `http://localhost:3000/api/v1/auth/login`  
 **Method**: POST  
 **Authentication**: Not required
 
 **Request Body**:
+
 ```json
 {
   "email": "john.doe@example.com",
@@ -159,6 +174,7 @@
 ```
 
 **Response**:
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -176,16 +192,19 @@
 ---
 
 ### 1.6 Refresh Token
+
 **URL**: `http://localhost:3000/api/v1/auth/refresh`  
 **Method**: POST  
 **Authentication**: Refresh token required
 
 **Request Headers**:
+
 ```
 x-refresh-token-id: 550e8400-e29b-41d4-a716-446655440002
 ```
 
 **Request Body**:
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -193,6 +212,7 @@ x-refresh-token-id: 550e8400-e29b-41d4-a716-446655440002
 ```
 
 **Response**:
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -204,16 +224,19 @@ x-refresh-token-id: 550e8400-e29b-41d4-a716-446655440002
 ---
 
 ### 1.7 Get Current User (Me)
+
 **URL**: `http://localhost:3000/api/v1/auth/me`  
 **Method**: GET  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -231,16 +254,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 1.8 List Sessions
+
 **URL**: `http://localhost:3000/api/v1/auth/sessions`  
 **Method**: GET  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "sessions": [
@@ -265,17 +291,20 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 1.9 Logout
+
 **URL**: `http://localhost:3000/api/v1/auth/logout`  
 **Method**: POST  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 x-refresh-token-id: session-uuid-1
 ```
 
 **Response**:
+
 ```json
 {
   "status": "ok",
@@ -286,16 +315,19 @@ x-refresh-token-id: session-uuid-1
 ---
 
 ### 1.10 Logout All Sessions
+
 **URL**: `http://localhost:3000/api/v1/auth/logout-all`  
 **Method**: POST  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "status": "ok",
@@ -309,16 +341,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 2. PROFILE ENDPOINTS
 
 ### 2.1 Get Profile
+
 **URL**: `http://localhost:3000/api/v1/profile`  
 **Method**: GET  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "userId": "550e8400-e29b-41d4-a716-446655440000",
@@ -339,16 +374,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 2.2 Update Profile
+
 **URL**: `http://localhost:3000/api/v1/profile`  
 **Method**: PATCH  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "fullName": "John Updated Doe",
@@ -358,6 +396,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "userId": "550e8400-e29b-41d4-a716-446655440000",
@@ -371,16 +410,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 2.3 Update Privacy Settings
+
 **URL**: `http://localhost:3000/api/v1/profile/privacy`  
 **Method**: PATCH  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "shareLocation": false,
@@ -389,6 +431,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "privacySettings": {
@@ -402,16 +445,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 2.4 Deactivate Account
+
 **URL**: `http://localhost:3000/api/v1/profile/deactivate`  
 **Method**: POST  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "status": "deactivated",
@@ -423,16 +469,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 2.5 Delete Account
+
 **URL**: `http://localhost:3000/api/v1/profile`  
 **Method**: DELETE  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "status": "deleted",
@@ -444,16 +493,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 2.6 Export User Data
+
 **URL**: `http://localhost:3000/api/v1/profile/export`  
 **Method**: GET  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -474,16 +526,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 3. DRIVER ENDPOINTS
 
 ### 3.1 Get Driver Profile
+
 **URL**: `http://localhost:3000/api/v1/drivers/profile`  
 **Method**: GET  
 **Authentication**: JWT required (DRIVER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "driverProfile": {
@@ -495,8 +550,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "rating": 4.9,
     "totalTrips": 543,
     "earnings": {
-      "total": 15420.50,
-      "thisMonth": 2340.00
+      "total": 15420.5,
+      "thisMonth": 2340.0
     }
   }
 }
@@ -505,16 +560,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 3.2 Update License
+
 **URL**: `http://localhost:3000/api/v1/drivers/license`  
 **Method**: PATCH  
 **Authentication**: JWT required (DRIVER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "licenseNumber": "DL98765432",
@@ -523,6 +581,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "driverProfile": {
@@ -538,16 +597,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 3.3 Set Online Status
+
 **URL**: `http://localhost:3000/api/v1/drivers/online`  
 **Method**: POST  
 **Authentication**: JWT required (DRIVER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "online": true
@@ -555,6 +617,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "online": true,
@@ -566,16 +629,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 3.4 Get Vehicles
+
 **URL**: `http://localhost:3000/api/v1/drivers/vehicles`  
 **Method**: GET  
 **Authentication**: JWT required (DRIVER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "vehicles": [
@@ -596,16 +662,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 3.5 Add Vehicle
+
 **URL**: `http://localhost:3000/api/v1/drivers/vehicles`  
 **Method**: POST  
 **Authentication**: JWT required (DRIVER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "make": "Honda",
@@ -618,6 +687,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "vehicle": {
@@ -639,16 +709,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 4. RIDE REQUEST ENDPOINTS
 
 ### 4.1 Create Ride Request
+
 **URL**: `http://localhost:3000/api/v1/ride-requests`  
 **Method**: POST  
 **Authentication**: JWT required (RIDER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "pickupLat": 37.7749,
@@ -662,6 +735,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "rideRequest": {
@@ -679,7 +753,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     },
     "seats": 2,
     "status": "PENDING",
-    "estimatedFare": 15.50,
+    "estimatedFare": 15.5,
     "createdAt": "2026-02-10T15:05:00.000Z"
   }
 }
@@ -688,16 +762,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 4.2 Get Current Ride Request
+
 **URL**: `http://localhost:3000/api/v1/ride-requests/current`  
 **Method**: GET  
 **Authentication**: JWT required (RIDER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "rideRequest": {
@@ -722,16 +799,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 4.3 Cancel Ride Request
+
 **URL**: `http://localhost:3000/api/v1/ride-requests/{id}/cancel`  
 **Method**: PATCH  
 **Authentication**: JWT required (RIDER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "rideRequest": {
@@ -748,16 +828,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 5. TRIP ENDPOINTS
 
 ### 5.1 Get Trip Details
+
 **URL**: `http://localhost:3000/api/v1/trips/{id}`  
 **Method**: GET  
 **Authentication**: JWT required
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "trip": {
@@ -789,16 +872,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 5.2 Update Driver Location
+
 **URL**: `http://localhost:3000/api/v1/trips/{id}/location`  
 **Method**: PATCH  
 **Authentication**: JWT required (DRIVER role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "lat": 37.7899,
@@ -807,6 +893,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "trip": {
@@ -825,16 +912,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 6. ADMIN ENDPOINTS
 
 ### 6.1 List All Users
+
 **URL**: `http://localhost:3000/api/v1/admin/users`  
 **Method**: GET  
 **Authentication**: JWT required (ADMIN role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "users": [
@@ -864,16 +954,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 6.2 Get User Details
+
 **URL**: `http://localhost:3000/api/v1/admin/users/{userId}`  
 **Method**: GET  
 **Authentication**: JWT required (ADMIN role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "user": {
@@ -895,16 +988,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 6.3 Suspend User
+
 **URL**: `http://localhost:3000/api/v1/admin/users/suspend`  
 **Method**: POST  
 **Authentication**: JWT required (ADMIN role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Request Body**:
+
 ```json
 {
   "targetUserId": "550e8400-e29b-41d4-a716-446655440000",
@@ -913,6 +1009,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "status": "suspended",
@@ -926,16 +1023,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 ### 6.4 Reinstate User
+
 **URL**: `http://localhost:3000/api/v1/admin/users/{userId}/reinstate`  
 **Method**: POST  
 **Authentication**: JWT required (ADMIN role)
 
 **Request Headers**:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response**:
+
 ```json
 {
   "status": "active",
@@ -953,6 +1053,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Base URL**: `http://localhost:3000/api/v1`
 
 ### Endpoints by Category:
+
 - **Authentication**: 10 endpoints
 - **Profile**: 6 endpoints
 - **Driver**: 5 endpoints
@@ -961,6 +1062,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - **Admin**: 4 endpoints
 
 ### Authentication Notes:
+
 - Public endpoints: Request OTP, Register (Rider/Driver), Verify OTP, Login
 - Protected endpoints require: `Authorization: Bearer {access_token}`
 - Role-specific endpoints require RIDER, DRIVER, or ADMIN role

@@ -65,4 +65,3 @@ export class ChatGateway {
     return (client as unknown as TypedSocket).join(`ride:${data.rideId}`);
   }
 }
- 

@@ -21,4 +21,3 @@ export const REDIS = 'REDIS_CLIENT';
   exports: [REDIS],
 })
 export class RedisModule {}
- 
