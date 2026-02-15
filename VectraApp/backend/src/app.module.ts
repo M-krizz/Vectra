@@ -1,4 +1,4 @@
-// Force CI rebuild
+// Force CI rebuild (gitattributes fix)
 import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -69,4 +69,4 @@ dotenv.config();
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
