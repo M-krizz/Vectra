@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -13,7 +14,7 @@ import Redis from 'ioredis';
 
 // Define explicit interfaces to satisfy linting
 interface TypedServer {
-  to: (room: string) => { emit: (ev: string, data: any) => void };
+  to: (room: string) => { emit: (ev: string, data: unknown) => void };
 }
 
 interface TypedSocket {
