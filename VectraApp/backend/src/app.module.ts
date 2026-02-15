@@ -10,7 +10,6 @@ import { RedisModule } from './integrations/redis/redis.module';
 // Authentication module (merged)
 import { AuthenticationModule } from './modules/Authentication';
 
-// Feature modules
 import { RideRequestsModule } from './modules/ride_requests/ride-requests.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { ChatModule } from './modules/chat/chat.module';
