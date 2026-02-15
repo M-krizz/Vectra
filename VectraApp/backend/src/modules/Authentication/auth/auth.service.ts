@@ -15,6 +15,8 @@ import {
   DriverStatus,
 } from '../drivers/driver-profile.entity';
 import { OtpService } from './otp.service';
+import { UsersService } from '../users/users.service';
+import { CreateRiderDto, CreateDriverDto } from '../users/dto/users.dto';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +32,7 @@ export class AuthService {
     private refreshRepo: Repository<RefreshTokenEntity>,
     @InjectRepository(DriverProfileEntity)
     private profilesRepo: Repository<DriverProfileEntity>,
+    private usersService: UsersService,
   ) {
     this.accessExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
     this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
@@ -118,6 +121,16 @@ export class AuthService {
       },
       ...tokens,
     };
+  }
+
+  async registerRider(dto: CreateRiderDto, ip?: string, userAgent?: string) {
+    const user = await this.usersService.createRider(dto);
+    return this.createSessionAndTokens(user, userAgent, ip);
+  }
+
+  async registerDriver(dto: CreateDriverDto, ip?: string, userAgent?: string) {
+    const user = await this.usersService.createDriver(dto);
+    return this.createSessionAndTokens(user, userAgent, ip);
   }
 
   /**

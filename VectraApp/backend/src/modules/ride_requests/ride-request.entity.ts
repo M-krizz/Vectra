@@ -48,7 +48,12 @@ export class RideRequestEntity {
   @Column({ type: 'enum', enum: RideType, name: 'ride_type' })
   rideType!: RideType;
 
-  @Column({ type: 'enum', enum: VehicleType, name: 'vehicle_type', default: VehicleType.AUTO })
+  @Column({
+    type: 'enum',
+    enum: VehicleType,
+    name: 'vehicle_type',
+    default: VehicleType.AUTO,
+  })
   vehicleType!: VehicleType;
 
   @Column({
