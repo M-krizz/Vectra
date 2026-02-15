@@ -26,7 +26,7 @@ interface ResolveIncidentDto {
 @Controller('api/v1/safety')
 @UseGuards(JwtAuthGuard)
 export class SafetyController {
-  constructor(private readonly safetyService: SafetyService) { }
+  constructor(private readonly safetyService: SafetyService) {}
 
   @Post('incidents')
   async reportIncident(

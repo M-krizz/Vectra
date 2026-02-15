@@ -28,7 +28,8 @@ interface TypedSocket {
   namespace: 'location',
 })
 export class LocationGateway
-  implements OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   private redis: Redis;
   private readonly logger = new Logger(LocationGateway.name);
 
@@ -40,11 +41,15 @@ export class LocationGateway
   }
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${(client as unknown as TypedSocket).id}`);
+    this.logger.log(
+      `Client connected: ${(client as unknown as TypedSocket).id}`,
+    );
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${(client as unknown as TypedSocket).id}`);
+    this.logger.log(
+      `Client disconnected: ${(client as unknown as TypedSocket).id}`,
+    );
   }
 
   @SubscribeMessage('update_location')

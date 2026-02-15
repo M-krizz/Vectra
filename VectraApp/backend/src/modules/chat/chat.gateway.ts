@@ -32,7 +32,7 @@ export class ChatGateway {
     private chatService: ChatService,
     private rideRequestsService: RideRequestsService,
     private usersService: UsersService,
-  ) { }
+  ) {}
 
   @SubscribeMessage('send_message')
   async handleMessage(
@@ -51,7 +51,9 @@ export class ChatGateway {
         sender,
         content,
       );
-      (this.server as unknown as TypedServer).to(`ride:${rideId}`).emit('new_message', savedMessage);
+      (this.server as unknown as TypedServer)
+        .to(`ride:${rideId}`)
+        .emit('new_message', savedMessage);
     }
   }
 
