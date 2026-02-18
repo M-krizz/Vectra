@@ -1,0 +1,12 @@
+name: shared
+description: Shared utilities, models, and services for Vectra apps.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  dio: ^5.4.0
+  flutter_secure_storage: ^9.0.0
+  flutter:
+    sdk: flutter

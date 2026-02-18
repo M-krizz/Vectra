@@ -8,7 +8,7 @@ import '../features/auth/bloc/auth_bloc.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
-import '../features/home/screens/home_screen.dart';
+import '../features/home/screens/main_screen.dart';
 
 /// App Router configuration using GoRouter
 class AppRouter {
@@ -74,7 +74,7 @@ class AppRouter {
         GoRoute(
           path: '/home',
           name: 'home',
-          builder: (context, state) => const HomeScreen(),
+          builder: (context, state) => const MainScreen(),
         ),
       ],
       errorBuilder: (context, state) =>
