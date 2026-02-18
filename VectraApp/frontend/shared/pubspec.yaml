@@ -3,7 +3,7 @@ description: Shared utilities, models, and services for Vectra apps.
 publish_to: 'none'
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.10.3
 
 dependencies:
   dio: ^5.4.0
