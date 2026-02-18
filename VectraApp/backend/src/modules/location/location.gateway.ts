@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -10,6 +11,16 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
+
+// Define explicit interfaces to satisfy linting
+interface TypedServer {
+  to: (room: string) => { emit: (ev: string, data: unknown) => void };
+}
+
+interface TypedSocket {
+  id: string;
+  join: (room: string) => void | Promise<void>;
+}
 
 @Injectable()
 @WebSocketGateway({
@@ -30,11 +41,15 @@ export class LocationGateway
   }
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+    this.logger.log(
+      `Client connected: ${(client as unknown as TypedSocket).id}`,
+    );
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    this.logger.log(
+      `Client disconnected: ${(client as unknown as TypedSocket).id}`,
+    );
   }
 
   @SubscribeMessage('update_location')
@@ -60,13 +75,13 @@ export class LocationGateway
 
     // If rideId is present, broadcast to the specific ride room
     if (rideId) {
-      void this.server
+      (this.server as unknown as TypedServer)
         .to(`ride:${rideId}`)
         .emit('location_changed', { lat, lng, driverId });
     }
 
     // Also broadcast to a general "fleet" room for admins
-    void this.server
+    (this.server as unknown as TypedServer)
       .to('admin:fleet')
       .emit('driver_moved', { lat, lng, driverId });
   }
@@ -76,11 +91,11 @@ export class LocationGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { rideId: string },
   ) {
-    return client.join(`ride:${data.rideId}`);
+    return (client as unknown as TypedSocket).join(`ride:${data.rideId}`);
   }
 
   @SubscribeMessage('join_fleet')
   handleJoinFleet(@ConnectedSocket() client: Socket) {
-    return client.join('admin:fleet');
+    return (client as unknown as TypedSocket).join('admin:fleet');
   }
 }

@@ -13,7 +13,7 @@ export class RideRequestsService {
   constructor(
     @InjectRepository(RideRequestEntity)
     private readonly rideRequestsRepo: Repository<RideRequestEntity>,
-  ) { }
+  ) {}
 
   async createRequest(
     userId: string,
