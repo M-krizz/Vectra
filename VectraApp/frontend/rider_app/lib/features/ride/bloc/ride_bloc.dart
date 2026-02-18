@@ -36,7 +36,7 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     on<RideDriverLocationUpdated>(_onDriverLocationUpdated);
     on<RideCompleted>(_onRideCompleted);
     on<RideCancelled>(_onRideCancelled);
-    on<RideCancellationReasonUpdated>(_onCancellationReasonUpdated);
+    on<RideArrivalCountdownUpdated>(_onArrivalCountdownUpdated);
     on<RidePooledRequestsRequested>(_onPooledRequestsRequested);
     on<RidePooledRequestSelected>(_onPooledRequestSelected);
     on<RidePooledAutoConfirmed>(_onPooledAutoConfirmed);
@@ -471,6 +471,8 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     _rideProgressTimer?.cancel();
     return super.close();
   }
+
+
 
   /// Load available pooled rider requests
   Future<void> _onPooledRequestsRequested(

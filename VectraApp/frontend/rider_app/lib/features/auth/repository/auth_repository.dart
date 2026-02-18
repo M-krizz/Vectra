@@ -37,28 +37,35 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final response = await _apiClient.post(
-      ApiConstants.login,
-      data: {
-        'email': email,
-        'password': password,
-        'deviceInfo': 'Vectra Rider App - Android',
-      },
+    // MOCK IMPLEMENTATION
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+
+    final mockUser = UserModel(
+      id: 'mock_user_123',
+      email: email,
+      phone: '9876543210',
+      fullName: 'Mock User',
+      role: 'rider',
     );
 
-    final authResponse = AuthResponseModel.fromJson(response.data);
+    final mockAuthResponse = AuthResponseModel(
+      accessToken: 'mock_access_token',
+      refreshToken: 'mock_refresh_token',
+      refreshTokenId: 'mock_refresh_token_id',
+      user: mockUser,
+    );
 
     // Save tokens
     await _storageService.saveTokens(
-      accessToken: authResponse.accessToken,
-      refreshToken: authResponse.refreshToken,
-      refreshTokenId: authResponse.refreshTokenId,
+      accessToken: mockAuthResponse.accessToken,
+      refreshToken: mockAuthResponse.refreshToken,
+      refreshTokenId: mockAuthResponse.refreshTokenId,
     );
 
     // Save user data
-    await _storageService.saveUserData(jsonEncode(authResponse.user.toJson()));
+    await _storageService.saveUserData(jsonEncode(mockAuthResponse.user.toJson()));
 
-    return authResponse.user;
+    return mockAuthResponse.user;
   }
 
   /// Register new rider
@@ -68,61 +75,58 @@ class AuthRepository {
     required String fullName,
     required String password,
   }) async {
-    final response = await _apiClient.post(
-      ApiConstants.registerRider,
-      data: {
-        'email': email,
-        'phone': phone,
-        'fullName': fullName,
-        'password': password,
-      },
+    // MOCK IMPLEMENTATION
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+
+    final mockUser = UserModel(
+      id: 'mock_user_456',
+      email: email,
+      phone: phone,
+      fullName: fullName,
+      role: 'rider',
     );
 
-    final data = response.data as Map<String, dynamic>;
-    return UserModel.fromJson(data['user'] as Map<String, dynamic>);
+    // Save tokens (simulate auto-login after register)
+    await _storageService.saveTokens(
+      accessToken: 'mock_access_token_reg',
+      refreshToken: 'mock_refresh_token_reg',
+      refreshTokenId: 'mock_rt_id_reg',
+    );
+
+    await _storageService.saveUserData(jsonEncode(mockUser.toJson()));
+
+    return mockUser;
   }
 
   /// Logout user
   Future<void> logout() async {
-    try {
-      final refreshTokenId = await _storageService.getRefreshTokenId();
-      if (refreshTokenId != null) {
-        await _apiClient.post(
-          ApiConstants.logout,
-          data: {'refreshTokenId': refreshTokenId},
-        );
-      }
-    } finally {
-      await _storageService.clearAll();
-    }
+    // MOCK IMPLEMENTATION
+    await _storageService.clearAll();
   }
 
   /// Refresh access token
   Future<void> refreshToken() async {
-    final refreshToken = await _storageService.getRefreshToken();
-    final refreshTokenId = await _storageService.getRefreshTokenId();
-
-    if (refreshToken == null || refreshTokenId == null) {
-      throw UnauthorizedException(message: 'No refresh token available');
-    }
-
-    final response = await _apiClient.post(
-      ApiConstants.refreshToken,
-      data: {'refreshToken': refreshToken, 'refreshTokenId': refreshTokenId},
-    );
-
-    final data = response.data as Map<String, dynamic>;
-
-    await _storageService.saveTokens(
-      accessToken: data['accessToken'],
-      refreshToken: data['refreshToken'],
-      refreshTokenId: data['refreshTokenId'],
-    );
+    // MOCK IMPLEMENTATION
+    // Just pretend we refreshed
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   /// Get user profile
   Future<UserModel> getProfile() async {
-    final response = await _apiClient.get(ApiConstants.profileMe);
-    return UserModel.fromJson(response.data as Map<String, dynamic>);
+    // MOCK IMPLEMENTATION
+    final userData = await _storageService.getUserData();
+    if (userData != null) {
+      final json = jsonDecode(userData) as Map<String, dynamic>;
+      return UserModel.fromJson(json);
+    }
+    
+    // Return dummy if no stored user
+    return const UserModel(
+      id: 'mock_user_profile',
+      email: 'mock@vectra.com',
+      phone: '9876543210',
+      fullName: 'Mock Profile',
+      role: 'rider',
+    );
   }
 }

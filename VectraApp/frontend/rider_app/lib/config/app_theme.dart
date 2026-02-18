@@ -5,9 +5,10 @@ class AppColors {
   AppColors._();
 
   // Primary colors
-  static const Color primary = Color(0xFF1A73E8);
-  static const Color primaryDark = Color(0xFF1557B0);
-  static const Color primaryLight = Color(0xFF4285F4);
+  // Primary colors
+  static const Color primary = Colors.black;
+  static const Color primaryDark = Colors.black87;
+  static const Color primaryLight = Colors.black54;
 
   // Secondary colors
   static const Color secondary = Color(0xFF34A853);
@@ -23,8 +24,9 @@ class AppColors {
   static const Color surfaceDark = Color(0xFF1E1E1E);
 
   // Text colors
-  static const Color textPrimaryLight = Color(0xFF202124);
-  static const Color textSecondaryLight = Color(0xFF5F6368);
+  // Text colors
+  static const Color textPrimaryLight = Colors.black;
+  static const Color textSecondaryLight = Colors.black87;
   static const Color textPrimaryDark = Color(0xFFE8EAED);
   static const Color textSecondaryDark = Color(0xFF9AA0A6);
 
