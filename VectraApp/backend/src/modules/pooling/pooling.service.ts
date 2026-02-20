@@ -6,7 +6,8 @@ import { RideRequestStatus, RideType, VehicleType } from '../ride_requests/ride-
 import { PoolGroupEntity, PoolStatus } from './pool-group.entity';
 import { TripEntity, TripStatus } from '../trips/trip.entity';
 import { TripRiderEntity, TripRiderStatus } from '../trips/trip-rider.entity';
-// import { MlClientService } from '../../integrations/ml-client/ml-client.service'; // TODO: Implement ML Client
+import { MlClientService } from '../../integrations/ml-client/ml-client.service';
+import { getLatitude, getLongitude } from '../../common/types/geo-point.type';
 
 @Injectable()
 export class PoolingService {
@@ -22,7 +23,7 @@ export class PoolingService {
         @InjectRepository(TripRiderEntity)
         private readonly tripRiderRepo: Repository<TripRiderEntity>,
         private readonly dataSource: DataSource,
-        // private readonly mlClient: MlClientService,
+        private readonly mlClient: MlClientService,
     ) { }
 
     /**
@@ -70,32 +71,30 @@ export class PoolingService {
 
         const maxRiders = mainRequest.vehicleType === VehicleType.AUTO ? 3 : 4;
 
-        // Form groups of size 2 up to maxRiders
-        // This is combinatorial. For V1 with small N, we can just try pairing with best candidate first?
-        // Or send all to Python and let Python permute?
-        // Let's send main + up to (max-1) candidates to Python.
-
+        // For V1, we send main + up to (max-1) candidates to Python for validation.
         const potentialGroup = [mainRequest, ...candidates.slice(0, maxRiders - 1)];
 
-        // Call Python Service (Mocked for now)
-        // const evaluation = await this.mlClient.evaluatePool({
-        //   vehicle_type: mainRequest.vehicleType,
-        //   riders: potentialGroup.map(r => ({ ... }))
-        // });
+        try {
+            const evaluation = await this.mlClient.evaluatePool({
+                vehicle_type: mainRequest.vehicleType,
+                riders: potentialGroup.map(r => ({
+                    id: r.id,
+                    lat: getLatitude(r.pickupPoint),
+                    lng: getLongitude(r.pickupPoint),
+                }))
+            });
 
-        // MOCK RESPONSE
-        const mockEvaluation = {
-            isValid: true,
-            score: 0.9,
-            sequence: potentialGroup.map(r => r.id), // Just sequential for now
-            detourOk: true
-        };
-
-        if (mockEvaluation.isValid && mockEvaluation.detourOk) {
-            return {
-                riders: potentialGroup,
-                ...mockEvaluation
-            };
+            if (evaluation.isValid && evaluation.detourOk) {
+                return {
+                    riders: potentialGroup,
+                    ...evaluation
+                };
+            }
+        } catch (err) {
+            this.logger.error('Pool evaluation failed via ML Service', err);
+            // Fallback: If ML is down, we could either fail or use a simple heuristic.
+            // Strict rule: "Never trust ML blindly" but also "Control logic".
+            // For now, if ML fails, we don't pool to avoid bad detour experiences.
         }
 
         return null;

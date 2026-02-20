@@ -17,6 +17,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { LocationModule } from './modules/location/location.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { PoolingModule } from './modules/pooling/pooling.module';
+import { MatchingModule } from './modules/matching/matching.module';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ dotenv.config();
     RideRequestsModule,
     TripsModule,
     PoolingModule,
+    MatchingModule,
 
     // Real-time features
     ChatModule,
