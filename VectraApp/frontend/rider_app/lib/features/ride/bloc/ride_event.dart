@@ -99,6 +99,12 @@ class RideCancelled extends RideEvent {
   const RideCancelled(this.reason);
 }
 
+/// Update cancellation reason
+class RideCancellationReasonUpdated extends RideEvent {
+  final String reason;
+  const RideCancellationReasonUpdated(this.reason);
+}
+
 /// Load available pooled rider requests
 class RidePooledRequestsRequested extends RideEvent {
   const RidePooledRequestsRequested();
@@ -124,4 +130,33 @@ class RideOTPGenerated extends RideEvent {
 class RideOTPVerified extends RideEvent {
   final String otp;
   const RideOTPVerified(this.otp);
+}
+
+/// No drivers found after search timeout
+class RideNoDriversFound extends RideEvent {
+  const RideNoDriversFound();
+}
+
+/// A trip_status event received from the WebSocket (drives navigation)
+class RideSocketStatusReceived extends RideEvent {
+  final String tripId;
+  final String status; // matches backend enum: ASSIGNED|ARRIVING|IN_PROGRESS|COMPLETED|CANCELLED
+  final Map<String, dynamic> payload;
+  const RideSocketStatusReceived({
+    required this.tripId,
+    required this.status,
+    this.payload = const {},
+  });
+}
+
+/// A location_update event received from the WebSocket
+class RideSocketLocationReceived extends RideEvent {
+  final double lat;
+  final double lng;
+  final int? etaSeconds;
+  const RideSocketLocationReceived({
+    required this.lat,
+    required this.lng,
+    this.etaSeconds,
+  });
 }

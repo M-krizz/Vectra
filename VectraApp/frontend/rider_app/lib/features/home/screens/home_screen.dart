@@ -401,6 +401,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return _buildVehicleSelectionSheet(context, rideState);
       case RideStatus.searching:
         return _buildSearchingDriverSheet(context, rideState);
+      case RideStatus.noDriversFound:
+        return _buildSearchingDriverSheet(context, rideState);
       case RideStatus.driverFound:
         return _buildDriverFoundSheet(context, rideState);
       case RideStatus.arrived:
@@ -2466,7 +2468,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          '${driver.vehicleColor} ${driver.vehicleModel} ΓÇó ${driver.vehicleNumber}',
+                          '${driver.vehicleColor} ${driver.vehicleModel} • ${driver.vehicleNumber}',
                           style: TextStyle(color: Colors.black54, fontSize: 13),
                         ),
                       ],

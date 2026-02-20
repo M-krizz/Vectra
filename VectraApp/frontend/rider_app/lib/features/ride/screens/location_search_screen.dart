@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../config/app_theme.dart';
 
 import '../bloc/ride_bloc.dart';
 import '../models/place_model.dart';
@@ -163,13 +164,10 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
 
   void _confirmSelection() {
     if (_selectedPickup != null && _selectedDestination != null) {
-      // Update the Ride BLoC
       final rideBloc = context.read<RideBloc>();
       rideBloc.add(RidePickupSet(_selectedPickup!));
       rideBloc.add(RideDestinationSet(_selectedDestination!));
-
-      // Pop back to home screen
-      Navigator.of(context).pop();
+      context.go('/home/ride-options');
     }
   }
 
@@ -195,7 +193,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Set your route',

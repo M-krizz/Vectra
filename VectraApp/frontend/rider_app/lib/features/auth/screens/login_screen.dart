@@ -106,17 +106,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Email field
                   CustomTextField(
                     controller: _emailController,
-                    label: 'Email',
-                    hint: 'Enter your email',
+                    label: 'Email / Mobile',
+                    hint: 'Enter email or mobile number',
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: Icons.email_outlined,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return 'Please enter your email or mobile';
                       }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
+                      if (value.contains('@') &&
+                          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                              .hasMatch(value)) {
                         return 'Please enter a valid email';
                       }
                       return null;
