@@ -42,11 +42,10 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     on<RidePooledAutoConfirmed>(_onPooledAutoConfirmed);
     on<RideOTPGenerated>(_onOTPGenerated);
     on<RideOTPVerified>(_onOTPVerified);
-    // New events
     on<RideNoDriversFound>(_onNoDriversFound);
     on<RideSocketStatusReceived>(_onSocketStatusReceived);
     on<RideSocketLocationReceived>(_onSocketLocationReceived);
-    on<RideArrivalCountdownUpdated>(_onArrivalCountdownUpdated);
+    on<RideCancellationReasonUpdated>(_onCancellationReasonUpdated);
   }
 
   void _onPickupSet(RidePickupSet event, Emitter<RideState> emit) {
