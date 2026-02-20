@@ -6,6 +6,7 @@ import { RideRequestEntity } from '../ride_requests/ride-request.entity';
 import { TripEntity } from '../trips/trip.entity';
 import { TripRiderEntity } from '../trips/trip-rider.entity';
 import { PoolingManager } from './pooling.manager';
+import { MlClientModule } from '../../integrations/ml-client/ml-client.module';
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import { PoolingManager } from './pooling.manager';
             TripEntity,
             TripRiderEntity,
         ]),
+        MlClientModule,
     ],
     providers: [PoolingService, PoolingManager],
     exports: [PoolingService],

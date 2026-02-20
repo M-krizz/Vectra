@@ -339,4 +339,17 @@ export class AuthService {
     if (!user || user.isSuspended) return null;
     return user;
   }
+
+  /**
+   * Verify an access token and return the payload
+   */
+  async verifyAccessToken(token: string) {
+    try {
+      return this.jwtService.verify(token, {
+        secret: process.env.JWT_ACCESS_SECRET as string,
+      });
+    } catch (err) {
+      return null;
+    }
+  }
 }
