@@ -42,6 +42,11 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     on<RidePooledAutoConfirmed>(_onPooledAutoConfirmed);
     on<RideOTPGenerated>(_onOTPGenerated);
     on<RideOTPVerified>(_onOTPVerified);
+    // New events
+    on<RideNoDriversFound>(_onNoDriversFound);
+    on<RideSocketStatusReceived>(_onSocketStatusReceived);
+    on<RideSocketLocationReceived>(_onSocketLocationReceived);
+    on<RideArrivalCountdownUpdated>(_onArrivalCountdownUpdated);
   }
 
   void _onPickupSet(RidePickupSet event, Emitter<RideState> emit) {
@@ -241,24 +246,28 @@ class RideBloc extends Bloc<RideEvent, RideState> {
       ),
     );
 
-    // Simulate driver search (3-8 seconds)
+    // ── Mock: simulate driver search with timeout ─────────────────────
+    // In production, this is replaced by socket 'trip_status' events.
     final searchDuration = Duration(seconds: 3 + Random().nextInt(5));
     _driverSearchTimer = Timer(searchDuration, () {
-      // Create mock driver
-      final mockDriver = DriverInfo(
-        id: 'driver_${Random().nextInt(1000)}',
-        name: _mockDriverNames[Random().nextInt(_mockDriverNames.length)],
-        phone: '+91 98765 ${Random().nextInt(90000) + 10000}',
-        vehicleNumber:
-            'TN ${Random().nextInt(90) + 10} ${_randomLetters()} ${Random().nextInt(9000) + 1000}',
-        vehicleModel:
-            _mockVehicleModels[Random().nextInt(_mockVehicleModels.length)],
-        vehicleColor: _mockColors[Random().nextInt(_mockColors.length)],
-        rating: 4.0 + Random().nextDouble(),
-        location: _getRandomNearbyLocation(state.pickup!.location!),
-      );
-
-      add(RideDriverFound(mockDriver));
+      // 80% chance a driver is found, 20% timeout (no drivers)
+      if (Random().nextDouble() < 0.8) {
+        final mockDriver = DriverInfo(
+          id: 'driver_${Random().nextInt(1000)}',
+          name: _mockDriverNames[Random().nextInt(_mockDriverNames.length)],
+          phone: '+91 98765 ${Random().nextInt(90000) + 10000}',
+          vehicleNumber:
+              'TN ${Random().nextInt(90) + 10} ${_randomLetters()} ${Random().nextInt(9000) + 1000}',
+          vehicleModel:
+              _mockVehicleModels[Random().nextInt(_mockVehicleModels.length)],
+          vehicleColor: _mockColors[Random().nextInt(_mockColors.length)],
+          rating: 4.0 + Random().nextDouble(),
+          location: _getRandomNearbyLocation(state.pickup!.location!),
+        );
+        add(RideDriverFound(mockDriver));
+      } else {
+        add(const RideNoDriversFound());
+      }
     });
   }
 
@@ -401,6 +410,13 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     );
   }
 
+  void _onCancellationReasonUpdated(
+    RideCancellationReasonUpdated event,
+    Emitter<RideState> emit,
+  ) {
+    emit(state.copyWith(cancellationReason: event.reason));
+  }
+
   // Helper methods
   LatLng _getRandomNearbyLocation(LatLng center) {
     final random = Random();
@@ -472,7 +488,65 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     return super.close();
   }
 
+  // ── New event handlers ────────────────────────────────────────────────
 
+  void _onNoDriversFound(RideNoDriversFound event, Emitter<RideState> emit) {
+    _driverSearchTimer?.cancel();
+    emit(state.copyWith(
+      status: RideStatus.noDriversFound,
+      isLoading: false,
+    ));
+  }
+
+  /// Maps backend status strings (from WebSocket) to RideBloc events.
+  /// This is the socket → BLoC bridge: the UI layer subscribes to RideBloc
+  /// state and the socket service calls rideBloc.add(RideSocketStatusReceived()).
+  void _onSocketStatusReceived(
+    RideSocketStatusReceived event,
+    Emitter<RideState> emit,
+  ) {
+    // Only process events for the current trip
+    if (event.tripId != state.rideId && state.rideId != null) return;
+
+    switch (event.status.toUpperCase()) {
+      case 'ASSIGNED':
+        // Driver info may come from payload in production
+        emit(state.copyWith(status: RideStatus.driverFound));
+      case 'ARRIVING':
+        emit(state.copyWith(status: RideStatus.arrived));
+      case 'IN_PROGRESS':
+        emit(state.copyWith(status: RideStatus.inProgress));
+      case 'COMPLETED':
+        final fare = (event.payload['fare'] as num?)?.toDouble()
+            ?? state.selectedVehicle?.fare
+            ?? 0;
+        emit(state.copyWith(status: RideStatus.completed, finalFare: fare));
+      case 'CANCELLED':
+        final reason = event.payload['reason']?.toString() ?? 'Trip cancelled';
+        emit(state.copyWith(
+          status: RideStatus.cancelled,
+          cancellationReason: reason,
+        ));
+      default:
+        break;
+    }
+  }
+
+  void _onSocketLocationReceived(
+    RideSocketLocationReceived event,
+    Emitter<RideState> emit,
+  ) {
+    if (state.driver == null) return;
+    final eta = event.etaSeconds != null
+        ? (event.etaSeconds! / 60).round()
+        : state.estimatedArrivalMinutes;
+    emit(state.copyWith(
+      driver: state.driver!.copyWith(
+        location: LatLng(event.lat, event.lng),
+      ),
+      estimatedArrivalMinutes: eta,
+    ));
+  }
 
   /// Load available pooled rider requests
   Future<void> _onPooledRequestsRequested(
