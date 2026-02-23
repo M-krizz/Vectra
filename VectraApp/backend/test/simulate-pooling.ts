@@ -8,6 +8,7 @@ import { RideRequestStatus, RideType, VehicleType } from '../src/modules/ride_re
 import { PoolingService } from '../src/modules/pooling/pooling.service';
 import { PoolingManager } from '../src/modules/pooling/pooling.manager';
 import * as dotenv from 'dotenv';
+import { MlClientService } from '../src/integrations/ml-client/ml-client.service';
 import { GeoPoint } from '../src/common/types/geo-point.type';
 
 dotenv.config();
@@ -41,12 +42,17 @@ async function runSimulation() {
         const tripRiderRepo = SimulationDataSource.getRepository(TripRiderEntity);
 
         // --- INSTANTIATE SERVICES MANUALLY ---
+        const mlClient = {
+            evaluatePool: async () => ({ isValid: true, score: 0.9, sequence: [], detourOk: true })
+        } as unknown as MlClientService;
+
         const poolingService = new PoolingService(
             requestRepo,
             poolRepo,
             tripRepo,
             tripRiderRepo,
-            SimulationDataSource
+            SimulationDataSource,
+            mlClient
         );
         const poolingManager = new PoolingManager(
             requestRepo,
