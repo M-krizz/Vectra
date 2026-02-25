@@ -92,12 +92,12 @@ class TripSocketService {
   /// Subscribe to a specific trip's room.
   void joinTripRoom(String tripId) {
     _currentTripId = tripId;
-    _socket?.emit('join_trip_room', {'tripId': tripId});
+    _socket?.emit('join_trip', {'tripId': tripId});
   }
 
   /// Leave a trip room.
   void leaveTripRoom(String tripId) {
-    _socket?.emit('leave_trip_room', {'tripId': tripId});
+    _socket?.emit('leave_trip', {'tripId': tripId});
     if (_currentTripId == tripId) _currentTripId = null;
   }
 
@@ -157,19 +157,19 @@ class TripSocketService {
         if (!_intentionalDisconnect) _scheduleReconnect();
       })
       // ── Trip events ────────────────────────────────────────────────────
-      ..on('trip_status', (data) {
+      ..on('trip_status_changed', (data) {
         if (data is Map) {
           _statusController.add(TripStatusEvent(
             tripId: data['tripId']?.toString() ?? '',
-            status: data['status']?.toString() ?? '',
+            status: data['newStatus']?.toString() ?? '',
             payload: Map<String, dynamic>.from(data),
           ));
         }
       })
-      ..on('location_update', (data) {
+      ..on('driver_moved', (data) {
         if (data is Map) {
           _locationController.add(LocationUpdateEvent(
-            tripId: data['tripId']?.toString() ?? '',
+            tripId: _currentTripId ?? '',
             lat: (data['lat'] as num?)?.toDouble() ?? 0,
             lng: (data['lng'] as num?)?.toDouble() ?? 0,
             etaSeconds: data['etaSeconds'] as int?,
