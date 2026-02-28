@@ -190,6 +190,3 @@ flutter run
 1.  **Branching**: `feature/feature-name` or `fix/issue-name`.
 2.  **Commits**: Use conventional commits (e.g., `feat: add pooling logic`).
 3.  **PRs**: Ensure CI checks pass before merging.
-
-## 📄 License
-This project is licensed under the MIT License.
