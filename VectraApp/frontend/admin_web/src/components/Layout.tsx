@@ -41,6 +41,10 @@ export default function Layout() {
                         <span className="nav-icon">🚗</span>
                         Trips
                     </NavLink>
+                    <NavLink to="/fleet" className={({ isActive }) => (isActive ? 'active' : '')}>
+                        <span className="nav-icon">🌎</span>
+                        Fleet Map
+                    </NavLink>
                     <NavLink to="/safety" className={({ isActive }) => (isActive ? 'active' : '')}>
                         <span className="nav-icon">🛡️</span>
                         Safety &amp; Incidents

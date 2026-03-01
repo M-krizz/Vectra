@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import UsersPage from './pages/UsersPage';
 import TripsPage from './pages/TripsPage';
 import SafetyPage from './pages/SafetyPage';
+import FleetMapPage from './pages/FleetMapPage';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                         <Route path="/users" element={<UsersPage />} />
                         <Route path="/trips" element={<TripsPage />} />
                         <Route path="/safety" element={<SafetyPage />} />
+                        <Route path="/fleet" element={<FleetMapPage />} />
                     </Route>
                 </Routes>
             </BrowserRouter>
