@@ -5,7 +5,7 @@ interface AuthContextType {
     user: MeResponse | null;
     loading: boolean;
     isAuthenticated: boolean;
-    setToken: (token: string) => void;
+    setToken: (token: string) => Promise<void>;
     logout: () => void;
     refreshUser: () => Promise<void>;
 }
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         try {
             const me = await getMe();
-            if (me.role !== 'ADMIN') {
+            if (me.role !== 'ADMIN' && me.role !== 'COMMUNITY_ADMIN') {
                 localStorage.removeItem('access_token');
                 setUser(null);
             } else {
@@ -43,9 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshUser();
     }, [refreshUser]);
 
-    const setToken = (token: string) => {
+    const setToken = async (token: string) => {
         localStorage.setItem('access_token', token);
-        refreshUser();
+        await refreshUser();
     };
 
     const logout = async () => {

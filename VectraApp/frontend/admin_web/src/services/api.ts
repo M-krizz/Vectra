@@ -6,7 +6,18 @@ interface FetchOptions {
     headers?: Record<string, string>;
 }
 
+import { mockApiFetch } from './mockApi';
+
+// ==========================================
+// FEATURE FLAG: USE MOCK DATA INSTEAD OF REAL SERVER
+const IS_MOCK_MODE = false;
+// ==========================================
+
 async function apiFetch<T = unknown>(path: string, opts: FetchOptions = {}): Promise<T> {
+    if (IS_MOCK_MODE) {
+        return mockApiFetch<T>(path, opts);
+    }
+
     const token = localStorage.getItem('access_token');
 
     const headers: Record<string, string> = {

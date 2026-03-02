@@ -18,7 +18,7 @@ export default function LoginPage() {
 
         try {
             const res = await login(email, password);
-            setToken(res.accessToken);
+            await setToken(res.accessToken);
             navigate('/', { replace: true });
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Login failed');
