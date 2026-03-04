@@ -8,7 +8,10 @@ import {
     type UserDetails,
 } from '../services/userService';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function UsersPage() {
+    const { user: currentUser } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -121,10 +124,10 @@ export default function UsersPage() {
                                         <td>
                                             <span
                                                 className={`badge ${u.role === 'ADMIN'
-                                                        ? 'info'
-                                                        : u.role === 'DRIVER'
-                                                            ? 'success'
-                                                            : 'neutral'
+                                                    ? 'info'
+                                                    : u.role === 'DRIVER'
+                                                        ? 'success'
+                                                        : 'neutral'
                                                     }`}
                                             >
                                                 {u.role}
@@ -241,10 +244,10 @@ export default function UsersPage() {
                                             <span className="detail-value">
                                                 <span
                                                     className={`badge ${selectedUser.driverProfile.verificationStatus === 'APPROVED'
-                                                            ? 'success'
-                                                            : selectedUser.driverProfile.verificationStatus === 'REJECTED'
-                                                                ? 'danger'
-                                                                : 'warning'
+                                                        ? 'success'
+                                                        : selectedUser.driverProfile.verificationStatus === 'REJECTED'
+                                                            ? 'danger'
+                                                            : 'warning'
                                                         }`}
                                                 >
                                                     {selectedUser.driverProfile.verificationStatus}
@@ -275,21 +278,23 @@ export default function UsersPage() {
                                     <button className="btn btn-ghost" onClick={() => setSelectedUser(null)}>
                                         Close
                                     </button>
-                                    {selectedUser.user.isSuspended ? (
-                                        <button
-                                            className="btn btn-success"
-                                            onClick={handleReinstate}
-                                            disabled={actionLoading}
-                                        >
-                                            {actionLoading ? 'Reinstating…' : '✓ Reinstate'}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            className="btn btn-danger"
-                                            onClick={() => setShowSuspendModal(true)}
-                                        >
-                                            🚫 Suspend
-                                        </button>
+                                    {currentUser?.role === 'ADMIN' && (
+                                        selectedUser.user.isSuspended ? (
+                                            <button
+                                                className="btn btn-success"
+                                                onClick={handleReinstate}
+                                                disabled={actionLoading}
+                                            >
+                                                {actionLoading ? 'Reinstating…' : '✓ Reinstate'}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn btn-danger"
+                                                onClick={() => setShowSuspendModal(true)}
+                                            >
+                                                🚫 Suspend
+                                            </button>
+                                        )
                                     )}
                                 </div>
                             </>
