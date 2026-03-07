@@ -47,9 +47,11 @@ import { RolesGuard } from './common/roles.guard';
       RoleChangeAuditEntity,
     ]),
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_ACCESS_SECRET || 'fallback_secret',
-      signOptions: { expiresIn: 900 },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_ACCESS_SECRET || 'fallback_secret',
+        signOptions: { expiresIn: 900 },
+      }),
     }),
   ],
   controllers: [
@@ -83,4 +85,4 @@ import { RolesGuard } from './common/roles.guard';
     TypeOrmModule,
   ],
 })
-export class AuthenticationModule {}
+export class AuthenticationModule { }

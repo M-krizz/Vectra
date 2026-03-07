@@ -134,3 +134,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 11) Default Admin User Seeding
+INSERT INTO users (role, email, phone, name, status, password_hash)
+VALUES ('ADMIN', 'admin@vectra.app', '+10000000000', 'Vectra Superadmin', 'ACTIVE', '$2b$10$/I0kRIJakPc9nUoiw1kgTLUYM4.lESOqqQiS4gC2t1wY3/O/RcihC')
+ON CONFLICT (email) DO NOTHING;
