@@ -17,6 +17,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { LocationModule } from './modules/location/location.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { PoolingModule } from './modules/pooling/pooling.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ dotenv.config();
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: false, // ✅ IMPORTANT: migrations control the schema
+      synchronize: false, // migrations control the schema
     }),
 
     // Authentication (users, drivers, admin, rbac, profile, compliance)
@@ -54,6 +55,9 @@ dotenv.config();
 
     // Safety
     SafetyModule,
+
+    // Admin Dashboard
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [
