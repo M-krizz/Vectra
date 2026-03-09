@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,7 +18,7 @@ export class PoolingManager {
     @InjectRepository(RideRequestEntity)
     private readonly requestRepo: Repository<RideRequestEntity>,
     private readonly poolingService: PoolingService,
-  ) {}
+  ) { }
 
   /**
    * Main Pooling Loop: Runs every 10 seconds
