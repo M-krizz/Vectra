@@ -44,13 +44,13 @@ We welcome contributions that improve documentation — whether it's fixing typo
 
 Make sure you have the following installed on your machine:
 
-| Tool       | Version   | Purpose                            |
-|------------|-----------|------------------------------------|
-| **Node.js**    | >= 18.x   | Backend runtime                    |
-| **npm**        | >= 9.x    | Package management                 |
-| **Docker** & **Docker Compose** | Latest | PostgreSQL + Redis containers |
-| **Flutter**    | >= 3.x    | Frontend mobile & web apps         |
-| **Git**        | Latest    | Version control                    |
+| Tool                            | Version | Purpose                       |
+| ------------------------------- | ------- | ----------------------------- |
+| **Node.js**                     | >= 18.x | Backend runtime               |
+| **npm**                         | >= 9.x  | Package management            |
+| **Docker** & **Docker Compose** | Latest  | PostgreSQL + Redis containers |
+| **Flutter**                     | >= 3.x  | Frontend mobile & web apps    |
+| **Git**                         | Latest  | Version control               |
 
 ### Dev Environment Setup
 

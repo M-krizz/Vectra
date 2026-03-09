@@ -1,16 +1,10 @@
 {
-  "roots": [
-    "shared"
-  ],
+  "roots": ["shared"],
   "packages": [
     {
       "name": "shared",
       "version": "0.0.0",
-      "dependencies": [
-        "dio",
-        "flutter",
-        "flutter_secure_storage"
-      ],
+      "dependencies": ["dio", "flutter", "flutter_secure_storage"],
       "devDependencies": []
     },
     {
@@ -43,9 +37,7 @@
     {
       "name": "material_color_utilities",
       "version": "0.11.1",
-      "dependencies": [
-        "collection"
-      ]
+      "dependencies": ["collection"]
     },
     {
       "name": "collection",
@@ -95,40 +87,27 @@
     {
       "name": "flutter_secure_storage_platform_interface",
       "version": "1.1.2",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
+      "dependencies": ["flutter", "plugin_platform_interface"]
     },
     {
       "name": "flutter_secure_storage_macos",
       "version": "3.1.3",
-      "dependencies": [
-        "flutter",
-        "flutter_secure_storage_platform_interface"
-      ]
+      "dependencies": ["flutter", "flutter_secure_storage_platform_interface"]
     },
     {
       "name": "flutter_web_plugins",
       "version": "0.0.0",
-      "dependencies": [
-        "flutter"
-      ]
+      "dependencies": ["flutter"]
     },
     {
       "name": "flutter_secure_storage_linux",
       "version": "1.2.3",
-      "dependencies": [
-        "flutter",
-        "flutter_secure_storage_platform_interface"
-      ]
+      "dependencies": ["flutter", "flutter_secure_storage_platform_interface"]
     },
     {
       "name": "js",
       "version": "0.6.7",
-      "dependencies": [
-        "meta"
-      ]
+      "dependencies": ["meta"]
     },
     {
       "name": "path",
@@ -143,9 +122,7 @@
     {
       "name": "plugin_platform_interface",
       "version": "2.1.8",
-      "dependencies": [
-        "meta"
-      ]
+      "dependencies": ["meta"]
     },
     {
       "name": "dio",
@@ -163,12 +140,7 @@
     {
       "name": "dio_web_adapter",
       "version": "2.1.1",
-      "dependencies": [
-        "dio",
-        "http_parser",
-        "meta",
-        "web"
-      ]
+      "dependencies": ["dio", "http_parser", "meta", "web"]
     },
     {
       "name": "web",
@@ -188,24 +160,17 @@
     {
       "name": "typed_data",
       "version": "1.4.0",
-      "dependencies": [
-        "collection"
-      ]
+      "dependencies": ["collection"]
     },
     {
       "name": "async",
       "version": "2.13.0",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
+      "dependencies": ["collection", "meta"]
     },
     {
       "name": "string_scanner",
       "version": "1.4.1",
-      "dependencies": [
-        "source_span"
-      ]
+      "dependencies": ["source_span"]
     },
     {
       "name": "mime",
@@ -215,11 +180,7 @@
     {
       "name": "source_span",
       "version": "1.10.2",
-      "dependencies": [
-        "collection",
-        "path",
-        "term_glyph"
-      ]
+      "dependencies": ["collection", "path", "term_glyph"]
     },
     {
       "name": "term_glyph",
@@ -262,11 +223,7 @@
     {
       "name": "path_provider_platform_interface",
       "version": "2.1.2",
-      "dependencies": [
-        "flutter",
-        "platform",
-        "plugin_platform_interface"
-      ]
+      "dependencies": ["flutter", "platform", "plugin_platform_interface"]
     },
     {
       "name": "path_provider_foundation",
@@ -306,9 +263,7 @@
     {
       "name": "pub_semver",
       "version": "2.2.0",
-      "dependencies": [
-        "collection"
-      ]
+      "dependencies": ["collection"]
     },
     {
       "name": "logging",
@@ -318,10 +273,7 @@
     {
       "name": "code_assets",
       "version": "1.0.0",
-      "dependencies": [
-        "collection",
-        "hooks"
-      ]
+      "dependencies": ["collection", "hooks"]
     },
     {
       "name": "hooks",
@@ -338,37 +290,22 @@
     {
       "name": "yaml",
       "version": "3.1.3",
-      "dependencies": [
-        "collection",
-        "source_span",
-        "string_scanner"
-      ]
+      "dependencies": ["collection", "source_span", "string_scanner"]
     },
     {
       "name": "crypto",
       "version": "3.0.7",
-      "dependencies": [
-        "typed_data"
-      ]
+      "dependencies": ["typed_data"]
     },
     {
       "name": "glob",
       "version": "2.1.3",
-      "dependencies": [
-        "async",
-        "collection",
-        "file",
-        "path",
-        "string_scanner"
-      ]
+      "dependencies": ["async", "collection", "file", "path", "string_scanner"]
     },
     {
       "name": "file",
       "version": "7.0.1",
-      "dependencies": [
-        "meta",
-        "path"
-      ]
+      "dependencies": ["meta", "path"]
     },
     {
       "name": "platform",
@@ -378,25 +315,17 @@
     {
       "name": "xdg_directories",
       "version": "1.1.0",
-      "dependencies": [
-        "meta",
-        "path"
-      ]
+      "dependencies": ["meta", "path"]
     },
     {
       "name": "path_provider_android",
       "version": "2.2.22",
-      "dependencies": [
-        "flutter",
-        "path_provider_platform_interface"
-      ]
+      "dependencies": ["flutter", "path_provider_platform_interface"]
     },
     {
       "name": "win32",
       "version": "5.15.0",
-      "dependencies": [
-        "ffi"
-      ]
+      "dependencies": ["ffi"]
     }
   ],
   "configVersion": 1
