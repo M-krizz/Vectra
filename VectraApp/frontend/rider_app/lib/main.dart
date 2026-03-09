@@ -8,6 +8,8 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/repository/auth_repository.dart';
 import 'features/ride/bloc/ride_bloc.dart';
 import 'features/ride/repository/places_repository.dart';
+import 'features/ride/repository/ride_repository.dart';
+import 'core/socket/socket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +46,12 @@ class VectraRiderApp extends StatelessWidget {
         RepositoryProvider<PlacesRepository>(
           create: (context) => PlacesRepository(),
         ),
+        RepositoryProvider<RideRepository>(
+          create: (context) => RideRepository(apiClient: apiClient),
+        ),
+        RepositoryProvider<SocketService>(
+          create: (context) => SocketService(storageService: storageService)..connect(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -54,7 +62,11 @@ class VectraRiderApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (context) =>
-                RideBloc(placesRepository: context.read<PlacesRepository>()),
+                RideBloc(
+                  placesRepository: context.read<PlacesRepository>(),
+                  rideRepository: context.read<RideRepository>(),
+                  socketService: context.read<SocketService>(),
+                ),
           ),
         ],
         child: const _AppView(),

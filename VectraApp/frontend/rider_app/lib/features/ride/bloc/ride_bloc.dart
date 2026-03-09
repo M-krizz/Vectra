@@ -5,6 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/place_model.dart';
 import '../repository/places_repository.dart';
+import '../repository/ride_repository.dart';
+import '../../../core/socket/socket_service.dart';
 
 part 'ride_event.dart';
 part 'ride_state.dart';
@@ -12,14 +14,51 @@ part 'ride_state.dart';
 /// BLoC for managing ride booking flow
 class RideBloc extends Bloc<RideEvent, RideState> {
   final PlacesRepository _placesRepository;
-  Timer? _driverSearchTimer;
-  Timer? _driverMovementTimer;
+  final RideRepository _rideRepository;
+  final SocketService _socketService;
+  StreamSubscription? _rideStatusSubscription;
+  StreamSubscription? _driverLocationSubscription;
   Timer? _rideProgressTimer;
   int _arrivalCountdown = 5; // Minutes until driver arrives
 
-  RideBloc({required PlacesRepository placesRepository})
-    : _placesRepository = placesRepository,
-      super(const RideState()) {
+  RideBloc({
+    required PlacesRepository placesRepository,
+    required RideRepository rideRepository,
+    required SocketService socketService,
+  }) : _placesRepository = placesRepository,
+       _rideRepository = rideRepository,
+       _socketService = socketService,
+       super(const RideState()) {
+    
+    // Listen to real backend socket events
+    _rideStatusSubscription = _socketService.rideStatusStream.listen((data) {
+      if (data['status'] == 'ARRIVING') {
+        final driverData = data['data']?['driver'] ?? {};
+        final driver = DriverInfo(
+          id: driverData['id'] ?? 'driver_real',
+          name: driverData['name'] ?? 'Assigned Driver',
+          phone: driverData['phone'] ?? '+91 9999999999',
+          vehicleNumber: driverData['vehicleNumber'] ?? 'TN 01 A 1234',
+          vehicleModel: driverData['vehicleModel'] ?? 'Sedan',
+          vehicleColor: driverData['vehicleColor'] ?? 'White',
+          rating: 4.8,
+          location: LatLng(12.9716, 77.5946), // default temp
+        );
+        add(RideDriverFound(driver));
+      } else if (data['status'] == 'ARRIVED') {
+        add(const RideDriverArrived());
+      } else if (data['status'] == 'COMPLETED') {
+        add(RideCompleted(state.selectedVehicle?.fare ?? 0));
+      } else if (data['status'] == 'CANCELLED') {
+        add(const RideCancelled('Cancelled by driver'));
+      }
+    });
+
+    _driverLocationSubscription = _socketService.driverLocationStream.listen((data) {
+      if (data['latitude'] != null && data['longitude'] != null) {
+        add(RideDriverLocationUpdated(LatLng(data['latitude'], data['longitude'])));
+      }
+    });
     on<RidePickupSet>(_onPickupSet);
     on<RideDestinationSet>(_onDestinationSet);
     on<RidePickupCleared>(_onPickupCleared);
@@ -237,29 +276,24 @@ class RideBloc extends Bloc<RideEvent, RideState> {
       state.copyWith(
         status: RideStatus.searching,
         isLoading: true,
-        rideId: 'RIDE_${DateTime.now().millisecondsSinceEpoch}',
       ),
     );
 
-    // Simulate driver search (3-8 seconds)
-    final searchDuration = Duration(seconds: 3 + Random().nextInt(5));
-    _driverSearchTimer = Timer(searchDuration, () {
-      // Create mock driver
-      final mockDriver = DriverInfo(
-        id: 'driver_${Random().nextInt(1000)}',
-        name: _mockDriverNames[Random().nextInt(_mockDriverNames.length)],
-        phone: '+91 98765 ${Random().nextInt(90000) + 10000}',
-        vehicleNumber:
-            'TN ${Random().nextInt(90) + 10} ${_randomLetters()} ${Random().nextInt(9000) + 1000}',
-        vehicleModel:
-            _mockVehicleModels[Random().nextInt(_mockVehicleModels.length)],
-        vehicleColor: _mockColors[Random().nextInt(_mockColors.length)],
-        rating: 4.0 + Random().nextDouble(),
-        location: _getRandomNearbyLocation(state.pickup!.location!),
+    try {
+      final res = await _rideRepository.requestRide(
+        pickup: state.pickup!,
+        destination: state.destination!,
+        rideType: state.rideType,
+        vehicleId: state.selectedVehicle?.id,
+        estimatedFare: state.selectedVehicle?.fare ?? 0.0,
+        distanceMeters: state.route?.distanceMeters.toDouble() ?? 0.0,
       );
-
-      add(RideDriverFound(mockDriver));
-    });
+      
+      emit(state.copyWith(rideId: res['rideId'] ?? 'RIDE_${DateTime.now().millisecondsSinceEpoch}'));
+      // Driver search will now be answered via socket event (RideDriverFound)
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed: $e', status: RideStatus.selectingVehicle, isLoading: false));
+    }
   }
 
   void _onDriverFound(RideDriverFound event, Emitter<RideState> emit) {
@@ -466,8 +500,8 @@ class RideBloc extends Bloc<RideEvent, RideState> {
 
   @override
   Future<void> close() {
-    _driverSearchTimer?.cancel();
-    _driverMovementTimer?.cancel();
+    _rideStatusSubscription?.cancel();
+    _driverLocationSubscription?.cancel();
     _rideProgressTimer?.cancel();
     return super.close();
   }

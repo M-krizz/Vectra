@@ -51,7 +51,7 @@ class SocketService {
     }
 
     _socket = io.io(
-      'wss://api.vectra.com',
+      ApiEndpoints.wsUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
@@ -161,7 +161,7 @@ class SocketService {
   // --- Mock Simulation Logic ---
 
   Timer? _simulationTimer;
-  bool _isSimulationMode = true; // Force simulation for now
+  bool _isSimulationMode = false; // Simulation disabled
 
   void startSimulation() {
     if (!_isSimulationMode) return;
