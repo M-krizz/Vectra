@@ -36,7 +36,7 @@ export class PoolingService {
     private readonly tripRiderRepo: Repository<TripRiderEntity>,
     private readonly dataSource: DataSource,
     // private readonly mlClient: MlClientService,
-  ) { }
+  ) {}
 
   /**
    * Adaptive Radius Search for Pooling Candidates

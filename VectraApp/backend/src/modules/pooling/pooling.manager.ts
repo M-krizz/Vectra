@@ -18,7 +18,7 @@ export class PoolingManager {
     @InjectRepository(RideRequestEntity)
     private readonly requestRepo: Repository<RideRequestEntity>,
     private readonly poolingService: PoolingService,
-  ) { }
+  ) {}
 
   /**
    * Main Pooling Loop: Runs every 10 seconds
