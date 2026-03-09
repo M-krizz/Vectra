@@ -10,6 +10,9 @@ import 'features/ride/bloc/ride_bloc.dart';
 import 'features/ride/repository/places_repository.dart';
 import 'features/ride/repository/ride_repository.dart';
 import 'core/socket/socket_service.dart';
+import 'features/profile/repository/saved_places_repository.dart';
+import 'features/profile/bloc/saved_places_bloc.dart';
+import 'features/profile/bloc/saved_places_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +20,6 @@ void main() async {
   // Initialize services
   final storageService = StorageService.getInstance();
   final apiClient = ApiClient.getInstance(storageService);
-
   runApp(VectraRiderApp(storageService: storageService, apiClient: apiClient));
 }
 
@@ -26,7 +28,7 @@ class VectraRiderApp extends StatelessWidget {
   final ApiClient apiClient;
 
   const VectraRiderApp({
-    super.key,
+    super.key,  
     required this.storageService,
     required this.apiClient,
   });
@@ -52,6 +54,9 @@ class VectraRiderApp extends StatelessWidget {
         RepositoryProvider<SocketService>(
           create: (context) => SocketService(storageService: storageService)..connect(),
         ),
+        RepositoryProvider<SavedPlacesRepository>(
+          create: (context) => SavedPlacesRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -67,6 +72,11 @@ class VectraRiderApp extends StatelessWidget {
                   rideRepository: context.read<RideRepository>(),
                   socketService: context.read<SocketService>(),
                 ),
+          ),
+          BlocProvider(
+            create: (context) =>
+                SavedPlacesBloc(repository: context.read<SavedPlacesRepository>())
+                  ..add(LoadSavedPlaces()),
           ),
         ],
         child: const _AppView(),

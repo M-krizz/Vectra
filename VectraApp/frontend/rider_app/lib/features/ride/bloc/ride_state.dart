@@ -68,6 +68,7 @@ enum RideStatus {
   routeCalculated, // Route has been calculated, showing on map
   selectingVehicle, // User is selecting vehicle type
   searching, // Searching for a driver
+  noDriversFound, // Request timed out with no driver accepting
   driverFound, // Driver has been found, en route to pickup
   arrived, // Driver has arrived at pickup
   inProgress, // Ride is in progress

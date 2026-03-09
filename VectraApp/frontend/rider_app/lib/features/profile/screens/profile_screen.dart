@@ -1,322 +1,234 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../config/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
-import '../../history/screens/ride_history_screen.dart';
-import 'edit_profile_screen.dart';
-import 'saved_places_screen.dart';
-import 'payment_methods_screen.dart';
+import 'settings_screen.dart';
 
-/// User profile screen with settings and options
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          final user = state is AuthAuthenticated ? state.user : null;
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        final user = state is AuthAuthenticated ? state.user : null;
+        final memberSince = 'February 2026';
 
-          return SingleChildScrollView(
-            child: Column(
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: const Row(
               children: [
-                // Profile header
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 36,
-                        backgroundColor: Colors.grey.shade200,
-                        child: const Icon(Icons.person, size: 40),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user?.fullName ?? 'User',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              user?.phone ?? '+91 XXXXX XXXXX',
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                            Text(
-                              user?.email ?? 'user@example.com',
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const EditProfileScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.edit),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Menu items
-                _buildSection(
-                  context,
-                  title: 'Account',
-                  items: [
-                    _MenuItem(
-                      icon: Icons.history,
-                      title: 'My Rides',
-                      subtitle: 'View your ride history',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RideHistoryScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuItem(
-                      icon: Icons.bookmark_outline,
-                      title: 'Saved Places',
-                      subtitle: 'Home, Work, and favorites',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SavedPlacesScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuItem(
-                      icon: Icons.payment,
-                      title: 'Payment Methods',
-                      subtitle: 'Manage your payment options',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PaymentMethodsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildSection(
-                  context,
-                  title: 'Preferences',
-                  items: [
-                    _MenuItem(
-                      icon: Icons.notifications_outlined,
-                      title: 'Notifications',
-                      subtitle: 'Manage notification settings',
-                      onTap: () {
-                        _showComingSoon(context);
-                      },
-                    ),
-                    _MenuItem(
-                      icon: Icons.language,
-                      title: 'Language',
-                      subtitle: 'English',
-                      onTap: () {
-                        _showComingSoon(context);
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildSection(
-                  context,
-                  title: 'Support',
-                  items: [
-                    _MenuItem(
-                      icon: Icons.help_outline,
-                      title: 'Help & Support',
-                      onTap: () {
-                        _showComingSoon(context);
-                      },
-                    ),
-                    _MenuItem(
-                      icon: Icons.info_outline,
-                      title: 'About',
-                      onTap: () {
-                        showAboutDialog(
-                          context: context,
-                          applicationName: 'Vectra Rider',
-                          applicationVersion: '1.0.0',
-                          applicationIcon: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.directions_car,
-                              color: Colors.white,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuItem(
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'Privacy Policy',
-                      onTap: () {
-                        _showComingSoon(context);
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Logout button
-                Container(
-                  color: Colors.white,
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      _showLogoutDialog(context);
-                    },
-                    icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text(
-                      'Logout',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Version
+                Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                SizedBox(width: 8),
                 Text(
-                  'Version 1.0.0',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  'Profile',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 32),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required List<_MenuItem> items,
-  }) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(height: 1, color: AppColors.border),
             ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.settings_outlined, size: 16),
+                  label: const Text('Settings'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+            ],
           ),
-          ...items.map((item) => _buildMenuItem(context, item)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(BuildContext context, _MenuItem item) {
-    return ListTile(
-      leading: Icon(item.icon, color: Colors.grey.shade700),
-      title: Text(item.title),
-      subtitle: item.subtitle != null
-          ? Text(
-              item.subtitle!,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-            )
-          : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-      onTap: item.onTap,
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Coming soon!')));
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+          body: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: [
+              // ── Profile fields ─────────────────────────────────────────
+              _ProfileTile(
+                icon: Icons.person_outline_rounded,
+                title: 'Name',
+                value: user?.fullName ?? 'User',
+                editable: true,
+                onTap: () {},
+              ),
+              _ProfileTile(
+                icon: Icons.phone_outlined,
+                title: 'Phone Number',
+                value: user?.phone ?? '+91 XXXXX XXXXX',
+                editable: false,
+              ),
+              _ProfileTile(
+                icon: Icons.mail_outline_rounded,
+                title: 'Email',
+                value: user?.email ?? 'user@example.com',
+                editable: true,
+                onTap: () {},
+              ),
+              _ProfileTile(
+                icon: Icons.person_pin_outlined,
+                title: 'Gender',
+                value: 'Not set',
+                editable: false,
+              ),
+              _ProfileTile(
+                icon: Icons.calendar_today_outlined,
+                title: 'Date of Birth',
+                value: 'Not set',
+                editable: true,
+                onTap: () {},
+              ),
+              _ProfileTile(
+                icon: Icons.verified_user_outlined,
+                title: 'Member Since',
+                value: memberSince,
+                editable: false,
+              ),
+              _EmergencyContactTile(),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<AuthBloc>().add(AuthLogoutRequested());
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _MenuItem {
+// ─── Profile tile ──────────────────────────────────────────────────────────
+
+class _ProfileTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String? subtitle;
-  final VoidCallback onTap;
+  final String value;
+  final bool editable;
+  final VoidCallback? onTap;
 
-  const _MenuItem({
+  const _ProfileTile({
     required this.icon,
     required this.title,
-    this.subtitle,
-    required this.onTap,
+    required this.value,
+    required this.editable,
+    this.onTap,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: editable ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, size: 22, color: AppColors.textSecondary),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (editable)
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 20),
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 1, indent: 58, endIndent: 0, color: AppColors.divider),
+      ],
+    );
+  }
+}
+
+// ─── Emergency contact tile ────────────────────────────────────────────────
+
+class _EmergencyContactTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Emergency contact — coming soon!')),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, size: 22, color: AppColors.textSecondary),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Emergency contact',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Required',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              'Add',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
