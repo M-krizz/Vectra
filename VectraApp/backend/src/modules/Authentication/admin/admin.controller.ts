@@ -1,9 +1,11 @@
 import {
   Controller,
   Get,
+  Patch,
   Post,
   Body,
   Param,
+  Query,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -30,6 +32,29 @@ export class AdminController {
     return this.adminService.getUserDetails(userId);
   }
 
+  @Get('metrics/overview')
+  getMetricsOverview() {
+    return this.adminService.getMetricsOverview();
+  }
+
+  @Get('drivers/pending')
+  listPendingDrivers() {
+    return this.adminService.listPendingDrivers();
+  }
+
+  @Patch('drivers/:id/status')
+  updateDriverStatus(
+    @Param('id') id: string,
+    @Body() body: { status: 'APPROVED' | 'REJECTED' },
+    @Req() req: { user: { userId: string } },
+  ) {
+    return this.adminService.updateDriverApprovalStatus(
+      id,
+      body.status,
+      req.user.userId,
+    );
+  }
+
   @Post('users/suspend')
   suspendUser(
     @Body() dto: SuspendUserDto,
@@ -48,5 +73,15 @@ export class AdminController {
     @Req() req: { user: { userId: string } },
   ) {
     return this.adminService.reinstateUser(userId, req.user.userId);
+  }
+
+  @Get('trips')
+  listAllTrips(@Query('status') status?: string) {
+    return this.adminService.listAllTrips(status);
+  }
+
+  @Get('incentives')
+  listAllIncentives() {
+    return this.adminService.listAllIncentives();
   }
 }
