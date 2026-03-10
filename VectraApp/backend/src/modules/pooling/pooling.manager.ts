@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository } from 'typeorm';
 import { RideRequestEntity } from '../ride_requests/ride-request.entity';
 import { RideRequestStatus, RideType } from '../ride_requests/ride-request.enums';
 import { PoolingService } from './pooling.service';
+import { LocationGateway } from '../location/location.gateway';
 
 @Injectable()
 export class PoolingManager {
@@ -14,6 +15,7 @@ export class PoolingManager {
         @InjectRepository(RideRequestEntity)
         private readonly requestRepo: Repository<RideRequestEntity>,
         private readonly poolingService: PoolingService,
+        private readonly locationGateway: LocationGateway,
     ) { }
 
     /**
@@ -70,19 +72,17 @@ export class PoolingManager {
     }
 
     private async handleTimeout(req: RideRequestEntity) {
-        // Per V1: Do not auto-convert to SOLO. Ask user.
-        // Emit event: POOL_TIMEOUT_CHOICE_REQUIRED
-        this.logger.log(`Request ${req.id} timed out searching for pool. Emitting choice event.`);
-        // TODO: Emit Websocket event to learner
-        // For now, we just log it. We might update status to 'EXPIRED' if we want to stop processing it?
-        // Or keep it REQUESTED but stop expanding radius?
+        this.logger.log(`Request ${req.id} timed out searching for a pool — marking EXPIRED`);
 
-        // If we don't update status, this loop will pick it up again.
-        // We should probably have a 'TIMEOUT_DECISION_PENDING' status or flag.
-        // For V1 simple impl, we can leave it or mark EXPIRED.
-        // Let's mark EXPIRED for now to stop the loop spamming.
+        req.status = RideRequestStatus.EXPIRED;
+        await this.requestRepo.save(req);
 
-        // req.status = RideRequestStatus.EXPIRED;
-        // await this.requestRepo.save(req);
+        // Notify rider via socket so the app can show a dialog
+        this.locationGateway.server
+            ?.to(`user:${req.riderUserId}`)
+            .emit('pool_timeout', {
+                requestId: req.id,
+                message: 'No pool match found. Please create a new ride request.',
+            });
     }
 }

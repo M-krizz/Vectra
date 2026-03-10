@@ -7,6 +7,8 @@ import { TripEntity } from '../trips/trip.entity';
 import { TripRiderEntity } from '../trips/trip-rider.entity';
 import { PoolingManager } from './pooling.manager';
 import { MlClientModule } from '../../integrations/ml-client/ml-client.module';
+import { PoolingController } from './pooling.controller';
+import { LocationModule } from '../location/location.module';
 
 @Module({
     imports: [
@@ -17,7 +19,9 @@ import { MlClientModule } from '../../integrations/ml-client/ml-client.module';
             TripRiderEntity,
         ]),
         MlClientModule,
+        LocationModule,
     ],
+    controllers: [PoolingController],
     providers: [PoolingService, PoolingManager],
     exports: [PoolingService],
 })
