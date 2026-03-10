@@ -17,6 +17,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { LocationModule } from './modules/location/location.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { PoolingModule } from './modules/pooling/pooling.module';
+import { RealtimeModule } from './realtime/realtime.module';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ dotenv.config();
     // Real-time features
     ChatModule,
     LocationModule,
+    RealtimeModule,
 
     // Safety
     SafetyModule,
@@ -68,4 +70,4 @@ dotenv.config();
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

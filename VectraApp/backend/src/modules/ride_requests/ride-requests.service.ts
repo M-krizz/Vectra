@@ -5,6 +5,7 @@ import { RideRequestEntity } from './ride-request.entity';
 import { RideRequestStatus, VehicleType } from './ride-request.enums';
 import { CreateRideRequestDto } from './dto/create-ride-request.dto';
 import { GeoPoint } from '../../common/types/geo-point.type';
+import { SocketGateway } from '../../realtime/socket.gateway';
 
 @Injectable()
 export class RideRequestsService {
@@ -13,7 +14,8 @@ export class RideRequestsService {
   constructor(
     @InjectRepository(RideRequestEntity)
     private readonly rideRequestsRepo: Repository<RideRequestEntity>,
-  ) {}
+    private readonly socketGateway: SocketGateway,
+  ) { }
 
   async createRequest(
     userId: string,
@@ -30,7 +32,9 @@ export class RideRequestsService {
       status: RideRequestStatus.REQUESTED,
     });
 
-    return this.rideRequestsRepo.save(rideRequest);
+    const saved = await this.rideRequestsRepo.save(rideRequest);
+    this.socketGateway.emitTripStatus(saved.id, 'REQUESTED', { rideRequest: saved });
+    return saved;
   }
 
   async getRequest(id: string): Promise<RideRequestEntity | null> {
@@ -54,5 +58,6 @@ export class RideRequestsService {
       { id, riderUserId: userId },
       { status: RideRequestStatus.CANCELLED },
     );
+    this.socketGateway.emitTripStatus(id, 'CANCELLED', { reason: 'Cancelled by rider' });
   }
 }

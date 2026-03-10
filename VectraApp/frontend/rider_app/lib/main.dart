@@ -10,6 +10,7 @@ import 'features/ride/bloc/ride_bloc.dart';
 import 'features/ride/repository/places_repository.dart';
 import 'features/ride/repository/ride_repository.dart';
 import 'core/socket/socket_service.dart';
+import 'features/ride/services/trip_socket_service.dart';
 import 'features/profile/repository/saved_places_repository.dart';
 import 'features/profile/bloc/saved_places_bloc.dart';
 import 'features/profile/bloc/saved_places_event.dart';
@@ -54,6 +55,15 @@ class VectraRiderApp extends StatelessWidget {
         RepositoryProvider<SocketService>(
           create: (context) => SocketService(storageService: storageService)..connect(),
         ),
+        RepositoryProvider<TripSocketService>(
+          create: (context) {
+            final service = TripSocketService(baseUrl: ApiConstants.baseUrl);
+            storageService.getAccessToken().then((token) {
+              if (token != null) service.connect(token: token);
+            });
+            return service;
+          },
+        ),
         RepositoryProvider<SavedPlacesRepository>(
           create: (context) => SavedPlacesRepository(),
         ),
@@ -70,7 +80,7 @@ class VectraRiderApp extends StatelessWidget {
                 RideBloc(
                   placesRepository: context.read<PlacesRepository>(),
                   rideRepository: context.read<RideRepository>(),
-                  socketService: context.read<SocketService>(),
+                  tripSocketService: context.read<TripSocketService>(),
                 ),
           ),
           BlocProvider(

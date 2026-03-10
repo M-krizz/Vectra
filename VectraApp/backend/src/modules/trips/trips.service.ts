@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TripEntity } from './trip.entity';
 import { TripEventEntity } from './trip-event.entity';
+import { SocketGateway } from '../../realtime/socket.gateway';
 
 @Injectable()
 export class TripsService {
@@ -11,7 +12,8 @@ export class TripsService {
     private readonly tripRepo: Repository<TripEntity>,
     @InjectRepository(TripEventEntity)
     private readonly eventRepo: Repository<TripEventEntity>,
-  ) {}
+    private readonly socketGateway: SocketGateway,
+  ) { }
 
   async getTrip(id: string) {
     const trip = await this.tripRepo.findOne({
@@ -45,6 +47,7 @@ export class TripsService {
       eventType: 'DRIVER_LOCATION',
       metadata: { lat, lng },
     });
-    await this.eventRepo.save(event);
+    const savedEvent = await this.eventRepo.save(event);
+    this.socketGateway.emitLocationUpdate(id, lat, lng);
   }
 }

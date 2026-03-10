@@ -6,7 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/place_model.dart';
 import '../repository/places_repository.dart';
 import '../repository/ride_repository.dart';
-import '../../../core/socket/socket_service.dart';
+import '../services/trip_socket_service.dart';
 
 part 'ride_event.dart';
 part 'ride_state.dart';
@@ -15,47 +15,34 @@ part 'ride_state.dart';
 class RideBloc extends Bloc<RideEvent, RideState> {
   final PlacesRepository _placesRepository;
   final RideRepository _rideRepository;
-  final SocketService _socketService;
+  final TripSocketService _tripSocketService;
   StreamSubscription? _rideStatusSubscription;
   StreamSubscription? _driverLocationSubscription;
 
   RideBloc({
     required PlacesRepository placesRepository,
     required RideRepository rideRepository,
-    required SocketService socketService,
+    required TripSocketService tripSocketService,
   }) : _placesRepository = placesRepository,
        _rideRepository = rideRepository,
-       _socketService = socketService,
+       _tripSocketService = tripSocketService,
        super(const RideState()) {
     
     // Listen to real backend socket events
-    _rideStatusSubscription = _socketService.rideStatusStream.listen((data) {
-      if (data['status'] == 'ARRIVING') {
-        final driverData = data['data']?['driver'] ?? {};
-        final driver = DriverInfo(
-          id: driverData['id'] ?? 'driver_real',
-          name: driverData['name'] ?? 'Assigned Driver',
-          phone: driverData['phone'] ?? '+91 9999999999',
-          vehicleNumber: driverData['vehicleNumber'] ?? 'TN 01 A 1234',
-          vehicleModel: driverData['vehicleModel'] ?? 'Sedan',
-          vehicleColor: driverData['vehicleColor'] ?? 'White',
-          rating: 4.8,
-          location: LatLng(12.9716, 77.5946), // default temp
-        );
-        add(RideDriverFound(driver));
-      } else if (data['status'] == 'ARRIVED') {
-        add(const RideDriverArrived());
-      } else if (data['status'] == 'COMPLETED') {
-        add(RideCompleted(state.selectedVehicle?.fare ?? 0));
-      } else if (data['status'] == 'CANCELLED') {
-        add(const RideCancelled('Cancelled by driver'));
-      }
+    _rideStatusSubscription = _tripSocketService.tripStatusStream.listen((event) {
+      add(RideSocketStatusReceived(
+        tripId: event.tripId,
+        status: event.status,
+        payload: event.payload,
+      ));
     });
 
-    _driverLocationSubscription = _socketService.driverLocationStream.listen((data) {
-      if (data['latitude'] != null && data['longitude'] != null) {
-        add(RideDriverLocationUpdated(LatLng(data['latitude'], data['longitude'])));
-      }
+    _driverLocationSubscription = _tripSocketService.locationStream.listen((event) {
+      add(RideSocketLocationReceived(
+        lat: event.lat,
+        lng: event.lng,
+        etaSeconds: event.etaSeconds,
+      ));
     });
     on<RidePickupSet>(_onPickupSet);
     on<RideDestinationSet>(_onDestinationSet);

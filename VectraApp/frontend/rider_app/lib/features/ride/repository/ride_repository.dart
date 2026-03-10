@@ -20,20 +20,18 @@ class RideRepository {
       final response = await apiClient.post(
         ApiConstants.rideRequests,
         data: {
-          'pickupLocation': {
-            'lat': pickup.location?.latitude,
-            'lng': pickup.location?.longitude,
-            'address': pickup.address,
+          'pickupPoint': {
+            'type': 'Point',
+            'coordinates': [pickup.location?.longitude ?? 0, pickup.location?.latitude ?? 0],
           },
-          'dropoffLocation': {
-            'lat': destination.location?.latitude,
-            'lng': destination.location?.longitude,
-            'address': destination.address,
+          'dropPoint': {
+            'type': 'Point',
+            'coordinates': [destination.location?.longitude ?? 0, destination.location?.latitude ?? 0],
           },
+          'pickupAddress': pickup.address,
+          'dropAddress': destination.address,
           'rideType': rideType,
           'vehicleType': vehicleId,
-          'estimatedFare': estimatedFare,
-          'distance': distanceMeters,
         },
       );
 

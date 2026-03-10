@@ -4,7 +4,7 @@ import 'package:shared/shared.dart';
 
 /// Set to true to bypass the real backend and use mock data.
 /// Flip to false when the backend API is reachable.
-const bool kUseMockAuth = true;
+const bool kUseMockAuth = false;
 
 /// Repository for authentication operations
 class AuthRepository {
