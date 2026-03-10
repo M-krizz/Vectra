@@ -56,7 +56,8 @@ async function runSimulation() {
         );
         const poolingManager = new PoolingManager(
             requestRepo,
-            poolingService
+            poolingService,
+            { server: null } as any  // LocationGateway mock — not needed in simulation
         );
 
         // 1. Create Riders

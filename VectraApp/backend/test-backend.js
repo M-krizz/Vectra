@@ -6,10 +6,9 @@
  */
 
 const http = require('http');
-const WebSocket = require('ws');
 
-const BASE_URL = 'http://localhost:4000';
-const WS_URL = 'ws://localhost:4000';
+const PORT = Number(process.env.PORT || 3000);
+const BASE_URL = `http://localhost:${PORT}`;
 
 console.log('🚀 Starting Vectra Backend Tests...\n');
 
@@ -22,9 +21,16 @@ const testEndpoints = [
 
 async function testHttpEndpoint(endpoint) {
     return new Promise((resolve) => {
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            resolve(result);
+        };
+
         const options = {
             hostname: 'localhost',
-            port: 4000,
+            port: PORT,
             path: endpoint.path,
             method: endpoint.method,
             headers: {
@@ -37,53 +43,66 @@ async function testHttpEndpoint(endpoint) {
             console.log(
                 `${success ? '✅' : '❌'} ${endpoint.description}: ${res.statusCode} ${success ? '(Expected)' : `(Expected ${endpoint.expectStatus})`}`
             );
-            resolve(success);
+            finish(success);
         });
 
         req.on('error', (err) => {
+            if (settled) return;
             console.log(`❌ ${endpoint.description}: Connection failed - ${err.message}`);
-            resolve(false);
+            finish(false);
         });
 
         req.setTimeout(5000, () => {
+            if (settled) return;
             console.log(`❌ ${endpoint.description}: Timeout`);
             req.abort();
-            resolve(false);
+            finish(false);
         });
 
         req.end();
     });
 }
 
-async function testWebSocket() {
+async function testSocketIo() {
     return new Promise((resolve) => {
-        try {
-            const ws = new WebSocket(WS_URL);
-            
-            ws.on('open', () => {
-                console.log('✅ WebSocket connection established');
-                ws.close();
-                resolve(true);
-            });
-            
-            ws.on('error', (err) => {
-                console.log(`❌ WebSocket connection failed: ${err.message}`);
-                resolve(false);
-            });
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            resolve(result);
+        };
 
-            ws.on('close', () => {
-                resolve(true);
-            });
+        const req = http.request({
+            hostname: 'localhost',
+            port: PORT,
+            path: '/socket.io/?EIO=4&transport=polling',
+            method: 'GET',
+            headers: {
+                Accept: '*/*',
+            },
+        }, (res) => {
+            const success = res.statusCode === 200;
+            console.log(
+                `${success ? '✅' : '❌'} Socket.IO polling handshake: ${res.statusCode}`
+            );
+            res.resume();
+            finish(success);
+        });
 
-            setTimeout(() => {
-                console.log('❌ WebSocket connection timeout');
-                ws.close();
-                resolve(false);
-            }, 5000);
-        } catch (err) {
-            console.log(`❌ WebSocket error: ${err.message}`);
-            resolve(false);
-        }
+        req.on('error', (err) => {
+            if (settled) return;
+            console.log(`❌ Socket.IO probe failed: ${err.message}`);
+            finish(false);
+        });
+
+        req.setTimeout(5000, () => {
+            if (settled) return;
+            console.log('❌ Socket.IO probe timeout');
+            req.abort();
+            finish(false);
+        });
+
+        req.end();
     });
 }
 
@@ -99,12 +118,12 @@ async function runTests() {
         if (result) httpPassed++;
     }
 
-    console.log('\n🌐 Testing WebSocket Connection...\n');
-    const wsResult = await testWebSocket();
+    console.log('\n🌐 Testing Socket.IO Connectivity...\n');
+    const wsResult = await testSocketIo();
 
     console.log('\n📊 Test Summary:');
     console.log(`HTTP Endpoints: ${httpPassed}/${httpTests} passed`);
-    console.log(`WebSocket: ${wsResult ? 'PASSED' : 'FAILED'}`);
+    console.log(`Socket.IO: ${wsResult ? 'PASSED' : 'FAILED'}`);
     
     if (httpPassed === httpTests && wsResult) {
         console.log('\n🎉 All tests PASSED! Your Vectra backend is working perfectly!');
