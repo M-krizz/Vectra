@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PoolingV1Update1769875200000 implements MigrationInterface {
     name = 'PoolingV1Update1769875200000';
@@ -22,7 +22,7 @@ export class PoolingV1Update1769875200000 implements MigrationInterface {
 
         // 3. Create pool_groups table
         await queryRunner.query(`
-            CREATE TABLE "pool_groups" (
+            CREATE TABLE IF NOT EXISTS "pool_groups" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
                 "status" "public"."pool_groups_status_enum" NOT NULL DEFAULT 'FORMING', 
                 "vehicle_type" "public"."vehicle_type_enum" NOT NULL, 
@@ -36,10 +36,10 @@ export class PoolingV1Update1769875200000 implements MigrationInterface {
 
         // 4. Update ride_requests table
         // Add vehicle_type
-        await queryRunner.query(`ALTER TABLE "ride_requests" ADD "vehicle_type" "public"."vehicle_type_enum" NOT NULL DEFAULT 'AUTO'`);
+        await queryRunner.query(`ALTER TABLE "ride_requests" ADD COLUMN IF NOT EXISTS "vehicle_type" "public"."vehicle_type_enum" NOT NULL DEFAULT 'AUTO'`);
 
         // Add pool_group_id
-        await queryRunner.query(`ALTER TABLE "ride_requests" ADD "pool_group_id" uuid`);
+        await queryRunner.query(`ALTER TABLE "ride_requests" ADD COLUMN IF NOT EXISTS "pool_group_id" uuid`);
 
         // Update RideRequestStatus Enum to include 'POOLED'
         // This fails inside a transaction block usually.
@@ -47,9 +47,19 @@ export class PoolingV1Update1769875200000 implements MigrationInterface {
 
         // Add FK
         await queryRunner.query(`
-            ALTER TABLE "ride_requests" 
-            ADD CONSTRAINT "FK_ride_requests_pool_group_id" 
-            FOREIGN KEY ("pool_group_id") REFERENCES "pool_groups"("id") ON DELETE SET NULL
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM pg_constraint
+                    WHERE conname = 'FK_ride_requests_pool_group_id'
+                ) THEN
+                    ALTER TABLE "ride_requests" 
+                    ADD CONSTRAINT "FK_ride_requests_pool_group_id" 
+                    FOREIGN KEY ("pool_group_id") REFERENCES "pool_groups"("id") ON DELETE SET NULL;
+                END IF;
+            END
+            $$;
         `);
 
     }
