@@ -169,7 +169,7 @@ class DriverStatusNotifier extends StateNotifier<DriverStatusState> {
 
   void _stopLocationBroadcasting() {
     _locationService.stopBroadcasting();
-    _socketService.emitDriverOffline();
+    _socketService.disconnect();
   }
 
   /// Clear error
