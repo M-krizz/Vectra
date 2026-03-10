@@ -58,6 +58,12 @@ export class DriverProfileEntity {
   })
   licenseState!: string | null;
 
+  @Column({ type: 'varchar', nullable: true, name: 'license_file_url' })
+  licenseFileUrl!: string | null;
+
+  @Column({ type: 'varchar', nullable: true, name: 'rc_file_url' })
+  rcFileUrl!: string | null;
+
   // ===== Verification Status =====
   @Column({
     type: 'enum',
