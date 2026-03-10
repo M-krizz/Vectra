@@ -12,6 +12,10 @@ import { DocumentEntity } from './compliance/document.entity';
 import { ComplianceEventEntity } from './compliance/compliance-event.entity';
 import { AdminAuditEntity } from './admin/admin-audit.entity';
 import { RoleChangeAuditEntity } from './rbac/role-change-audit.entity';
+import { RideRequestEntity } from '../ride_requests/ride-request.entity';
+import { IncidentEntity } from '../safety/entities/incident.entity';
+import { TripEntity } from '../trips/trip.entity';
+import { IncentiveEntity } from '../incentives/incentive.entity';
 
 // Services
 import { OtpService } from './auth/otp.service';
@@ -45,6 +49,10 @@ import { RolesGuard } from './common/roles.guard';
       ComplianceEventEntity,
       AdminAuditEntity,
       RoleChangeAuditEntity,
+      RideRequestEntity,
+      IncidentEntity,
+      TripEntity,
+      IncentiveEntity,
     ]),
     PassportModule,
     JwtModule.register({

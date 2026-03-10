@@ -41,6 +41,10 @@ export class UpdateProfileDto {
   profileImageKey?: string;
 
   @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PreferredLocationDto)

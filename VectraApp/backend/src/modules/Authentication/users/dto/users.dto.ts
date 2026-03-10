@@ -11,10 +11,6 @@ export class CreateRiderDto {
 
   @IsString()
   fullName!: string;
-
-  @IsOptional()
-  @IsString()
-  password?: string;
 }
 
 export class CreateDriverDto {
@@ -28,10 +24,6 @@ export class CreateDriverDto {
 
   @IsString()
   fullName!: string;
-
-  @IsOptional()
-  @IsString()
-  password?: string;
 
   @IsString()
   licenseNumber!: string;
