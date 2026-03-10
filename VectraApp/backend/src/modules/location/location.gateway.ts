@@ -8,10 +8,12 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import Redis from 'ioredis';
 import { REDIS } from '../../integrations/redis/redis.module';
 import { AuthService } from '../Authentication/auth/auth.service';
+import { TripsService } from '../trips/trips.service';
 
 @Injectable()
 @WebSocketGateway({
@@ -27,6 +29,7 @@ export class LocationGateway
   constructor(
     @Inject(REDIS) private readonly redisClient: Redis,
     private readonly authService: AuthService,
+    @Inject(forwardRef(() => TripsService)) private readonly tripsService: TripsService,
   ) { }
 
   async handleConnection(client: Socket) {
@@ -132,6 +135,48 @@ export class LocationGateway
     });
   }
 
+  /**
+   * Cron job running every minute to clean up stale drivers from the active pool.
+   * If a driver hasn't sent a GPS update in >2 minutes, remove them from `drivers:geo`
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async cleanupStaleLocations() {
+    this.logger.debug('Running stale location cleanup...');
+    try {
+      // Get all drivers in the geo index
+      // Using a large radius from center of India as a hack to get all, 
+      // or we can just fetch all keys matching `driver:location:*`
+      const keys = await this.redisClient.keys('driver:location:*');
+      if (keys.length === 0) return;
+
+      const now = new Date().getTime();
+      let removedCount = 0;
+
+      for (const key of keys) {
+        const dataStr = await this.redisClient.get(key);
+        if (!dataStr) continue;
+
+        const data = JSON.parse(dataStr);
+        const lastUpdate = new Date(data.updatedAt).getTime();
+        const diffSeconds = (now - lastUpdate) / 1000;
+
+        if (diffSeconds > 120) { // 2 minutes stale
+          const driverId = key.replace('driver:location:', '');
+          await this.redisClient.zrem('drivers:geo', driverId);
+          await this.redisClient.del(key);
+          removedCount++;
+          this.logger.log(`Removed stale driver ${driverId} from active pool`);
+        }
+      }
+
+      if (removedCount > 0) {
+        this.logger.debug(`Removed ${removedCount} stale drivers`);
+      }
+    } catch (err) {
+      this.logger.error(`Failed to clean up stale locations: ${err}`);
+    }
+  }
+
   // --- Trip Status & Communication (Module 1.9) ---
 
   @SubscribeMessage('join_trip')
@@ -159,5 +204,62 @@ export class LocationGateway
       this.logger.log(`Admin ${(client as any).userId} joined fleet room`);
       return client.join('admin:fleet');
     }
+  }
+
+  // --- Driver Ride Acceptance (Module 1.5) ---
+
+  /**
+   * Driver emits `ride_accept` with { tripId }.
+   * - Driver joins the trip room for GPS broadcasting.
+   * - Rider in `trip:<tripId>` room is notified via `driver_accepted`.
+   * - Redis records which driver owns this trip.
+   */
+  @SubscribeMessage('ride_accept')
+  async handleRideAccept(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { tripId: string },
+  ) {
+    const driverId = (client as any).userId;
+    const role = (client as any).role;
+    if (role !== 'DRIVER' || !driverId) return;
+
+    this.logger.log(`Driver ${driverId} accepted trip ${data.tripId}`);
+
+    try {
+      // Persist assignment in DB with Redis mutex lock
+      await this.tripsService.acceptTrip(data.tripId, driverId);
+
+      // Map trip → driver in Redis (TTL: 6 hours)
+      await this.redisClient.setex(`trip:driver:${data.tripId}`, 21600, driverId);
+
+      // Driver joins trip room to broadcast GPS
+      await client.join(`trip:${data.tripId}`);
+    } catch (err: any) {
+      this.logger.warn(`Driver ${driverId} failed to accept trip ${data.tripId}: ${err.message}`);
+      client.emit('ride_accept_error', {
+        tripId: data.tripId,
+        message: err.message ?? 'Failed to accept trip',
+      });
+    }
+  }
+
+  /**
+   * Driver emits `ride_reject` with { tripId }.
+   * - The trip room is notified.
+   * - Matching can re-offer to another driver.
+   */
+  @SubscribeMessage('ride_reject')
+  async handleRideReject(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { tripId: string },
+  ) {
+    const driverId = (client as any).userId;
+    this.logger.log(`Driver ${driverId} rejected trip ${data.tripId}`);
+
+    // Notify rider about rejection → matching will retry
+    this.server.to(`trip:${data.tripId}`).emit('driver_rejected', {
+      tripId: data.tripId,
+      driverId,
+    });
   }
 }
