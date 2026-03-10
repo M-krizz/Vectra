@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../socket/socket_service.dart';
-import '../api/api_client.dart';
 
 /// Location service for background GPS broadcasting
 class LocationService {
@@ -15,10 +14,6 @@ class LocationService {
 
   // Location update interval (5 seconds when moving, 10 when stationary)
   static const Duration _movingInterval = Duration(seconds: 5);
-  static const Duration _stationaryInterval = Duration(seconds: 10);
-
-  // Distance filter in meters (minimum movement to trigger update)
-  static const double _distanceFilter = 10.0;
 
   LocationService({required SocketService socketService})
       : _socketService = socketService;
@@ -67,8 +62,9 @@ class LocationService {
       if (!hasPermission) return null;
 
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 15),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (e) {
       return null;
@@ -104,9 +100,6 @@ class LocationService {
 
     // Also broadcast on timer for consistent updates
     _startBroadcastTimer();
-
-    // Notify socket that driver is online
-    _socketService.emitDriverOnline();
   }
 
   void _startBroadcastTimer() {
@@ -124,6 +117,8 @@ class LocationService {
     _socketService.emitLocationUpdate(
       position.latitude,
       position.longitude,
+      heading: position.heading,
+      speed: position.speed,
     );
   }
 
@@ -134,9 +129,6 @@ class LocationService {
     _positionSubscription = null;
     _broadcastTimer?.cancel();
     _broadcastTimer = null;
-
-    // Notify socket that driver is offline
-    _socketService.emitDriverOffline();
   }
 
   /// Calculate distance between two positions in meters

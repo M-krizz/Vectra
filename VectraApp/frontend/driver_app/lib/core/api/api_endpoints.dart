@@ -1,52 +1,53 @@
 /// API Endpoint constants for the Vectra Driver App
+/// All paths match the NestJS backend controllers exactly.
 class ApiEndpoints {
   ApiEndpoints._();
 
   // Base URL - Configure based on environment
-  static const String baseUrl = 'https://api.vectra.com/v1';
+  static const String baseUrl = 'http://localhost:3000';
 
-  // Auth endpoints
-  static const String sendOtp = '/auth/send-otp';
-  static const String verifyOtp = '/auth/verify-otp';
-  static const String refreshToken = '/auth/refresh';
-  static const String logout = '/auth/logout';
+  // Auth endpoints (OTP ONLY) — AuthController: /api/v1/auth
+  static const String requestOtp = '/api/v1/auth/request-otp';
+  static const String verifyOtp = '/api/v1/auth/verify-otp';
+  static const String refreshToken = '/api/v1/auth/refresh';
+  static const String logout = '/api/v1/auth/logout';
+  static const String completeProfile = '/api/v1/auth/complete-profile';
 
-  // Driver endpoints
-  static const String driverProfile = '/driver/profile';
-  static const String driverStatus = '/driver/status';
-  static const String driverDocuments = '/driver/documents';
-  static const String driverLocation = '/driver/location';
+  // Driver endpoints — DriversController: /api/v1/drivers
+  static const String driverProfile = '/api/v1/drivers/profile';
+  static const String driverOnline = '/api/v1/drivers/online';
+  static const String driverDocumentsUpload = '/api/v1/drivers/documents/upload';
+  static const String driverVehicles = '/api/v1/drivers/vehicles';
 
-  // Ride endpoints
-  static const String rideAccept = '/rides/accept';
-  static const String rideReject = '/rides/reject';
-  static const String rideStart = '/rides/start';
-  static const String rideComplete = '/rides/complete';
-  static const String rideCancel = '/rides/cancel';
-  static const String rideHistory = '/rides/history';
-  static const String rideActive = '/rides/active';
+  // Trip endpoints — TripsController: /api/v1/trips
+  static const String trips = '/api/v1/trips';
+  static String tripById(String tripId) => '/api/v1/trips/$tripId';
+  static String tripStatus(String tripId) => '/api/v1/trips/$tripId/status';
+  static String tripLocation(String tripId) => '/api/v1/trips/$tripId/location';
+  static String tripFare(String tripId) => '/api/v1/trips/$tripId/fare';
+  static String tripOtpGenerate(String tripId) => '/api/v1/trips/$tripId/otp/generate';
+  static String tripOtpVerify(String tripId) => '/api/v1/trips/$tripId/otp/verify';
 
-  // Wallet endpoints
-  static const String walletBalance = '/wallet/balance';
-  static const String walletTransactions = '/wallet/transactions';
-  static const String walletWithdraw = '/wallet/withdraw';
-  static const String rateCard = '/wallet/rate-card';
+  // Fare endpoints — FareController: /api/v1/fare
+  static const String fareRateCards = '/api/v1/fare/rate-cards';
 
-  // Incentives endpoints
-  static const String incentives = '/incentives';
-  static const String incentiveProgress = '/incentives/progress';
+  // Wallet/Payments endpoints — PaymentsController: /api/v1/payments
+  static const String wallet = '/api/v1/payments/wallet';
+  static const String walletBalance = '/api/v1/payments/wallet';
+  static const String walletTopup = '/api/v1/payments/wallet/topup';
+  static const String walletWithdraw = '/api/v1/payments/wallet/withdraw';
+  static const String walletTransactions = '/api/v1/payments/wallet/transactions';
 
-  // Heatmap endpoints
-  static const String heatmapDemand = '/heatmap/demand';
-  static const String heatmapSurge = '/heatmap/surge';
+  // Trip history
+  static const String tripHistory = '/api/v1/trips';
 
-  // Dynamic ride endpoints
-  static String acceptRide(String rideId) => '/rides/$rideId/accept';
-  static String rejectRide(String rideId) => '/rides/$rideId/reject';
-  static String startTrip(String tripId) => '/rides/$tripId/start';
-  static String completeTrip(String tripId) => '/rides/$tripId/complete';
-  static String cancelTrip(String tripId) => '/rides/$tripId/cancel';
-  static String updateTrip(String tripId) => '/rides/$tripId';
-  static const String activeTrip = '/rides/active';
-  static const String tripHistory = '/rides/history';
+  // Safety endpoints — SafetyController: /api/v1/safety
+  static const String safetyIncidents = '/api/v1/safety/incidents';
+  static const String safetySos = '/api/v1/safety/sos';
+  static const String safetyContacts = '/api/v1/safety/contacts';
+
+  // Incentives endpoints — IncentivesController: /api/v1/incentives
+  static const String incentives = '/api/v1/incentives';
+  static const String incentivesActive = '/api/v1/incentives/active';
+  static const String incentivesCompleted = '/api/v1/incentives/completed';
 }

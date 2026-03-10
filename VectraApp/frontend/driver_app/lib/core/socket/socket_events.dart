@@ -1,8 +1,9 @@
-/// Socket.IO event constants for real-time communication
+/// Socket.IO event constants for real-time communication.
+/// All event names match the backend LocationGateway exactly.
 class SocketEvents {
   SocketEvents._();
 
-  // Connection events
+  // Connection events (built-in Socket.IO)
   static const String connect = 'connect';
   static const String disconnect = 'disconnect';
   static const String connectError = 'connect_error';
@@ -11,37 +12,22 @@ class SocketEvents {
   static const String reconnectError = 'reconnect_error';
   static const String reconnectFailed = 'reconnect_failed';
 
-  // Authentication events
-  static const String authenticate = 'authenticate';
-  static const String authenticated = 'authenticated';
-  static const String authError = 'auth_error';
+  // --- Driver → Server (emit) ---
+  static const String updateLocation = 'update_location';
+  static const String rideAccept = 'ride_accept';
+  static const String rideReject = 'ride_reject';
+  static const String joinTrip = 'join_trip';
+  static const String leaveTrip = 'leave_trip';
 
-  // Driver status events
-  static const String driverOnline = 'driver:online';
-  static const String driverOffline = 'driver:offline';
-  static const String driverLocationUpdate = 'driver:location_update';
-
-  // Ride events
-  static const String rideOffer = 'ride:offer';
-  static const String rideOfferExpired = 'ride:offer_expired';
-  static const String rideAccepted = 'ride:accepted';
-  static const String rideRejected = 'ride:rejected';
-  static const String rideCancelled = 'ride:cancelled';
-  static const String rideStarted = 'ride:started';
-  static const String rideCompleted = 'ride:completed';
-  static const String riderLocationUpdate = 'ride:rider_location';
-
-  // Navigation events
-  static const String routeUpdate = 'navigation:route_update';
-  static const String etaUpdate = 'navigation:eta_update';
-
-  // Heatmap events
-  static const String heatmapUpdate = 'heatmap:update';
-  static const String surgeUpdate = 'heatmap:surge_update';
-
-  // Notification events
-  static const String notification = 'notification';
-  static const String alert = 'alert';
+  // --- Server → Driver (listen) ---
+  static const String rideOffered = 'ride_offered';
+  static const String driverAccepted = 'driver_accepted';
+  static const String driverRejected = 'driver_rejected';
+  static const String tripStatusChanged = 'trip_status_changed';
+  static const String driverMoved = 'driver_moved';
+  static const String heatmapUpdate = 'heatmap_update';
+  static const String surgeUpdate = 'surge_update';
+  static const String demandUpdate = 'demand_update';
 
   // Error events
   static const String error = 'error';
