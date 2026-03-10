@@ -16,4 +16,4 @@ import { TripsController } from './trips.controller';
   providers: [TripsService],
   exports: [TypeOrmModule, TripsService],
 })
-export class TripsModule { }
+export class TripsModule {}

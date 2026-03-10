@@ -13,7 +13,7 @@ export class TripsService {
     @InjectRepository(TripEventEntity)
     private readonly eventRepo: Repository<TripEventEntity>,
     private readonly socketGateway: SocketGateway,
-  ) { }
+  ) {}
 
   async getTrip(id: string) {
     const trip = await this.tripRepo.findOne({
@@ -58,7 +58,10 @@ export class TripsService {
     trip.status = newStatus;
     if (newStatus === TripStatus.IN_PROGRESS && !trip.startAt) {
       trip.startAt = new Date();
-    } else if (newStatus === TripStatus.COMPLETED || newStatus === TripStatus.CANCELLED) {
+    } else if (
+      newStatus === TripStatus.COMPLETED ||
+      newStatus === TripStatus.CANCELLED
+    ) {
       if (!trip.endAt) trip.endAt = new Date();
     }
 

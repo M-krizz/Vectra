@@ -9,7 +9,7 @@ import { TripStatus } from './trip.entity';
 @Controller('api/v1/trips')
 @UseGuards(JwtAuthGuard)
 export class TripsController {
-  constructor(private readonly tripsService: TripsService) { }
+  constructor(private readonly tripsService: TripsService) {}
 
   @Get(':id')
   async getTrip(@Param('id') id: string) {

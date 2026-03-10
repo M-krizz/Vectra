@@ -20,7 +20,7 @@ export class RideRequestsService {
     private readonly rideRequestsRepo: Repository<RideRequestEntity>,
     private readonly socketGateway: SocketGateway,
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   async createRequest(
     userId: string,
@@ -38,7 +38,9 @@ export class RideRequestsService {
     });
 
     const saved = await this.rideRequestsRepo.save(rideRequest);
-    this.socketGateway.emitTripStatus(saved.id, 'REQUESTED', { rideRequest: saved });
+    this.socketGateway.emitTripStatus(saved.id, 'REQUESTED', {
+      rideRequest: saved,
+    });
     return saved;
   }
 
@@ -63,7 +65,9 @@ export class RideRequestsService {
       { id, riderUserId: userId },
       { status: RideRequestStatus.CANCELLED },
     );
-    this.socketGateway.emitTripStatus(id, 'CANCELLED', { reason: 'Cancelled by rider' });
+    this.socketGateway.emitTripStatus(id, 'CANCELLED', {
+      reason: 'Cancelled by rider',
+    });
   }
 
   async acceptSoloRideRequest(rideRequestId: string, driverUserId: string) {
@@ -84,7 +88,9 @@ export class RideRequestsService {
       }
 
       // 2. Fetch the rider to include their name in the response
-      const rider = await queryRunner.manager.findOne(UserEntity, { where: { id: request.riderUserId } });
+      const rider = await queryRunner.manager.findOne(UserEntity, {
+        where: { id: request.riderUserId },
+      });
 
       // 3. Mark request as assigned
       request.status = RideRequestStatus.ACCEPTED; // Or however Vectra models it
@@ -111,7 +117,10 @@ export class RideRequestsService {
       await queryRunner.commitTransaction();
 
       // Emit event to Rider using tripId or rideRequestId. Usually Rider app expects rideId
-      this.socketGateway.emitTripStatus(request.id, 'ACCEPTED', { tripId: savedTrip.id, driverId: driverUserId });
+      this.socketGateway.emitTripStatus(request.id, 'ACCEPTED', {
+        tripId: savedTrip.id,
+        driverId: driverUserId,
+      });
 
       // Build driver-friendly response
       return {
@@ -135,7 +144,6 @@ export class RideRequestsService {
         status: 'assigned', // Dart enum value 'assigned'
         vehicleType: request.vehicleType,
       };
-
     } catch (err) {
       await queryRunner.rollbackTransaction();
       this.logger.error('Failed to accept ride', err);

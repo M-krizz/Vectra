@@ -18,7 +18,7 @@ import { AuthenticatedRequest } from '../Authentication/common/authenticated-req
 @Controller('api/v1/ride-requests')
 @UseGuards(JwtAuthGuard)
 export class RideRequestsController {
-  constructor(private readonly rideRequestsService: RideRequestsService) { }
+  constructor(private readonly rideRequestsService: RideRequestsService) {}
 
   @Post()
   @Roles(UserRole.RIDER)
