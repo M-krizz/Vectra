@@ -54,11 +54,11 @@ class ApiEndpoints {
   static const String heatmapSurge = '/heatmap/surge';
 
   // Dynamic ride endpoints
-  static String acceptRide(String rideId) => '/rides/$rideId/accept';
-  static String rejectRide(String rideId) => '/rides/$rideId/reject';
-  static String startTrip(String tripId) => '/rides/$tripId/start';
-  static String completeTrip(String tripId) => '/rides/$tripId/complete';
-  static String cancelTrip(String tripId) => '/rides/$tripId/cancel';
+  static String acceptRide(String rideId) => '/ride-requests/$rideId/accept';
+  static String rejectRide(String rideId) => '/ride-requests/$rideId/reject';
+  static String startTrip(String tripId) => '/trips/$tripId/start';
+  static String completeTrip(String tripId) => '/trips/$tripId/complete';
+  static String cancelTrip(String tripId) => '/trips/$tripId/cancel';
   static String updateTrip(String tripId) => '/rides/$tripId';
   static const String activeTrip = '/rides/active';
   static const String tripHistory = '/rides/history';

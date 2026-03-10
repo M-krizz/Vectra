@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TripEntity } from './trip.entity';
+import { TripEntity, TripStatus } from './trip.entity';
 import { TripEventEntity } from './trip-event.entity';
 import { SocketGateway } from '../../realtime/socket.gateway';
 
@@ -49,5 +49,21 @@ export class TripsService {
     });
     const savedEvent = await this.eventRepo.save(event);
     this.socketGateway.emitLocationUpdate(id, lat, lng);
+  }
+
+  async updateTripStatus(id: string, newStatus: TripStatus) {
+    const trip = await this.tripRepo.findOne({ where: { id } });
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    trip.status = newStatus;
+    if (newStatus === TripStatus.IN_PROGRESS && !trip.startAt) {
+      trip.startAt = new Date();
+    } else if (newStatus === TripStatus.COMPLETED || newStatus === TripStatus.CANCELLED) {
+      if (!trip.endAt) trip.endAt = new Date();
+    }
+
+    await this.tripRepo.save(trip);
+    this.socketGateway.emitTripStatus(id, newStatus);
+    return trip;
   }
 }

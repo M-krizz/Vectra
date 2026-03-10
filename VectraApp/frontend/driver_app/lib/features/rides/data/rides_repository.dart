@@ -16,39 +16,35 @@ class RidesRepository {
 
   /// Accept a ride request
   Future<Trip> acceptRide(String rideRequestId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    _mockActiveTrip = Trip(
-      id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
-      riderId: 'rider_001',
-      riderName: 'Alice Wonderland',
-      riderPhone: '+919876543210',
-      riderRating: 4.8,
-      pickupLocation: LatLng(12.9716, 77.5946),
-      pickupAddress: 'MG Road Metro Station, Bangalore',
-      dropoffLocation: LatLng(12.9352, 77.6245),
-      dropoffAddress: 'Forum Mall, Koramangala',
-      fare: 250.0,
-      distance: 5.2,
-      status: TripStatus.assigned,
-      vehicleType: 'Sedan',
-      otp: '1234',
-      startedAt: null,
-      completedAt: null,
+    final response = await _apiClient.post(
+      ApiEndpoints.acceptRide(rideRequestId),
+      data: {},
     );
+    _mockActiveTrip = Trip.fromJson(response.data);
     return _mockActiveTrip!;
   }
 
   /// Reject a ride request
   Future<void> rejectRide(String rideRequestId) async {
-    await Future.delayed(const Duration(seconds: 1));
+    await _apiClient.post(
+      ApiEndpoints.rejectRide(rideRequestId),
+      data: {},
+    );
   }
 
-  /// Update trip status
+  /// Update trip status (e.g., arrived)
   Future<Trip> updateTripStatus(String tripId, TripStatus status) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Backend doesn't have an explicit 'arrived' endpoint yet, so we just update local state if it's not a major transition
+    if (status == TripStatus.started) {
+       return startTrip(tripId, '1234'); // Placeholder
+    } else if (status == TripStatus.completed) {
+       return completeTrip(tripId);
+    } else if (status == TripStatus.cancelled) {
+       await cancelTrip(tripId, 'Cancelled');
+       return _mockActiveTrip!.copyWith(status: TripStatus.cancelled);
+    }
     
+    // Otherwise just mock it for now
     if (_mockActiveTrip != null) {
       _mockActiveTrip = _mockActiveTrip!.copyWith(status: status);
       return _mockActiveTrip!;
@@ -56,14 +52,12 @@ class RidesRepository {
     throw Exception('No active trip found');
   }
 
-  /// Start trip with OTP verification
+  /// Start trip
   Future<Trip> startTrip(String tripId, String otp) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (otp != '1234') {
-      throw Exception('Invalid OTP');
-    }
-
+    await _apiClient.patch(
+      ApiEndpoints.startTrip(tripId),
+      data: {'otp': otp},
+    );
     if (_mockActiveTrip != null) {
       _mockActiveTrip = _mockActiveTrip!.copyWith(
         status: TripStatus.started,
@@ -76,14 +70,15 @@ class RidesRepository {
 
   /// Complete trip
   Future<Trip> completeTrip(String tripId) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
+    await _apiClient.patch(
+      ApiEndpoints.completeTrip(tripId),
+      data: {},
+    );
     if (_mockActiveTrip != null) {
-      _mockActiveTrip = _mockActiveTrip!.copyWith(
+      final completedTrip = _mockActiveTrip!.copyWith(
         status: TripStatus.completed,
         completedAt: DateTime.now(),
       );
-      final completedTrip = _mockActiveTrip!;
       _mockActiveTrip = null; // Clear active trip
       return completedTrip;
     }
@@ -92,41 +87,40 @@ class RidesRepository {
 
   /// Cancel trip
   Future<void> cancelTrip(String tripId, String reason) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (_mockActiveTrip != null) {
-      _mockActiveTrip = _mockActiveTrip!.copyWith(
-        status: TripStatus.cancelled,
-        cancellationReason: reason,
-      );
-      _mockActiveTrip = null;
-    }
+    await _apiClient.patch(
+      ApiEndpoints.cancelTrip(tripId),
+      data: {'reason': reason},
+    );
+    _mockActiveTrip = null;
   }
 
   /// Get active trip
   Future<Trip?> getActiveTrip() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.activeTrip);
+      if (response.data != null) {
+        _mockActiveTrip = Trip.fromJson(response.data);
+        return _mockActiveTrip;
+      }
+    } catch (e) {
+      // Ignore
+    }
     return _mockActiveTrip;
   }
 
   /// Get trip history
   Future<List<Trip>> getTripHistory({int page = 1, int limit = 20}) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // Return some mock history
-    return [
-      Trip(
-        id: 'trip_history_1',
-        riderId: 'rider_002',
-        riderName: 'Bob Builder',
-        pickupLocation: LatLng(12.9279, 77.6271),
-        pickupAddress: 'Koramangala 5th Block',
-        dropoffLocation: LatLng(12.9698, 77.7500),
-        dropoffAddress: 'Whitefield',
-        fare: 450.0,
-        distance: 12.5,
-        status: TripStatus.completed,
-        vehicleType: 'Sedan',
-        completedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
+    try {
+      final response = await _apiClient.get(
+        ApiEndpoints.tripHistory,
+        queryParameters: {'page': page, 'limit': limit},
+      );
+      if (response.data is List) {
+        return (response.data as List).map((t) => Trip.fromJson(t)).toList();
+      }
+    } catch (e) {
+      // Ignore and return empty
+    }
+    return [];
   }
 }

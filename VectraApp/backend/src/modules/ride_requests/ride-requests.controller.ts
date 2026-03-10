@@ -18,7 +18,7 @@ import { AuthenticatedRequest } from '../Authentication/common/authenticated-req
 @Controller('api/v1/ride-requests')
 @UseGuards(JwtAuthGuard)
 export class RideRequestsController {
-  constructor(private readonly rideRequestsService: RideRequestsService) {}
+  constructor(private readonly rideRequestsService: RideRequestsService) { }
 
   @Post()
   @Roles(UserRole.RIDER)
@@ -42,5 +42,14 @@ export class RideRequestsController {
     @Param('id') id: string,
   ) {
     return this.rideRequestsService.cancelRequest(id, req.user.userId);
+  }
+
+  @Post(':id/accept')
+  @Roles(UserRole.DRIVER)
+  async acceptRequest(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.rideRequestsService.acceptSoloRideRequest(id, req.user.userId);
   }
 }

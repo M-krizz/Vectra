@@ -5,8 +5,10 @@ import { RideRequestEntity } from './ride-request.entity';
 import { RideRequestsService } from './ride-requests.service';
 import { RideRequestsController } from './ride-requests.controller';
 
+import { TripsModule } from '../trips/trips.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([RideRequestEntity]), RealtimeModule],
+  imports: [TypeOrmModule.forFeature([RideRequestEntity]), RealtimeModule, TripsModule],
   controllers: [RideRequestsController],
   providers: [RideRequestsService],
   exports: [TypeOrmModule, RideRequestsService],
