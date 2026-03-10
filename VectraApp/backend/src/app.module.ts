@@ -2,6 +2,8 @@ import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import * as dotenv from 'dotenv';
 
 // Global modules
@@ -18,6 +20,11 @@ import { LocationModule } from './modules/location/location.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { PoolingModule } from './modules/pooling/pooling.module';
 import { MatchingModule } from './modules/matching/matching.module';
+import { FareModule } from './modules/fare/fare.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { CancellationsModule } from './modules/cancellations/cancellations.module';
+import { IncentivesModule } from './modules/incentives/incentives.module';
+import { RealtimeModule } from './realtime/realtime.module';
 
 dotenv.config();
 
@@ -28,6 +35,12 @@ dotenv.config();
 
     // Scheduling for cron jobs
     ScheduleModule.forRoot(),
+
+    // Serve uploaded files statically
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
 
     // Database connection
     TypeOrmModule.forRoot({
@@ -49,6 +62,9 @@ dotenv.config();
     TripsModule,
     PoolingModule,
     MatchingModule,
+    FareModule,
+    PaymentsModule,
+    CancellationsModule,
 
     // Real-time features
     ChatModule,
@@ -56,6 +72,12 @@ dotenv.config();
 
     // Safety
     SafetyModule,
+
+    // Incentives
+    IncentivesModule,
+
+    // Real-time ride offers / driver notifications
+    RealtimeModule,
   ],
   controllers: [],
   providers: [
