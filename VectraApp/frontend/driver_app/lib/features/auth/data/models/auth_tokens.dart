@@ -5,6 +5,7 @@ class AuthTokens {
   final String role;
   final String? userId;
   final DateTime? expiresAt;
+  final bool isNewUser;
 
   AuthTokens({
     required this.accessToken,
@@ -12,6 +13,7 @@ class AuthTokens {
     required this.role,
     this.userId,
     this.expiresAt,
+    this.isNewUser = false,
   });
 
   factory AuthTokens.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class AuthTokens {
       expiresAt: json['expires_at'] != null
           ? DateTime.parse(json['expires_at'] as String)
           : null,
+      isNewUser: json['is_new_user'] as bool? ?? false,
     );
   }
 
@@ -33,6 +36,7 @@ class AuthTokens {
       'role': role,
       'user_id': userId,
       'expires_at': expiresAt?.toIso8601String(),
+      'is_new_user': isNewUser,
     };
   }
 
@@ -47,42 +51,40 @@ class AuthTokens {
   }
 }
 
-/// OTP request model
+/// OTP request model (phone or email)
 class OtpRequest {
-  final String phoneNumber;
-  final String countryCode;
+  final String identifier;
+  final String channel; // phone or email
 
   OtpRequest({
-    required this.phoneNumber,
-    this.countryCode = '+91',
+    required this.identifier,
+    this.channel = 'phone',
   });
 
   Map<String, dynamic> toJson() {
     return {
-      'phone_number': phoneNumber,
-      'country_code': countryCode,
+      'identifier': identifier,
+      'channel': channel,
     };
   }
-
-  String get fullPhoneNumber => '$countryCode$phoneNumber';
 }
 
 /// OTP verification model
 class OtpVerification {
-  final String phoneNumber;
+  final String identifier; // phone or email
   final String otp;
   final String? deviceToken;
 
   OtpVerification({
-    required this.phoneNumber,
+    required this.identifier,
     required this.otp,
     this.deviceToken,
   });
 
   Map<String, dynamic> toJson() {
     return {
-      'phone_number': phoneNumber,
-      'otp': otp,
+      'identifier': identifier,
+      'code': otp,
       if (deviceToken != null) 'device_token': deviceToken,
     };
   }
