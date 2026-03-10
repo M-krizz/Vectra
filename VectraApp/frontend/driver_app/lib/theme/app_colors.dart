@@ -33,4 +33,20 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // Legacy aliases used across older driver screens.
+  static const Color hyperLime = primaryLight;
+  static const Color neonGreen = primary;
+  static const Color successGreen = success;
+  static const Color errorRed = error;
+  static const Color warningOrange = warning;
+  static const Color carbonGrey = Color(0xFF1F2937);
+  static const Color voidBlack = Color(0xFF0B0F14);
+  static const Color warningAmber = warning;
+  static const Color skyBlue = info;
+  static const Color white10 = Color(0x1AFFFFFF);
+  static const Color white30 = Color(0x4DFFFFFF);
+  static const Color white50 = Color(0x80FFFFFF);
+  static const Color white70 = Color(0xB3FFFFFF);
+  static const Color white20 = Color(0x33FFFFFF);
 }
