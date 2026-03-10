@@ -3,13 +3,13 @@ import '../../data/rides_repository.dart';
 import '../../data/models/ride_request.dart';
 import '../../data/models/trip.dart';
 import '../../../../core/api/api_client.dart';
-import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/socket/socket_service.dart';
 
 // Repository provider
 final ridesRepositoryProvider = Provider<RidesRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  final storage = ref.watch(secureStorageServiceProvider);
-  return RidesRepository(apiClient, storage);
+  final socketService = ref.watch(socketServiceProvider);
+  return RidesRepository(apiClient, socketService);
 });
 
 // Ride request state
@@ -50,19 +50,20 @@ class RideRequestNotifier extends StateNotifier<RideRequestState> {
     state = state.copyWith(currentRequest: request);
   }
 
-  Future<void> acceptCurrentRequest() async {
-    if (state.currentRequest == null) return;
+  Future<Trip?> acceptCurrentRequest() async {
+    if (state.currentRequest == null) return null;
 
     state = state.copyWith(isLoading: true);
     try {
       final trip = await _repository.acceptRide(state.currentRequest!.id);
       state = state.copyWith(isLoading: false, clearRequest: true);
-      // Trip will be handled by ActiveTripNotifier
+      return trip;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to accept ride: ${e.toString()}',
       );
+      return null;
     }
   }
 
@@ -166,6 +167,20 @@ class ActiveTripNotifier extends StateNotifier<ActiveTripState> {
 
     state = state.copyWith(isLoading: true);
     try {
+      // Verify OTP with backend first
+      final verified = await _repository.verifyOtp(
+        state.trip!.id,
+        state.trip!.riderId,
+        otp,
+      );
+      if (!verified) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Invalid OTP',
+        );
+        return;
+      }
+      // OTP verified — transition to IN_PROGRESS
       final updatedTrip = await _repository.startTrip(state.trip!.id, otp);
       state = state.copyWith(trip: updatedTrip, isLoading: false);
     } catch (e) {
@@ -174,6 +189,13 @@ class ActiveTripNotifier extends StateNotifier<ActiveTripState> {
         error: 'Invalid OTP or failed to start trip',
       );
     }
+  }
+
+  /// Generate OTP when driver arrives at pickup.
+  /// Backend sends the OTP to the rider via WebSocket.
+  Future<void> generateOtp() async {
+    if (state.trip == null) return;
+    await _repository.generateOtp(state.trip!.id, state.trip!.riderId);
   }
 
   Future<void> completeTrip() async {
