@@ -47,7 +47,7 @@ export class TripsService {
       eventType: 'DRIVER_LOCATION',
       metadata: { lat, lng },
     });
-    const savedEvent = await this.eventRepo.save(event);
+    await this.eventRepo.save(event);
     this.socketGateway.emitLocationUpdate(id, lat, lng);
   }
 

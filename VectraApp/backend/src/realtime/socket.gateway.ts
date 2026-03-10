@@ -24,11 +24,11 @@ export class SocketGateway
 
     private logger: Logger = new Logger('SocketGateway');
 
-    afterInit(server: Server) {
+    afterInit(_server: Server) {
         this.logger.log('WebSocket Gateway Initialized');
     }
 
-    handleConnection(client: Socket, ...args: any[]) {
+    handleConnection(client: Socket, ..._args: unknown[]) {
         this.logger.log(`Client connected: ${client.id}`);
     }
 
@@ -54,7 +54,7 @@ export class SocketGateway
     ) {
         const { tripId } = data;
         if (tripId) {
-            client.join(`trip_${tripId}`);
+            void client.join(`trip_${tripId}`);
             this.logger.log(`Client ${client.id} joined trip room: trip_${tripId}`);
         }
     }
@@ -66,13 +66,13 @@ export class SocketGateway
     ) {
         const { tripId } = data;
         if (tripId) {
-            client.leave(`trip_${tripId}`);
+            void client.leave(`trip_${tripId}`);
             this.logger.log(`Client ${client.id} left trip room: trip_${tripId}`);
         }
     }
 
     // Helper method to emit trip status to all clients in a trip room
-    emitTripStatus(tripId: string, status: string, payload: any = {}) {
+    emitTripStatus(tripId: string, status: string, payload: Record<string, unknown> = {}) {
         this.server.to(`trip_${tripId}`).emit('trip_status', {
             tripId,
             status,
