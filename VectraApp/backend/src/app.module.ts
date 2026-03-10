@@ -17,6 +17,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { LocationModule } from './modules/location/location.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { PoolingModule } from './modules/pooling/pooling.module';
+import { RealtimeModule } from './realtime/realtime.module';
 
 dotenv.config();
 
@@ -33,11 +34,11 @@ dotenv.config();
       type: 'postgres',
       host: process.env.DB_HOST,
       port: Number(process.env.DB_PORT || 5432),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASS,
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: false, // ✅ IMPORTANT: migrations control the schema
+      synchronize: true, // Dev only: auto-create tables
     }),
 
     // Authentication (users, drivers, admin, rbac, profile, compliance)
@@ -51,6 +52,7 @@ dotenv.config();
     // Real-time features
     ChatModule,
     LocationModule,
+    RealtimeModule,
 
     // Safety
     SafetyModule,

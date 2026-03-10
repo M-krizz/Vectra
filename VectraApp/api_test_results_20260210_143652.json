@@ -1,0 +1,57 @@
+﻿[
+  {
+    "Test": 1,
+    "Category": "Authentication",
+    "Name": "Register Rider",
+    "Method": "POST",
+    "Url": "http://localhost:3000/api/v1/auth/register/rider",
+    "Status": "âŒ FAIL",
+    "StatusCode": null,
+    "Response": null,
+    "Error": "The remote server returned an error: (400) Bad Request."
+  },
+  {
+    "Test": 1,
+    "Category": "Authentication",
+    "Name": "Register Driver",
+    "Method": "POST",
+    "Url": "http://localhost:3000/api/v1/auth/register/driver",
+    "Status": "âŒ FAIL",
+    "StatusCode": null,
+    "Response": null,
+    "Error": "The remote server returned an error: (400) Bad Request."
+  },
+  {
+    "Test": 1,
+    "Category": "Auth \u0026 OTP (3001)",
+    "Name": "Generate OTP",
+    "Method": "POST",
+    "Url": "http://localhost:3001/auth/otp/generate",
+    "Status": "âŒ FAIL",
+    "StatusCode": null,
+    "Response": null,
+    "Error": "Unable to connect to the remote server"
+  },
+  {
+    "Test": 1,
+    "Category": "Auth \u0026 OTP (3001)",
+    "Name": "Register Rider (RS)",
+    "Method": "POST",
+    "Url": "http://localhost:3001/auth/register/rider",
+    "Status": "âŒ FAIL",
+    "StatusCode": null,
+    "Response": null,
+    "Error": "Unable to connect to the remote server"
+  },
+  {
+    "Test": 1,
+    "Category": "Auth \u0026 OTP (3001)",
+    "Name": "Register Driver (RS)",
+    "Method": "POST",
+    "Url": "http://localhost:3001/drivers/register",
+    "Status": "âŒ FAIL",
+    "StatusCode": null,
+    "Response": null,
+    "Error": "Unable to connect to the remote server"
+  }
+]

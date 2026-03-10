@@ -5,6 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/place_model.dart';
 import '../repository/places_repository.dart';
+import '../repository/ride_repository.dart';
+import '../services/trip_socket_service.dart';
 
 part 'ride_event.dart';
 part 'ride_state.dart';
@@ -12,14 +14,36 @@ part 'ride_state.dart';
 /// BLoC for managing ride booking flow
 class RideBloc extends Bloc<RideEvent, RideState> {
   final PlacesRepository _placesRepository;
-  Timer? _driverSearchTimer;
-  Timer? _driverMovementTimer;
-  Timer? _rideProgressTimer;
-  int _arrivalCountdown = 5; // Minutes until driver arrives
+  final RideRepository _rideRepository;
+  final TripSocketService _tripSocketService;
+  StreamSubscription? _rideStatusSubscription;
+  StreamSubscription? _driverLocationSubscription;
 
-  RideBloc({required PlacesRepository placesRepository})
-    : _placesRepository = placesRepository,
-      super(const RideState()) {
+  RideBloc({
+    required PlacesRepository placesRepository,
+    required RideRepository rideRepository,
+    required TripSocketService tripSocketService,
+  }) : _placesRepository = placesRepository,
+       _rideRepository = rideRepository,
+       _tripSocketService = tripSocketService,
+       super(const RideState()) {
+    
+    // Listen to real backend socket events
+    _rideStatusSubscription = _tripSocketService.tripStatusStream.listen((event) {
+      add(RideSocketStatusReceived(
+        tripId: event.tripId,
+        status: event.status,
+        payload: event.payload,
+      ));
+    });
+
+    _driverLocationSubscription = _tripSocketService.locationStream.listen((event) {
+      add(RideSocketLocationReceived(
+        lat: event.lat,
+        lng: event.lng,
+        etaSeconds: event.etaSeconds,
+      ));
+    });
     on<RidePickupSet>(_onPickupSet);
     on<RideDestinationSet>(_onDestinationSet);
     on<RidePickupCleared>(_onPickupCleared);
@@ -31,12 +55,10 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     on<RideVehicleSelected>(_onVehicleSelected);
     on<RideRequested>(_onRideRequested);
     on<RideDriverFound>(_onDriverFound);
-    on<RideDriverArrived>(_onDriverArrived);
     on<RideStarted>(_onRideStarted);
     on<RideDriverLocationUpdated>(_onDriverLocationUpdated);
     on<RideCompleted>(_onRideCompleted);
     on<RideCancelled>(_onRideCancelled);
-    on<RideArrivalCountdownUpdated>(_onArrivalCountdownUpdated);
     on<RidePooledRequestsRequested>(_onPooledRequestsRequested);
     on<RidePooledRequestSelected>(_onPooledRequestSelected);
     on<RidePooledAutoConfirmed>(_onPooledAutoConfirmed);
@@ -138,9 +160,6 @@ class RideBloc extends Bloc<RideEvent, RideState> {
   }
 
   void _onCleared(RideCleared event, Emitter<RideState> emit) {
-    _driverSearchTimer?.cancel();
-    _driverMovementTimer?.cancel();
-    _rideProgressTimer?.cancel();
     emit(const RideState());
   }
 
@@ -241,139 +260,40 @@ class RideBloc extends Bloc<RideEvent, RideState> {
       state.copyWith(
         status: RideStatus.searching,
         isLoading: true,
-        rideId: 'RIDE_${DateTime.now().millisecondsSinceEpoch}',
       ),
     );
 
-    // ── Mock: simulate driver search with timeout ─────────────────────
-    // In production, this is replaced by socket 'trip_status' events.
-    final searchDuration = Duration(seconds: 3 + Random().nextInt(5));
-    _driverSearchTimer = Timer(searchDuration, () {
-      // 80% chance a driver is found, 20% timeout (no drivers)
-      if (Random().nextDouble() < 0.8) {
-        final mockDriver = DriverInfo(
-          id: 'driver_${Random().nextInt(1000)}',
-          name: _mockDriverNames[Random().nextInt(_mockDriverNames.length)],
-          phone: '+91 98765 ${Random().nextInt(90000) + 10000}',
-          vehicleNumber:
-              'TN ${Random().nextInt(90) + 10} ${_randomLetters()} ${Random().nextInt(9000) + 1000}',
-          vehicleModel:
-              _mockVehicleModels[Random().nextInt(_mockVehicleModels.length)],
-          vehicleColor: _mockColors[Random().nextInt(_mockColors.length)],
-          rating: 4.0 + Random().nextDouble(),
-          location: _getRandomNearbyLocation(state.pickup!.location!),
-        );
-        add(RideDriverFound(mockDriver));
-      } else {
-        add(const RideNoDriversFound());
-      }
-    });
+    try {
+      final res = await _rideRepository.requestRide(
+        pickup: state.pickup!,
+        destination: state.destination!,
+        rideType: state.rideType,
+        vehicleId: state.selectedVehicle?.id,
+        estimatedFare: state.selectedVehicle?.fare ?? 0.0,
+        distanceMeters: state.route?.distanceMeters.toDouble() ?? 0.0,
+      );
+      
+      emit(state.copyWith(rideId: res['rideId'] ?? 'RIDE_${DateTime.now().millisecondsSinceEpoch}'));
+      // Driver search will now be answered via socket event (RideDriverFound)
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed: $e', status: RideStatus.selectingVehicle, isLoading: false));
+    }
   }
 
   void _onDriverFound(RideDriverFound event, Emitter<RideState> emit) {
-    _arrivalCountdown = 3 + Random().nextInt(3); // 3-5 minutes
     emit(
       state.copyWith(
         status: RideStatus.driverFound,
         driver: event.driver,
         isLoading: false,
-        estimatedArrivalMinutes: _arrivalCountdown,
       ),
     );
 
-    // Start simulating driver movement towards pickup
-    _startDriverMovementSimulation();
-
-    // Start countdown timer (every 10 seconds reduce by 1 minute for demo)
-    _startArrivalCountdown();
-  }
-
-  void _startArrivalCountdown() {
-    _rideProgressTimer?.cancel();
-    _rideProgressTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (_arrivalCountdown > 1) {
-        _arrivalCountdown--;
-        add(RideArrivalCountdownUpdated(_arrivalCountdown));
-      } else {
-        timer.cancel();
-        // Driver has arrived
-        add(const RideDriverArrived());
-      }
-    });
-  }
-
-  void _onArrivalCountdownUpdated(
-    RideArrivalCountdownUpdated event,
-    Emitter<RideState> emit,
-  ) {
-    emit(state.copyWith(estimatedArrivalMinutes: event.minutes));
-  }
-
-  void _onDriverArrived(RideDriverArrived event, Emitter<RideState> emit) {
-    _driverMovementTimer?.cancel();
-    // Generate unique OTP for this ride
-    final uniqueOtp = _generateUniqueOTP();
-    emit(
-      state.copyWith(
-        status: RideStatus.arrived,
-        estimatedArrivalMinutes: 0,
-        riderOtp: uniqueOtp,
-      ),
-    );
-
-    // Auto-verify OTP after 7 seconds (between 5-10s)
-    _rideProgressTimer?.cancel();
-    _rideProgressTimer = Timer(const Duration(seconds: 7), () {
-      // Automatically verify the OTP and start the ride
-      add(RideOTPVerified(uniqueOtp));
-    });
-  }
-
-  /// Generate a unique 4-digit OTP for the ride
-  String _generateUniqueOTP() {
-    final random = Random();
-    return (1000 + random.nextInt(9000)).toString();
-  }
-  void _startDriverMovementSimulation() {
-    // Move driver every 2 seconds towards pickup
-    _driverMovementTimer?.cancel();
-    _driverMovementTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (state.driver?.location != null && state.pickup?.location != null) {
-        final currentLoc = state.driver!.location!;
-        final targetLoc = state.pickup!.location!;
-
-        // Calculate distance to pickup
-        final distance = _calculateDistance(currentLoc, targetLoc);
-
-        if (distance < 50) {
-          // Driver has arrived
-          timer.cancel();
-          // Transition to arrived state handled elsewhere
-          return;
-        }
-
-        // Move driver closer (interpolate 10% towards target)
-        final newLat =
-            currentLoc.latitude +
-            (targetLoc.latitude - currentLoc.latitude) * 0.15;
-        final newLng =
-            currentLoc.longitude +
-            (targetLoc.longitude - currentLoc.longitude) * 0.15;
-
-        add(RideDriverLocationUpdated(LatLng(newLat, newLng)));
-      }
-    });
+    // Simulation timers removed here. Real-time updates come via sockets.
   }
 
   void _onRideStarted(RideStarted event, Emitter<RideState> emit) {
-    _driverMovementTimer?.cancel();
-    _rideProgressTimer?.cancel();
     emit(state.copyWith(status: RideStatus.inProgress));
-
-    // Simulate ride duration (15 seconds for demo, then complete)
-    _rideProgressTimer = Timer(const Duration(seconds: 15), () {
-      add(RideCompleted(state.selectedVehicle?.fare ?? 0));
-    });
   }
 
   void _onDriverLocationUpdated(
@@ -390,16 +310,12 @@ class RideBloc extends Bloc<RideEvent, RideState> {
   }
 
   void _onRideCompleted(RideCompleted event, Emitter<RideState> emit) {
-    _driverMovementTimer?.cancel();
-    _driverSearchTimer?.cancel();
     emit(
       state.copyWith(status: RideStatus.completed, finalFare: event.finalFare),
     );
   }
 
   void _onRideCancelled(RideCancelled event, Emitter<RideState> emit) {
-    _driverMovementTimer?.cancel();
-    _driverSearchTimer?.cancel();
     emit(
       state.copyWith(
         status: RideStatus.cancelled,
@@ -416,81 +332,16 @@ class RideBloc extends Bloc<RideEvent, RideState> {
     emit(state.copyWith(cancellationReason: event.reason));
   }
 
-  // Helper methods
-  LatLng _getRandomNearbyLocation(LatLng center) {
-    final random = Random();
-    final latOffset = (random.nextDouble() - 0.5) * 0.02; // ~1km offset
-    final lngOffset = (random.nextDouble() - 0.5) * 0.02;
-    return LatLng(center.latitude + latOffset, center.longitude + lngOffset);
-  }
-
-  double _calculateDistance(LatLng start, LatLng end) {
-    const double earthRadius = 6371000;
-    final double lat1Rad = start.latitude * pi / 180;
-    final double lat2Rad = end.latitude * pi / 180;
-    final double deltaLatRad = (end.latitude - start.latitude) * pi / 180;
-    final double deltaLngRad = (end.longitude - start.longitude) * pi / 180;
-
-    final double a =
-        sin(deltaLatRad / 2) * sin(deltaLatRad / 2) +
-        cos(lat1Rad) *
-            cos(lat2Rad) *
-            sin(deltaLngRad / 2) *
-            sin(deltaLngRad / 2);
-    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-    return earthRadius * c;
-  }
-
-  String _randomLetters() {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    return String.fromCharCodes([
-      letters.codeUnitAt(Random().nextInt(26)),
-      letters.codeUnitAt(Random().nextInt(26)),
-    ]);
-  }
-
-  static const _mockDriverNames = [
-    'Rajesh Kumar',
-    'Mohammed Salim',
-    'Vijay Sharma',
-    'Suresh Babu',
-    'Arun Prakash',
-    'Karthik Rajan',
-    'Manoj Kumar',
-    'Santosh Pillai',
-  ];
-
-  static const _mockVehicleModels = [
-    'Maruti Swift',
-    'Hyundai i20',
-    'Honda City',
-    'Toyota Etios',
-    'Maruti Dzire',
-    'Hyundai Xcent',
-  ];
-
-  static const _mockColors = [
-    'White',
-    'Silver',
-    'Black',
-    'Red',
-    'Blue',
-    'Grey',
-  ];
-
   @override
   Future<void> close() {
-    _driverSearchTimer?.cancel();
-    _driverMovementTimer?.cancel();
-    _rideProgressTimer?.cancel();
+    _rideStatusSubscription?.cancel();
+    _driverLocationSubscription?.cancel();
     return super.close();
   }
 
   // ── New event handlers ────────────────────────────────────────────────
 
   void _onNoDriversFound(RideNoDriversFound event, Emitter<RideState> emit) {
-    _driverSearchTimer?.cancel();
     emit(state.copyWith(
       status: RideStatus.noDriversFound,
       isLoading: false,
@@ -660,7 +511,7 @@ class RideBloc extends Bloc<RideEvent, RideState> {
       emit(state.copyWith(otpVerified: true));
 
       // Start the ride after OTP verification
-      _rideProgressTimer = Timer(const Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 500), () {
         add(const RideStarted());
       });
     } else {

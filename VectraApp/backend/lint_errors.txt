@@ -1,0 +1,55 @@
+﻿
+C:\Epic2Backend\Vectra\VectraApp\backend\src\modules\chat\chat.gateway.ts
+  13:2   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  18:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  27:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  29:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  30:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  44:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  44:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  44:24  error  Unsafe member access .to on an `error` typed value    @typescript-eslint/no-unsafe-member-access
+  44:45  error  Unsafe member access .emit on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+  48:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  50:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  51:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  53:5   error  Unsafe return of an error typed value                 @typescript-eslint/no-unsafe-return
+  53:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  53:19  error  Unsafe member access .join on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+
+C:\Epic2Backend\Vectra\VectraApp\backend\src\modules\location\location.gateway.ts
+  15:2   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  25:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  33:49  error  Unsafe member access .id on an `error` typed value    @typescript-eslint/no-unsafe-member-access
+  37:52  error  Unsafe member access .id on an `error` typed value    @typescript-eslint/no-unsafe-member-access
+  40:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  42:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  43:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  63:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  63:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  64:10  error  Unsafe member access .to on an `error` typed value    @typescript-eslint/no-unsafe-member-access
+  65:10  error  Unsafe member access .emit on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+  69:10  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  69:10  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  70:8   error  Unsafe member access .to on an `error` typed value    @typescript-eslint/no-unsafe-member-access
+  71:8   error  Unsafe member access .emit on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+  74:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  76:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  77:6   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  79:5   error  Unsafe return of an error typed value                 @typescript-eslint/no-unsafe-return
+  79:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  79:19  error  Unsafe member access .join on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+  82:4   error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  83:20  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  84:5   error  Unsafe return of an error typed value                 @typescript-eslint/no-unsafe-return
+  84:12  error  Unsafe call of an `error` type typed value            @typescript-eslint/no-unsafe-call
+  84:19  error  Unsafe member access .join on an `error` typed value  @typescript-eslint/no-unsafe-member-access
+
+C:\Epic2Backend\Vectra\VectraApp\backend\src\modules\pooling\pooling.manager.ts
+  60:27  error  Unsafe assignment of an `any` value                                                               @typescript-eslint/no-unsafe-assignment
+  62:64  error  Unsafe argument of type `any` assigned to a parameter of type `{ riders: RideRequestEntity[]; }`  @typescript-eslint/no-unsafe-argument
+
+C:\Epic2Backend\Vectra\VectraApp\backend\src\modules\pooling\pooling.service.ts
+  68:97  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 44 problems (44 errors, 0 warnings)
+

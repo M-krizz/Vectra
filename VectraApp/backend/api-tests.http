@@ -1,0 +1,275 @@
+###############################################################################
+# VECTRA Backend API Testing  
+# Base URL: http://localhost:3000/api/v1
+
+@baseUrl = http://localhost:3000/api/v1
+
+###############################################################################
+# 1. AUTHENTICATION (/api/v1/auth)
+###############################################################################
+
+### 1.1 Request OTP
+POST {{baseUrl}}/auth/request-otp
+Content-Type: application/json
+
+{
+  "channel": "email",
+  "identifier": "test.rider@vectra.com"
+}
+
+### 1.2 Register Rider
+# @name registerRider
+POST {{baseUrl}}/auth/register/rider
+Content-Type: application/json
+
+{
+  "fullName": "Vectra Test Rider",
+  "email": "test.rider@vectra.com",
+  "phone": "+1234567890",
+  "password": "SecurePassword123!",
+  "emergencyContacts": [
+    {
+      "name": "Emergency Contact",
+      "phone": "+0987654321",
+      "relationship": "Family"
+    }
+  ]
+}
+
+### 1.3 Register Driver
+# @name registerDriver
+POST {{baseUrl}}/auth/register/driver
+Content-Type: application/json
+
+{
+  "fullName": "Vectra Test Driver",
+  "email": "test.driver@vectra.com",
+  "phone": "+1234567891",
+  "password": "SecurePassword123!",
+  "licenseNumber": "DL98765432",
+  "licenseState": "CA",
+  "emergencyContacts": [
+    {
+      "name": "Emergency Contact Driver",
+      "phone": "+0987654322",
+      "relationship": "Family"
+    }
+  ]
+}
+
+### 1.4 Verify OTP (and Login)
+# @name verifyOtp
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "identifier": "test.rider@vectra.com",
+  "code": "123456"
+}
+
+### 1.5 Login with Email/Password
+# @name loginRider
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test.rider@vectra.com",
+  "password": "SecurePassword123!"
+}
+
+### 1.6 Login as Driver
+# @name loginDriver
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test.driver@vectra.com",
+  "password": "SecurePassword123!"
+}
+
+### 1.7 Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+x-refresh-token-id: {{refreshTokenId}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 1.8 Get Current User (Me)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{riderAccessToken}}
+
+### 1.9 List Sessions
+GET {{baseUrl}}/auth/sessions
+Authorization: Bearer {{riderAccessToken}}
+
+### 1.10 Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{riderAccessToken}}
+x-refresh-token-id: {{refreshTokenId}}
+
+### 1.11 Logout All Sessions
+POST {{baseUrl}}/auth/logout-all
+Authorization: Bearer {{riderAccessToken}}
+
+###############################################################################
+# 2. PROFILE MANAGEMENT (/api/v1/profile)
+###############################################################################
+
+### 2.1 Get Profile
+GET {{baseUrl}}/profile
+Authorization: Bearer {{riderAccessToken}}
+
+### 2.2 Update Profile
+PATCH {{baseUrl}}/profile
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "fullName": "Vectra Test Rider Updated",
+  "bio": "Updated profile for testing"
+}
+
+### 2.3 Update Privacy Settings
+PATCH {{baseUrl}}/profile/privacy
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "shareLocation": false,
+  "shareTrips": true
+}
+
+### 2.4 Deactivate Account
+POST {{baseUrl}}/profile/deactivate
+Authorization: Bearer {{riderAccessToken}}
+
+### 2.5 Delete Account - CAUTION
+# DELETE {{baseUrl}}/profile
+# Authorization: Bearer {{riderAccessToken}}
+
+### 2.6 Export User Data
+GET {{baseUrl}}/profile/export
+Authorization: Bearer {{riderAccessToken}}
+
+###############################################################################
+# 3. DRIVER OPERATIONS (/api/v1/drivers)
+###############################################################################
+
+### 3.1 Get Driver Profile
+GET {{baseUrl}}/drivers/profile
+Authorization: Bearer {{driverAccessToken}}
+
+### 3.2 Update License
+PATCH {{baseUrl}}/drivers/license
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "licenseNumber": "DL98765432-UPDATED",
+  "licenseState": "NY"
+}
+
+### 3.3 Set Driver Online Status
+POST {{baseUrl}}/drivers/online
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "online": true
+}
+
+### 3.4 Get Vehicles
+GET {{baseUrl}}/drivers/vehicles
+Authorization: Bearer {{driverAccessToken}}
+
+### 3.5 Add Vehicle
+POST {{baseUrl}}/drivers/vehicles
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "make": "Honda",
+  "model": "Accord",
+  "year": 2023,
+  "color": "Silver",
+  "licensePlate": "XYZ789",
+  "capacity": 4
+}
+
+###############################################################################
+# 4. RIDE REQUESTS (/api/v1/ride-requests)
+###############################################################################
+
+### 4.1 Create Ride Request (RIDER only)
+# @name createRideRequest
+POST {{baseUrl}}/ride-requests
+Authorization: Bearer {{riderAccessToken}}
+Content-Type: application/json
+
+{
+  "pickupLat": 37.7749,
+  "pickupLng": -122.4194,
+  "dropoffLat": 37.8049,
+  "dropoffLng": -122.4494,
+  "pickupAddress": "123 Market St, San Francisco, CA",
+  "dropoffAddress": "456 Mission St, San Francisco, CA",
+  "seats": 2
+}
+
+### 4.2 Get Current Active Ride Request (RIDER only)
+GET {{baseUrl}}/ride-requests/current
+Authorization: Bearer {{riderAccessToken}}
+
+### 4.3 Cancel Ride Request (RIDER only)
+PATCH {{baseUrl}}/ride-requests/{{rideRequestId}}/cancel
+Authorization: Bearer {{riderAccessToken}}
+
+###############################################################################
+# 5. TRIPS MANAGEMENT (/api/v1/trips)
+###############################################################################
+
+### 5.1 Get Trip Details
+GET {{baseUrl}}/trips/{{tripId}}
+Authorization: Bearer {{driverAccessToken}}
+
+### 5.2 Update Driver Location (DRIVER only)
+PATCH {{baseUrl}}/trips/{{tripId}}/location
+Authorization: Bearer {{driverAccessToken}}
+Content-Type: application/json
+
+{
+  "lat": 37.7849,
+  "lng": -122.4294
+}
+
+###############################################################################
+# 6. ADMIN OPERATIONS (/api/v1/admin)
+###############################################################################
+
+### 6.1 List All Users (ADMIN only)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{adminAccessToken}}
+
+### 6.2 Get User Details (ADMIN only)
+GET {{baseUrl}}/admin/users/{{riderId}}
+Authorization: Bearer {{adminAccessToken}}
+
+### 6.3 Suspend User (ADMIN only)
+POST {{baseUrl}}/admin/users/suspend
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "targetUserId": "{{riderId}}",
+  "reason": "Testing suspension functionality"
+}
+
+### 6.4 Reinstate User (ADMIN only)
+POST {{baseUrl}}/admin/users/{{riderId}}/reinstate
+Authorization: Bearer {{adminAccessToken}}
+
+###############################################################################
+# END OF API TESTS
+###############################################################################

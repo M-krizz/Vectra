@@ -1,6 +1,6 @@
 name: shared
 description: Shared utilities, models, and services for Vectra apps.
-publish_to: 'none'
+publish_to: "none"
 
 environment:
   sdk: ^3.10.3

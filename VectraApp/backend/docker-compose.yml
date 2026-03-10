@@ -4,7 +4,7 @@ services:
   backend:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
@@ -20,7 +20,7 @@ services:
     build: ./ml-service
     container_name: ml-service
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - ./ml-service:/app
     environment:

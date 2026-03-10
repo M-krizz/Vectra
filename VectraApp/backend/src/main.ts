@@ -7,24 +7,32 @@ async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
   const allowedOriginsEnv = process.env.CORS_ALLOWED_ORIGINS;
   const allowedOrigins = allowedOriginsEnv
-    ? allowedOriginsEnv.split(',').map(origin => origin.trim()).filter(origin => origin.length > 0)
+    ? allowedOriginsEnv
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0)
     : [];
 
-  app.enableCors({
-    origin: isProduction
-      ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-          // Allow same-origin requests without an Origin header (e.g., curl, server-to-server)
-          if (!origin) {
-            return callback(null, true);
-          }
-
-          if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-          }
-
-          return callback(new Error('Not allowed by CORS'), false);
+  const corsOrigin = isProduction
+    ? (
+        origin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void,
+      ) => {
+        // Allow same-origin requests without an Origin header (e.g., curl, server-to-server)
+        if (!origin) {
+          return callback(null, true);
         }
-      : true,
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'), false);
+      }
+    : true;
+
+  app.enableCors({
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

@@ -18,6 +18,7 @@ docker compose up -d
 ```
 
 This starts:
+
 - **PostgreSQL 16** with PostGIS 3.4 extension (port `5432`)
 - **Redis 7** for caching (port `6379`)
 
@@ -28,6 +29,7 @@ docker ps
 ```
 
 You should see:
+
 ```
 CONTAINER ID   IMAGE                    STATUS          PORTS                    NAMES
 xxxxxxxxxxxx   postgis/postgis:16-3.4   Up X minutes    0.0.0.0:5432->5432/tcp   vectra_db
@@ -43,6 +45,7 @@ npm install
 ```
 
 The `.env` file should contain:
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -63,12 +66,12 @@ This creates all required tables in the database.
 
 ## Database Connection Details
 
-| Property | Value |
-|----------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| Database | `vectra_db` |
-| Username | `vectra` |
+| Property | Value         |
+| -------- | ------------- |
+| Host     | `localhost`   |
+| Port     | `5432`        |
+| Database | `vectra_db`   |
+| Username | `vectra`      |
 | Password | `vectra_pass` |
 
 ### Connection String
@@ -83,22 +86,24 @@ postgresql://vectra:vectra_pass@localhost:5432/vectra_db
 
 ### Docker Commands
 
-| Command | Description |
-|---------|-------------|
-| `docker compose up -d` | Start database containers |
-| `docker compose down` | Stop containers (keeps data) |
-| `docker compose down -v` | Stop containers AND delete all data |
-| `docker compose logs -f db` | View database logs |
-| `docker compose restart db` | Restart database |
+| Command                     | Description                         |
+| --------------------------- | ----------------------------------- |
+| `docker compose up -d`      | Start database containers           |
+| `docker compose down`       | Stop containers (keeps data)        |
+| `docker compose down -v`    | Stop containers AND delete all data |
+| `docker compose logs -f db` | View database logs                  |
+| `docker compose restart db` | Restart database                    |
 
 ### Accessing the Database
 
 **Via psql (command line):**
+
 ```bash
 docker exec -it vectra_db psql -U vectra -d vectra_db
 ```
 
 **Common psql commands:**
+
 ```sql
 \dt                    -- List all tables
 \d table_name          -- Describe a table
@@ -107,11 +112,11 @@ docker exec -it vectra_db psql -U vectra -d vectra_db
 
 ### Migration Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run migration:run` | Apply pending migrations |
-| `npm run migration:revert` | Undo last migration |
-| `npm run migration:generate -- src/database/migrations/YourMigrationName` | Generate new migration |
+| Command                                                                   | Description              |
+| ------------------------------------------------------------------------- | ------------------------ |
+| `npm run migration:run`                                                   | Apply pending migrations |
+| `npm run migration:revert`                                                | Undo last migration      |
+| `npm run migration:generate -- src/database/migrations/YourMigrationName` | Generate new migration   |
 
 ---
 
@@ -140,21 +145,24 @@ npm run migration:run
 If port 5432 is already in use:
 
 1. Check what's using it:
+
    ```bash
    # Windows
    netstat -ano | findstr :5432
-   
+
    # Mac/Linux
    lsof -i :5432
    ```
 
 2. Either stop the other service or change the port in `docker-compose.yml`:
+
    ```yaml
    ports:
-     - "5433:5432"  # Use 5433 externally
+     - "5433:5432" # Use 5433 externally
    ```
-   
+
    Then update `backend/.env`:
+
    ```env
    DB_PORT=5433
    ```
@@ -185,6 +193,7 @@ npm run migration:run
 You can connect to the database using any PostgreSQL client:
 
 ### pgAdmin
+
 - Host: `localhost`
 - Port: `5432`
 - Username: `vectra`
@@ -192,12 +201,15 @@ You can connect to the database using any PostgreSQL client:
 - Database: `vectra_db`
 
 ### DBeaver / DataGrip
+
 Use the connection string:
+
 ```
 postgresql://vectra:vectra_pass@localhost:5432/vectra_db
 ```
 
 ### VS Code Extensions
+
 - **PostgreSQL** by Chris Kolkman
 - **Database Client** by Weijan Chen
 
