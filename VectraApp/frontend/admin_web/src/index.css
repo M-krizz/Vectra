@@ -12,15 +12,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --primary: #00f2ff;
-  --primary-glow: #00f2ff44;
-  --secondary: #7000ff;
-  --accent: #ff007a;
-  --bg-darker: #02020a;
-  --bg-card: #0c0c1e;
-  --text-dim: #94a3b8;
+  --primary: #00e676;
+  --primary-glow: #00e67644;
+  --secondary: #651fff;
+  --accent: #ffd600;
+  --bg-darker: #0a0a0a;
+  --bg-card: #141414;
+  --text-dim: #a1a1aa;
   --danger: #ef4444;
-  --success: #22c55e;
+  --success: #10b981;
 }
 
 body {
@@ -64,8 +64,8 @@ body {
 /* Animations */
 @keyframes pulse-glow {
   0% { box-shadow: 0 0 0 0 var(--primary-glow); }
-  70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 230, 118, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
 }
 
 .pulse {
