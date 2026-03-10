@@ -1,28 +1,23 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List, Optional
+from flask import Flask, request, jsonify
+from app.api.pooling import Rider, evaluate as evaluate_pool_logic
 
-app = FastAPI()
+app = Flask(__name__)
 
-class Rider(BaseModel):
-    id: str
-    lat: float
-    lon: float
-
-class PoolRequest(BaseModel):
-    vehicle_type: str
-    riders: List[Rider]
-
-@app.get("/")
+@app.route("/")
 def read_root():
-    return {"Hello": "World"}
+    return jsonify({"service": "Vectra ML Service", "status": "ok"})
 
-@app.post("/evaluate-pool")
-def evaluate_pool(request: PoolRequest):
-    # Mock Logic: Always approve
-    return {
-        "isValid": True,
-        "score": 0.95,
-        "sequence": [r.id for r in request.riders],
-        "detourOk": True
-    }
+@app.route("/evaluate-pool", methods=["POST"])
+def evaluate_pool():
+    data = request.json
+    riders_data = data.get("riders", [])
+    
+    riders = []
+    for r in riders_data:
+        riders.append(Rider(id=r["id"], lat=r["lat"], lon=r["lon"]))
+        
+    result = evaluate_pool_logic(riders)
+    return jsonify(result)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
