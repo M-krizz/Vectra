@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../config/app_theme.dart';
+import '../repository/ride_repository.dart';
 
 /// Rating dialog shown after ride completion
 class RatingDialog extends StatefulWidget {
+  final String tripId;
   final String driverName;
   final String vehicleNumber;
   final double fare;
@@ -10,6 +14,7 @@ class RatingDialog extends StatefulWidget {
 
   const RatingDialog({
     super.key,
+    required this.tripId,
     required this.driverName,
     required this.vehicleNumber,
     required this.fare,
@@ -20,6 +25,7 @@ class RatingDialog extends StatefulWidget {
   /// Show the rating dialog
   static Future<void> show(
     BuildContext context, {
+    required String tripId,
     required String driverName,
     required String vehicleNumber,
     required double fare,
@@ -32,6 +38,7 @@ class RatingDialog extends StatefulWidget {
       enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (context) => RatingDialog(
+        tripId: tripId,
         driverName: driverName,
         vehicleNumber: vehicleNumber,
         fare: fare,
@@ -73,10 +80,11 @@ class _RatingDialogState extends State<RatingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -92,7 +100,7 @@ class _RatingDialogState extends State<RatingDialog> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: colors.outline.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -103,13 +111,13 @@ class _RatingDialogState extends State<RatingDialog> {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: AppColors.success.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.check_circle,
                   size: 40,
-                  color: Colors.green.shade600,
+                  color: AppColors.success,
                 ),
               ),
               const SizedBox(height: 16),
@@ -122,7 +130,7 @@ class _RatingDialogState extends State<RatingDialog> {
 
               Text(
                 'You paid ₹${widget.fare.toStringAsFixed(0)}',
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
               ),
 
               const SizedBox(height: 24),
@@ -131,15 +139,15 @@ class _RatingDialogState extends State<RatingDialog> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: colors.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Icon(Icons.person, size: 28),
+                      backgroundColor: colors.outline.withValues(alpha: 0.3),
+                      child: Icon(Icons.person, size: 28, color: colors.onSurfaceVariant),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -156,7 +164,7 @@ class _RatingDialogState extends State<RatingDialog> {
                           Text(
                             widget.vehicleNumber,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: colors.onSurfaceVariant,
                               fontSize: 13,
                             ),
                           ),
@@ -189,8 +197,8 @@ class _RatingDialogState extends State<RatingDialog> {
                         index < _rating ? Icons.star : Icons.star_border,
                         size: 40,
                         color: index < _rating
-                            ? Colors.amber
-                            : Colors.grey.shade400,
+                            ? AppColors.accent
+                            : colors.outline,
                       ),
                     ),
                   );
@@ -201,7 +209,7 @@ class _RatingDialogState extends State<RatingDialog> {
               Text(
                 _getRatingText(),
                 style: TextStyle(
-                  color: _rating > 0 ? Colors.amber.shade700 : Colors.grey,
+                  color: _rating > 0 ? AppColors.warning : colors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -231,14 +239,14 @@ class _RatingDialogState extends State<RatingDialog> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.black
-                              : Colors.grey.shade100,
+                              ? colors.primary
+                              : colors.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           review,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
+                            color: isSelected ? colors.onPrimary : colors.onSurface,
                             fontSize: 13,
                           ),
                         ),
@@ -256,7 +264,7 @@ class _RatingDialogState extends State<RatingDialog> {
                   decoration: InputDecoration(
                     hintText: 'Add a comment (optional)',
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: colors.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -273,13 +281,13 @@ class _RatingDialogState extends State<RatingDialog> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
+                    color: AppColors.warning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.shade200),
+                    border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.favorite, color: Colors.amber.shade700),
+                      const Icon(Icons.favorite, color: AppColors.warning),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -292,7 +300,7 @@ class _RatingDialogState extends State<RatingDialog> {
                             Text(
                               '100% goes to the driver',
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: colors.onSurfaceVariant,
                                 fontSize: 12,
                               ),
                             ),
@@ -323,9 +331,9 @@ class _RatingDialogState extends State<RatingDialog> {
                       ? _submitRating
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade300,
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    disabledBackgroundColor: colors.outline.withValues(alpha: 0.5),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -353,7 +361,7 @@ class _RatingDialogState extends State<RatingDialog> {
                 onPressed: _isSubmitting ? null : widget.onSkip,
                 child: Text(
                   'Skip',
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: TextStyle(color: colors.onSurfaceVariant),
                 ),
               ),
             ],
@@ -383,11 +391,27 @@ class _RatingDialogState extends State<RatingDialog> {
   Future<void> _submitRating() async {
     setState(() => _isSubmitting = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      if (widget.tripId.isEmpty) {
+        throw Exception('Missing trip id for rating submission');
+      }
 
-    setState(() => _isSubmitting = false);
+      await context.read<RideRepository>().submitTripRating(
+        tripId: widget.tripId,
+        rating: _rating,
+        feedback: _reviewController.text,
+        tags: _selectedQuickReview == null ? null : [_selectedQuickReview!],
+      );
 
-    widget.onSubmit();
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      widget.onSubmit();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to submit rating. Please try again.')),
+      );
+    }
   }
 }
