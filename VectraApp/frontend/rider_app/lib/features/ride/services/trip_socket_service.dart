@@ -77,7 +77,9 @@ class TripSocketService {
 
   bool get isConnected => _socket?.connected ?? false;
 
-  TripSocketService({required this.baseUrl});
+  final io.Socket Function(String, io.OptionBuilder)? socketBuilder;
+
+  TripSocketService({required this.baseUrl, this.socketBuilder});
 
   // ── Public API ─────────────────────────────────────────────────────────
 
@@ -124,15 +126,17 @@ class TripSocketService {
   void _initSocket(String token) {
     _socket?.dispose();
 
-    _socket = io.io(
-      baseUrl,
-      io.OptionBuilder()
+    final optionsBuilder = io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .setExtraHeaders({'Authorization': 'Bearer $token'})
-          .setQuery({'token': token})
-          .build(),
-    );
+          .setQuery({'token': token});
+
+    if (socketBuilder != null) {
+      _socket = socketBuilder!(baseUrl, optionsBuilder);
+    } else {
+      _socket = io.io(baseUrl, optionsBuilder.build());
+    }
 
     _socket!
       ..onConnect((_) {

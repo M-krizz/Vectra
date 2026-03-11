@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RideRequestEntity } from './ride-request.entity';
@@ -26,6 +26,11 @@ export class RideRequestsService {
     userId: string,
     dto: CreateRideRequestDto,
   ): Promise<RideRequestEntity> {
+    const existing = await this.getActiveRequestForUser(userId);
+    if (existing) {
+      throw new BadRequestException('User already has an active ride request');
+    }
+
     const rideRequest = this.rideRequestsRepo.create({
       riderUserId: userId,
       pickupPoint: dto.pickupPoint as GeoPoint,
@@ -84,7 +89,7 @@ export class RideRequestsService {
         .getOne();
 
       if (!request || request.status !== RideRequestStatus.REQUESTED) {
-        throw new Error('Ride request is no longer available');
+        throw new ConflictException('Ride request is no longer available');
       }
 
       // 2. Fetch the rider to include their name in the response
