@@ -43,4 +43,13 @@ export class RideRequestsController {
   ) {
     return this.rideRequestsService.cancelRequest(id, req.user.userId);
   }
+
+  @Post(':id/accept')
+  @Roles(UserRole.DRIVER)
+  async acceptRequest(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.rideRequestsService.acceptSoloRideRequest(id, req.user.userId);
+  }
 }

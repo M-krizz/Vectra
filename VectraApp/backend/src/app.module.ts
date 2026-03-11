@@ -71,4 +71,4 @@ dotenv.config();
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -2,6 +2,7 @@ export enum RideRequestStatus {
   REQUESTED = 'REQUESTED',
   MATCHING = 'MATCHING',
   POOLED = 'POOLED',
+  ACCEPTED = 'ACCEPTED',
   EXPIRED = 'EXPIRED',
   CANCELLED = 'CANCELLED',
 }

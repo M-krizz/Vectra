@@ -6,7 +6,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main, Athentication, "backend-*", "feature/*"]
+    branches: [main, Athentication, "backend-*", "feature/*", "Epic*"]
     paths:
       - "VectraApp/backend/**"
       - ".github/workflows/backend-ci.yml"

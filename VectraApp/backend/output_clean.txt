@@ -1,0 +1,58 @@
+--- Vectra E2E Simulation ---
+1. Registering Rider...
+Rider authenticated.
+2. Registering Driver...
+Driver might already exist
+Database updated: all users and drivers are now verified.
+Driver authenticated.
+3. Connecting Sockets...
+Rider socket connected
+Driver socket connected
+4. Driver goes online...
+5. Rider requests ride...
+Ride Request Created: f4a4b39d-28c7-462e-9370-57c069ca239d
+6. Driver attempts to accept ride...
+Ride accepted: {
+  id: 'f8187a81-bfac-441f-85a0-53ec09635c68',
+  riderId: '8c5dc46d-ae58-4707-80fb-fce387023393',
+  riderName: 'Test Rider',
+  riderPhone: '+1111111111',
+  riderRating: 5,
+  pickupLocation: { lat: 12.9716, lng: 77.5946 },
+  pickupAddress: 'MG Road',
+  dropoffLocation: { lat: 12.9352, lng: 77.6245 },
+  dropoffAddress: 'Koramangala',
+  fare: 250,
+  distance: 5,
+  status: 'assigned',
+  vehicleType: 'AUTO'
+}
+7. Driver starts trip...
+Rider received trip_status: {
+  tripId: 'f8187a81-bfac-441f-85a0-53ec09635c68',
+  status: 'IN_PROGRESS'
+}
+Driver received trip_status: {
+  tripId: 'f8187a81-bfac-441f-85a0-53ec09635c68',
+  status: 'IN_PROGRESS'
+}
+Trip started: IN_PROGRESS
+7.5. Driver sends location update...
+Rider received location_update: {
+  tripId: 'f8187a81-bfac-441f-85a0-53ec09635c68',
+  lat: 12.94,
+  lng: 77.61
+}
+Location update sent.
+8. Driver completes trip...
+Rider received trip_status: { tripId: 'f8187a81-bfac-441f-85a0-53ec09635c68', status: 'COMPLETED' }
+Driver received trip_status: { tripId: 'f8187a81-bfac-441f-85a0-53ec09635c68', status: 'COMPLETED' }
+Trip completed: COMPLETED
+--- Socket Events Received ---
+[
+  'rider:trip_status:IN_PROGRESS',
+  'driver:trip_status:IN_PROGRESS',
+  'rider:location_update',
+  'rider:trip_status:COMPLETED',
+  'driver:trip_status:COMPLETED'
+]
