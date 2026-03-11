@@ -7,16 +7,30 @@ import 'profile/personal_info_screen.dart';
 import 'profile/vehicle_info_screen.dart';
 import 'profile/document_info_screen.dart';
 import 'profile/ride_options_screen.dart';
+import 'profile/emergency_contacts_screen.dart';
 import '../../services/wallet_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final String userName;
   final SignUpData? signUpData;
 
   const ProfileScreen({super.key, required this.userName, this.signUpData});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WalletService().initialize();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final userName = widget.userName;
+    final signUpData = widget.signUpData;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -307,6 +321,20 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Help & Support',
                 subtitle: 'FAQ, Contact Us',
                 onTap: () {},
+              ),
+
+              _buildMenuOption(
+                icon: Icons.contacts_outlined,
+                title: 'Emergency Contacts',
+                subtitle: 'Manage SOS contacts',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EmergencyContactsScreen(),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 24),

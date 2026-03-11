@@ -1,15 +1,46 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../../core/api/api_endpoints.dart';
 import '../../theme/app_colors.dart';
 import '../../models/signup_data.dart';
 import '../../utils/notification_overlay.dart';
+import '../../services/legacy_driver_profile_service.dart';
 
-class DocumentInfoScreen extends StatelessWidget {
+class DocumentInfoScreen extends StatefulWidget {
   final SignUpData? signUpData;
   const DocumentInfoScreen({super.key, this.signUpData});
 
   @override
+  State<DocumentInfoScreen> createState() => _DocumentInfoScreenState();
+}
+
+class _DocumentInfoScreenState extends State<DocumentInfoScreen> {
+  Map<String, dynamic>? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await LegacyDriverProfileService.fetchProfile();
+      if (!mounted) return;
+      setState(() => _profile = profile);
+    } catch (_) {
+      // Keep fallback view based on local signup data when fetch fails.
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final licensePath = widget.signUpData?.licensePath ??
+        (_profile?['licenseFileUrl'] as String?);
+    final rcPath = widget.signUpData?.rcBookPath ??
+        (_profile?['rcFileUrl'] as String?);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -28,52 +59,34 @@ class DocumentInfoScreen extends StatelessWidget {
             _buildDocumentCard(
               context,
               title: 'Driving License',
-              status: _getDocumentStatus(signUpData?.licensePath),
+              status: _getDocumentStatus(licensePath),
               icon: Icons.credit_card,
-              expiryDate: 'Expires on 12/2028', // Dummy date for now
-              filePath: signUpData?.licensePath,
+              filePath: licensePath,
             ),
             const SizedBox(height: 16),
             _buildDocumentCard(
               context,
               title: 'RC Book (Vehicle Registration)',
-              status: _getDocumentStatus(signUpData?.rcBookPath),
+              status: _getDocumentStatus(rcPath),
               icon: Icons.description,
-              expiryDate: 'Expires on 05/2030', // Dummy date for now
-              filePath: signUpData?.rcBookPath,
+              filePath: rcPath,
             ),
             const SizedBox(height: 16),
-            if (signUpData != null) ...[
+            if (widget.signUpData != null) ...[
               _buildDocumentCard(
                 context,
                 title: 'Aadhar Card',
-                status: _getDocumentStatus(signUpData?.aadharPath),
+                status: _getDocumentStatus(widget.signUpData?.aadharPath),
                 icon: Icons.badge,
-                filePath: signUpData?.aadharPath,
+                filePath: widget.signUpData?.aadharPath,
               ),
               const SizedBox(height: 16),
               _buildDocumentCard(
                 context,
                 title: 'PAN Card',
-                status: _getDocumentStatus(signUpData?.panCardPath),
+                status: _getDocumentStatus(widget.signUpData?.panCardPath),
                 icon: Icons.account_balance_wallet,
-                filePath: signUpData?.panCardPath,
-              ),
-            ] else ...[
-              // Fallback dummy cards if no signup data provided (e.g. dev testing)
-              _buildDocumentCard(
-                context,
-                title: 'Aadhar Card',
-                status: 'Verified',
-                icon: Icons.badge,
-              ),
-              const SizedBox(height: 16),
-              _buildDocumentCard(
-                context,
-                title: 'PAN Card',
-                status: 'Pending Verification',
-                icon: Icons.account_balance_wallet,
-                isPending: true,
+                filePath: widget.signUpData?.panCardPath,
               ),
             ],
           ],
@@ -95,7 +108,6 @@ class DocumentInfoScreen extends StatelessWidget {
     required String status,
     required IconData icon,
     String? expiryDate,
-    bool isPending = false,
     String? filePath,
   }) {
     // If we have a file path, we consider it "Uploaded" essentially,
@@ -213,6 +225,15 @@ class DocumentInfoScreen extends StatelessWidget {
   }
 
   void _viewDocument(BuildContext context, String title, String path) {
+    final isNetwork =
+      path.startsWith('http') ||
+      path.startsWith('/uploads/') ||
+      path.startsWith('blob:') ||
+      path.startsWith('data:');
+    final resolvedUrl = path.startsWith('/uploads/')
+        ? '${ApiEndpoints.baseUrl}$path'
+        : path;
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -236,29 +257,53 @@ class DocumentInfoScreen extends StatelessWidget {
                   minScale: 0.5,
                   maxScale: 4.0,
                   child: Center(
-                    child: Image.file(
-                      File(path),
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Colors.white,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Failed to load image',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ],
+                    child: (kIsWeb || isNetwork)
+                        ? Image.network(
+                            resolvedUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 48,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : Image.file(
+                            File(path),
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 48,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
               ),
