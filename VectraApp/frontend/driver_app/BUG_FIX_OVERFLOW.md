@@ -1,6 +1,7 @@
 # 🐛 Bug Fix: Overflow Error in Sign Up
 
 ## 🚨 The Issue
+
 The user reported an **overflow error** in the "Enter Phone Number" screen. Usually, this happens when the keyboard pops up and pushes content up, but the layout (using `Column` + `Spacer`) doesn't allow scrolling, causing the widgets to run out of vertical space.
 
 ## ✅ The Fix
@@ -8,6 +9,7 @@ The user reported an **overflow error** in the "Enter Phone Number" screen. Usua
 I refactored the layout of both the **Phone Verification Screen** and the **OTP Verification Screen** to be scrollable and responsive.
 
 ### **1. Phone Verification Screen** (`phone_verification_screen.dart`)
+
 - **Before:** `Padding` -> `Column` -> `Spacer` -> `Button`
   - ❌ Overflowed when keyboard appeared
   - ❌ Content was static
@@ -17,6 +19,7 @@ I refactored the layout of both the **Phone Verification Screen** and the **OTP 
   - ✅ **Responsive** on all screen sizes
 
 ### **2. OTP Verification Screen** (`otp_verification_screen.dart`)
+
 - **Proactive Fix:** Applied the exact same solution since it shared the same problematic layout structure.
 - **Before:** `Padding` -> `Column` -> `Spacer` -> `Button`
 - **After:** `CustomScrollView` -> `SliverFillRemaining` -> `IntrinsicHeight` -> `Column`
@@ -48,6 +51,7 @@ CustomScrollView(
 ```
 
 ## 🚀 Status
+
 - **Phone Screen:** Fixed ✅
 - **OTP Screen:** Fixed ✅
 - **Other Screens:** Verified (Basic Detail, Vehicle Detail, Doc Upload already use `SingleChildScrollView`) ✅

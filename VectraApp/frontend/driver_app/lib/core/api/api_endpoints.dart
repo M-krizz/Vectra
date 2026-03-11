@@ -1,9 +1,22 @@
+import 'package:flutter/foundation.dart';
+
 /// API Endpoint constants for the Vectra Driver App
 class ApiEndpoints {
   ApiEndpoints._();
 
   // Base URL - Configure based on environment
-  static const String baseUrl = 'https://api.vectra.com/v1';
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:3000/api/v1';
+    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:3000/api/v1';
+    return 'http://localhost:3000/api/v1'; // iOS/Desktop
+  }
+
+  // Socket URL - Configure based on environment
+  static String get wsUrl {
+    if (kIsWeb) return 'http://localhost:3000';
+    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:3000';
+    return 'http://localhost:3000'; // iOS/Desktop
+  }
 
   // Auth endpoints
   static const String sendOtp = '/auth/send-otp';

@@ -16,6 +16,7 @@ import {
   LoginDto,
   RefreshDto,
 } from './dto/auth.dto';
+import { CreateRiderDto, CreateDriverDto } from '../users/dto/users.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -24,6 +25,29 @@ export class AuthController {
   @Post('request-otp')
   requestOtp(@Body() dto: RequestOtpDto) {
     return this.authService.requestOtp(dto.channel, dto.identifier);
+  }
+
+  @Post('register/rider')
+  async registerRider(
+    @Body() dto: CreateRiderDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    try {
+      return await this.authService.registerRider(dto, ip, userAgent);
+    } catch (error) {
+      console.error('Error registering rider:', error);
+      throw error;
+    }
+  }
+
+  @Post('register/driver')
+  registerDriver(
+    @Body() dto: CreateDriverDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.authService.registerDriver(dto, ip, userAgent);
   }
 
   @Post('verify-otp')

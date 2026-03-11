@@ -19,20 +19,11 @@ class AuthRepository {
   /// Send OTP to phone number
   Future<bool> sendOtp(OtpRequest request) async {
     try {
-      // In production, this would call the actual API
-      // For now, simulate a successful OTP send
-      print('AuthRepository: Simulating API call...');
-      await Future.delayed(const Duration(seconds: 1));
-      print('AuthRepository: API call simulated');
-
-      // Mock API call:
-      // final response = await _apiClient.post(
-      //   ApiEndpoints.sendOtp,
-      //   data: request.toJson(),
-      // );
-      // return response.statusCode == 200;
-
-      return true;
+      final response = await _apiClient.post(
+        ApiEndpoints.sendOtp,
+        data: request.toJson(),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       throw AuthError(message: 'Failed to send OTP. Please try again.');
     }
@@ -41,37 +32,23 @@ class AuthRepository {
   /// Verify OTP and get tokens
   Future<AuthTokens> verifyOtp(OtpVerification verification) async {
     try {
-      // In production, this would call the actual API
-      // For now, simulate a successful verification
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Mock response - in production, use actual API:
-      // final response = await _apiClient.post(
-      //   ApiEndpoints.verifyOtp,
-      //   data: verification.toJson(),
-      // );
-      // final tokens = AuthTokens.fromJson(response.data);
-
-      // Mock tokens for development
-      final mockTokens = AuthTokens(
-        accessToken: 'mock_access_token_${DateTime.now().millisecondsSinceEpoch}',
-        refreshToken: 'mock_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-        role: UserRoles.driver,
-        userId: 'driver_123',
-        expiresAt: DateTime.now().add(const Duration(days: 7)),
+      final response = await _apiClient.post(
+        ApiEndpoints.verifyOtp,
+        data: verification.toJson(),
       );
+      final tokens = AuthTokens.fromJson(response.data);
 
       // Store tokens
       await _storage.saveTokens(
-        accessToken: mockTokens.accessToken,
-        refreshToken: mockTokens.refreshToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       );
-      await _storage.saveUserRole(mockTokens.role);
-      if (mockTokens.userId != null) {
-        await _storage.saveUserId(mockTokens.userId!);
+      await _storage.saveUserRole(tokens.role);
+      if (tokens.userId != null) {
+        await _storage.saveUserId(tokens.userId!);
       }
 
-      return mockTokens;
+      return tokens;
     } catch (e) {
       throw AuthError(message: 'Invalid OTP. Please try again.');
     }
@@ -83,17 +60,13 @@ class AuthRepository {
       final refreshToken = await _storage.getRefreshToken();
       if (refreshToken == null) return null;
 
-      // In production, call the actual refresh API
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Mock new tokens
-      final newTokens = AuthTokens(
-        accessToken: 'refreshed_access_token_${DateTime.now().millisecondsSinceEpoch}',
-        refreshToken: 'refreshed_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-        role: UserRoles.driver,
-        userId: await _storage.getUserId(),
-        expiresAt: DateTime.now().add(const Duration(days: 7)),
+      final response = await _apiClient.post(
+        ApiEndpoints.refreshToken,
+        // The API might expect a parameter named refreshToken
+        data: {'refreshToken': refreshToken},
       );
+      
+      final newTokens = AuthTokens.fromJson(response.data);
 
       await _storage.saveTokens(
         accessToken: newTokens.accessToken,
@@ -109,8 +82,7 @@ class AuthRepository {
   /// Logout user
   Future<void> logout() async {
     try {
-      // In production, call logout API to invalidate tokens
-      // await _apiClient.post(ApiEndpoints.logout);
+      await _apiClient.post(ApiEndpoints.logout);
 
       await _storage.clearTokens();
       await _storage.clearAll();

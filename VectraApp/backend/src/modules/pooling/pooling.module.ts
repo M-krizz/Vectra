@@ -8,15 +8,15 @@ import { TripRiderEntity } from '../trips/trip-rider.entity';
 import { PoolingManager } from './pooling.manager';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            PoolGroupEntity,
-            RideRequestEntity,
-            TripEntity,
-            TripRiderEntity,
-        ]),
-    ],
-    providers: [PoolingService, PoolingManager],
-    exports: [PoolingService],
+  imports: [
+    TypeOrmModule.forFeature([
+      PoolGroupEntity,
+      RideRequestEntity,
+      TripEntity,
+      TripRiderEntity,
+    ]),
+  ],
+  providers: [PoolingService, PoolingManager],
+  exports: [PoolingService],
 })
-export class PoolingModule { }
+export class PoolingModule {}
