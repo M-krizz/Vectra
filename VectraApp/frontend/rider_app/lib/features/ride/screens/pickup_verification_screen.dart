@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../config/app_theme.dart';
 import '../bloc/ride_bloc.dart';
 import '../widgets/safety_fab.dart';
-import 'in_trip_screen.dart';
 
 class PickupVerificationScreen extends StatefulWidget {
   const PickupVerificationScreen({super.key});
@@ -31,47 +31,64 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen> {
 
   void _verify() {
     final state = context.read<RideBloc>().state;
-    final correctOtp = state.riderOtp ?? '1234';
+    final correctOtp = state.riderOtp;
+    if (correctOtp == null || correctOtp.length < 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Waiting for trip OTP from server...')),
+      );
+      return;
+    }
     if (_enteredOtp.length < 4) return;
 
     if (_enteredOtp == correctOtp) {
-      context.read<RideBloc>()
-        ..add(RideOTPVerified(correctOtp))
-        ..add(const RideStarted());
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const InTripScreen()),
+      context.read<RideBloc>().add(const RideOTPVerified());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP verified. Waiting for driver to start trip...')),
       );
     } else {
       setState(() => _error = true);
-      for (final c in _controllers) c.clear();
+      for (final c in _controllers) {
+        c.clear();
+      }
       _focuses[0].requestFocus();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RideBloc, RideState>(
-      builder: (context, state) {
-        final otp = state.riderOtp ?? '1234';
-        return Scaffold(
-          backgroundColor: Colors.white,
+    return BlocListener<RideBloc, RideState>(
+      listenWhen: (previous, current) => previous.status != current.status,
+      listener: (context, state) {
+        final tripId = state.rideId ?? 'current';
+        if (state.status == RideStatus.inProgress) {
+          context.go('/trip/$tripId/in-progress');
+        } else if (state.status == RideStatus.completed) {
+          context.go('/trip/$tripId/completed');
+        } else if (state.status == RideStatus.cancelled) {
+          context.go('/trip/$tripId/cancelled');
+        }
+      },
+      child: BlocBuilder<RideBloc, RideState>(
+        builder: (context, state) {
+          final otp = state.riderOtp;
+          return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'Verify Pickup',
               style: TextStyle(
-                  fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded,
-                  color: AppColors.textPrimary),
+              icon: Icon(Icons.arrow_back_rounded,
+                  color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
-              child: Container(height: 1, color: AppColors.border),
+              child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
             ),
           ),
           body: Padding(
@@ -83,8 +100,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen> {
                 Container(
                   width: 80,
                   height: 80,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE8F0FE),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.verified_user_rounded,
@@ -113,26 +130,51 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FA),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: otp.split('').map((d) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            d,
-                            style: const TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.primary,
-                              letterSpacing: 2,
+                    children: otp != null && otp.isNotEmpty
+                        ? otp
+                              .split('')
+                              .map(
+                                (digit) => Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text(
+                                    digit,
+                                    style: const TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.primary,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList()
+                        : [
+                            const Text(
+                              '----',
+                              style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 2,
+                              ),
                             ),
-                          ),
-                        )).toList(),
+                          ],
                   ),
                 ),
+                if (otp == null || otp.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text(
+                      'Waiting for driver assignment OTP...',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ),
 
                 const SizedBox(height: 32),
                 const Text(
@@ -150,7 +192,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen> {
                         height: 64,
                         margin: const EdgeInsets.symmetric(horizontal: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F7FA),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _error
@@ -214,13 +256,18 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen> {
           floatingActionButton: const SafetyFab(),
         );
       },
+      ),
     );
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
-    for (final f in _focuses) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focuses) {
+      f.dispose();
+    }
     super.dispose();
   }
 }

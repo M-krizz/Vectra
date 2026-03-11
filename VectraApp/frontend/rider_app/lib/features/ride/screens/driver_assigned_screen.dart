@@ -1,11 +1,13 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/app_theme.dart';
+import '../../../../config/maps_config.dart';
 import '../bloc/ride_bloc.dart';
 import '../widgets/safety_fab.dart';
-import 'driver_arriving_screen.dart';
 
 class DriverAssignedScreen extends StatefulWidget {
   const DriverAssignedScreen({super.key});
@@ -15,41 +17,36 @@ class DriverAssignedScreen extends StatefulWidget {
 }
 
 class _DriverAssignedScreenState extends State<DriverAssignedScreen> {
-  int _eta = 5;
-  Timer? _etaTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Countdown ETA and auto-advance to ARRIVING after etaTimer hits 0
-    _etaTimer = Timer.periodic(const Duration(seconds: 4), (t) {
-      if (!mounted) { t.cancel(); return; }
-      setState(() => _eta = (_eta - 1).clamp(0, 99));
-      if (_eta == 0) {
-        t.cancel();
-        context.read<RideBloc>().add(const RideDriverArrived());
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DriverArrivingScreen()),
-        );
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RideBloc, RideState>(
-      builder: (context, state) {
-        final driver = state.driver;
-        return Scaffold(
-          backgroundColor: Colors.white,
+    return BlocListener<RideBloc, RideState>(
+      listenWhen: (previous, current) => previous.status != current.status,
+      listener: (context, state) {
+        final tripId = state.rideId ?? 'current';
+        if (state.status == RideStatus.arrived) {
+          context.go('/trip/$tripId/arriving');
+        } else if (state.status == RideStatus.inProgress) {
+          context.go('/trip/$tripId/in-progress');
+        } else if (state.status == RideStatus.completed) {
+          context.go('/trip/$tripId/completed');
+        } else if (state.status == RideStatus.cancelled) {
+          context.go('/trip/$tripId/cancelled');
+        }
+      },
+      child: BlocBuilder<RideBloc, RideState>(
+        builder: (context, state) {
+          final driver = state.driver;
+          final eta = (state.estimatedArrivalMinutes ?? state.tripDurationMinutes ?? 5).clamp(0, 99);
+          return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             child: Column(
               children: [
-                // Map placeholder
+                // Map view
                 _MapPlaceholder(
-                  etaMinutes: _eta,
+                  etaMinutes: eta,
                   label: 'Driver is on the way',
+                  state: state,
                 ),
 
                 // Driver card
@@ -73,13 +70,8 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen> {
           floatingActionButton: const SafetyFab(),
         );
       },
+      ),
     );
-  }
-
-  @override
-  void dispose() {
-    _etaTimer?.cancel();
-    super.dispose();
   }
 }
 
@@ -88,32 +80,67 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen> {
 class _MapPlaceholder extends StatelessWidget {
   final int etaMinutes;
   final String label;
-  const _MapPlaceholder({required this.etaMinutes, required this.label});
+  final RideState state;
+  const _MapPlaceholder({required this.etaMinutes, required this.label, required this.state});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 220,
-      color: const Color(0xFFE8F0FE),
+      color: AppColors.primary.withValues(alpha: 0.1),
       child: Stack(
         children: [
-          // Mock map background
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.directions_car_rounded,
-                    size: 48, color: AppColors.primary),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary),
-                ),
-              ],
+          // Mapbox Map Background
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: LatLng(
+                state.driver?.location?.latitude ?? state.pickup?.location?.latitude ?? 11.0168,
+                state.driver?.location?.longitude ?? state.pickup?.location?.longitude ?? 76.9558,
+              ),
+              initialZoom: 15.0,
             ),
+            children: [
+              TileLayer(
+                urlTemplate: Theme.of(context).brightness == Brightness.dark
+                    ? MapsConfig.darkTileUrlTemplate
+                    : MapsConfig.tileUrlTemplate,
+                userAgentPackageName: 'com.vectra.rider',
+              ),
+              if (state.route?.polylinePoints != null && state.route!.polylinePoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: state.route!.polylinePoints,
+                      color: AppColors.primary,
+                      strokeWidth: 4,
+                    ),
+                  ],
+                ),
+              MarkerLayer(
+                markers: [
+                  if (state.driver?.location != null)
+                    Marker(
+                      point: LatLng(
+                        state.driver!.location!.latitude,
+                        state.driver!.location!.longitude,
+                      ),
+                      width: 36,
+                      height: 36,
+                      child: const Icon(Icons.local_taxi, color: Colors.orange, size: 28),
+                    ),
+                  if (state.pickup?.location != null)
+                    Marker(
+                      point: LatLng(
+                        state.pickup!.location!.latitude,
+                        state.pickup!.location!.longitude,
+                      ),
+                      width: 36,
+                      height: 36,
+                      child: const Icon(Icons.circle, color: Colors.green, size: 16),
+                    ),
+                ],
+              ),
+            ],
           ),
           // ETA badge
           Positioned(
@@ -122,7 +149,7 @@ class _MapPlaceholder extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -140,10 +167,10 @@ class _MapPlaceholder extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     etaMinutes == 0 ? 'Arriving now' : '$etaMinutes min',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -165,9 +192,9 @@ class _DriverCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -177,12 +204,12 @@ class _DriverCard extends StatelessWidget {
               Container(
                 width: 56,
                 height: 56,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF5F7FA),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.person_rounded,
-                    size: 30, color: AppColors.textSecondary),
+                child: Icon(Icons.person_rounded,
+                    size: 30, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -191,10 +218,10 @@ class _DriverCard extends StatelessWidget {
                   children: [
                     Text(
                       driver?.name ?? 'Driver',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -205,25 +232,25 @@ class _DriverCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Text(
                           driver?.rating.toString() ?? '—',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
-                        const Text('  •  ',
-                            style: TextStyle(color: AppColors.textSecondary)),
+                        Text('  •  ',
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                         Text(
                           driver?.vehicleModel ?? 'Vehicle',
-                          style: const TextStyle(
-                              fontSize: 13, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${driver?.vehicleColor ?? ''} • ${driver?.vehicleNumber ?? ''}',
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -239,7 +266,7 @@ class _DriverCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F0FE),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.call_rounded,
@@ -263,9 +290,9 @@ class _PoolMateCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -274,10 +301,10 @@ class _PoolMateCard extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             'You\'re pooling with ${rider.riderName}',
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary),
+                color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),

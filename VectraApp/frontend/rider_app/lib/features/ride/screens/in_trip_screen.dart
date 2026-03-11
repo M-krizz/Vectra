@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../config/app_theme.dart';
+import '../../../../config/maps_config.dart';
 import '../bloc/ride_bloc.dart';
+import '../services/trip_socket_service.dart';
 import '../widgets/safety_fab.dart';
-import 'trip_completed_screen.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class InTripScreen extends StatefulWidget {
   const InTripScreen({super.key});
@@ -16,33 +20,25 @@ class InTripScreen extends StatefulWidget {
 class _InTripScreenState extends State<InTripScreen> {
   int _elapsedSeconds = 0;
   Timer? _timer;
+  StreamSubscription<bool>? _connectionSubscription;
   bool _showReconnecting = false;
 
-  // Mock: trip auto-completes after 30s
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
-      setState(() => _elapsedSeconds++);
-
-      // Brief connectivity blip at 10s (demo)
-      if (_elapsedSeconds == 10) {
-        setState(() => _showReconnecting = true);
-        Future.delayed(const Duration(seconds: 3),
-            () { if (mounted) setState(() => _showReconnecting = false); });
-      }
-
-      if (_elapsedSeconds >= 30) {
+      if (!mounted) {
         t.cancel();
-        final state = context.read<RideBloc>().state;
-        final fare = state.selectedVehicle?.fare ?? 85.0;
-        context.read<RideBloc>().add(RideCompleted(fare));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const TripCompletedScreen()),
-        );
+        return;
       }
+      setState(() => _elapsedSeconds++);
+    });
+
+    final tripSocketService = context.read<TripSocketService>();
+    _showReconnecting = !tripSocketService.isConnected;
+    _connectionSubscription = tripSocketService.connectionStream.listen((connected) {
+      if (!mounted) return;
+      setState(() => _showReconnecting = !connected);
     });
   }
 
@@ -54,10 +50,20 @@ class _InTripScreenState extends State<InTripScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RideBloc, RideState>(
-      builder: (context, state) {
-        return Scaffold(
-          backgroundColor: Colors.white,
+    return BlocListener<RideBloc, RideState>(
+      listenWhen: (previous, current) => previous.status != current.status,
+      listener: (context, state) {
+        final tripId = state.rideId ?? 'current';
+        if (state.status == RideStatus.completed) {
+          context.go('/trip/$tripId/completed');
+        } else if (state.status == RideStatus.cancelled) {
+          context.go('/trip/$tripId/cancelled');
+        }
+      },
+      child: BlocBuilder<RideBloc, RideState>(
+        builder: (context, state) {
+          return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             child: Column(
               children: [
@@ -65,25 +71,60 @@ class _InTripScreenState extends State<InTripScreen> {
                 if (_showReconnecting) const _ReconnectingBanner(),
 
                 // Map placeholder
-                Container(
-                  height: 200,
-                  color: const Color(0xFFE3F2FD),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.navigation_rounded,
-                            size: 44, color: AppColors.primary),
-                        const SizedBox(height: 8),
-                        Text(
-                          'En route to ${state.destination?.name ?? 'destination'}',
-                          style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500),
-                        ),
-                      ],
+                // Google Map
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.35,
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: LatLng(
+                        state.driver?.location?.latitude ?? state.pickup?.location?.latitude ?? 11.0168,
+                        state.driver?.location?.longitude ?? state.pickup?.location?.longitude ?? 76.9558,
+                      ),
+                      initialZoom: 15.0,
                     ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: Theme.of(context).brightness == Brightness.dark
+                            ? MapsConfig.darkTileUrlTemplate
+                            : MapsConfig.tileUrlTemplate,
+                        userAgentPackageName: 'com.vectra.rider',
+                      ),
+                      if (state.route?.polylinePoints != null &&
+                          state.route!.polylinePoints.isNotEmpty)
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: state.route!.polylinePoints,
+                              color: AppColors.primary,
+                              strokeWidth: 4,
+                            ),
+                          ],
+                        ),
+                      MarkerLayer(
+                        markers: [
+                          if (state.driver?.location != null)
+                            Marker(
+                              point: LatLng(
+                                state.driver!.location!.latitude,
+                                state.driver!.location!.longitude,
+                              ),
+                              width: 36,
+                              height: 36,
+                              child: const Icon(Icons.local_taxi, color: Colors.orange, size: 28),
+                            ),
+                          if (state.destination?.location != null)
+                            Marker(
+                              point: LatLng(
+                                state.destination!.location!.latitude,
+                                state.destination!.location!.longitude,
+                              ),
+                              width: 36,
+                              height: 36,
+                              child: const Icon(Icons.location_on, color: Colors.red, size: 32),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
 
@@ -115,7 +156,7 @@ class _InTripScreenState extends State<InTripScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
+                              color: AppColors.success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -144,12 +185,14 @@ class _InTripScreenState extends State<InTripScreen> {
           floatingActionButton: const SafetyFab(),
         );
       },
+      ),
     );
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _connectionSubscription?.cancel();
     super.dispose();
   }
 }
@@ -163,7 +206,7 @@ class _ReconnectingBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFFFFF3E0),
+      color: AppColors.warning.withValues(alpha: 0.1),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -199,7 +242,7 @@ class _TripPhaseBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F0FE),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -248,7 +291,7 @@ class _CompactDriverBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -291,7 +334,7 @@ class _RouteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
