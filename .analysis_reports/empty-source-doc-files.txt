@@ -1,0 +1,11 @@
+VectraApp\backend\src\health\health.controller.ts
+VectraApp\backend\src\health\health.module.ts
+VectraApp\backend\src\realtime\realtime.module.ts
+VectraApp\backend\src\realtime\socket.auth.ts
+VectraApp\backend\src\realtime\socket.gateway.ts
+VectraApp\backend\ml-service\app\api\demand.py
+VectraApp\backend\ml-service\app\api\routing.py
+VectraApp\backend\ml-service\app\api\__init__.py
+VectraApp\docs\api-contracts.md
+VectraApp\docs\setup.md
+VectraApp\docs\websocket-events.md

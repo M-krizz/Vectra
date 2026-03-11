@@ -1,0 +1,68 @@
+VectraApp\backend\src\modules\fare\fare.service.ts:31:if (!config) throw new Error(`Unknown vehicleType: ${vehicleType}`);
+VectraApp\backend\src\modules\maps\maps.service.ts:71:throw new Error(`Google API Error: ${data.status}`);
+VectraApp\backend\src\modules\maps\maps.service.ts:76:throw new Error(`Distance calculation failed: ${element.status}`);
+VectraApp\backend\src\modules\pooling\pooling.manager.ts:76:// TODO: Emit Websocket event to learner
+VectraApp\backend\src\modules\safety\safety.controller.ts:37:// TODO: If rideId provided, fetch ride and pass to service
+VectraApp\frontend\driver_app\lib\features\driver_status\data\driver_status_repository.dart:42:rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+VectraApp\frontend\driver_app\lib\features\incentives\data\models\incentive.dart:30:rewardAmount: (json['rewardAmount'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\map_home\presentation\providers\map_home_providers.dart:28:demandLevel: (json['demand_level'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\map_home\presentation\providers\map_home_providers.dart:29:surgeMultiplier: (json['surge_multiplier'] as num?)?.toDouble() ?? 1.0,
+VectraApp\frontend\driver_app\lib\features\map_home\presentation\providers\map_home_providers.dart:60:totalAmount: (json['total_amount'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\map_home\presentation\providers\map_home_providers.dart:62:onlineHours: (json['online_hours'] as num?)?.toDouble() ?? 0.0,
+VectraApp\frontend\driver_app\lib\features\map_home\presentation\providers\map_home_providers.dart:63:co2Saved: (json['co2_saved'] as num?)?.toDouble() ?? 0.0,
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:45:riderRating: (json['riderRating'] as num?)?.toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:47:(json['pickupLocation']['lat'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:48:(json['pickupLocation']['lng'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:52:(json['dropoffLocation']['lat'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:53:(json['dropoffLocation']['lng'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:56:estimatedFare: (json['estimatedFare'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\ride_request.dart:57:estimatedDistance: (json['estimatedDistance'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:61:riderRating: (json['riderRating'] as num?)?.toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:63:(json['pickupLocation']['lat'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:64:(json['pickupLocation']['lng'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:68:(json['dropoffLocation']['lat'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:69:(json['dropoffLocation']['lng'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:72:fare: (json['fare'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:73:distance: (json['distance'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:89:(point['lat'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\data\models\trip.dart:90:(point['lng'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\rides\presentation\screens\active_trip_screen.dart:59:// TODO: Implement SOS functionality
+VectraApp\frontend\driver_app\lib\features\rides\presentation\screens\active_trip_screen.dart:234:// TODO: Implement call functionality
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:24:minDistance: (json['minDistance'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:25:maxDistance: (json['maxDistance'] as num?)?.toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:26:ratePerKm: (json['ratePerKm'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:69:baseFare: (json['baseFare'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:73:nightFareMultiplier: (json['nightFareMultiplier'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:76:surgeMultiplier: (json['surgeMultiplier'] as num?)?.toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:77:waitingChargePerMin: (json['waitingChargePerMin'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\rate_card.dart:78:cancellationFee: (json['cancellationFee'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\data\models\transaction.dart:37:amount: (json['amount'] as num).toDouble(),
+VectraApp\frontend\driver_app\lib\features\wallet\presentation\screens\wallet_screen.dart:117:// TODO: Implement withdrawal
+VectraApp\frontend\driver_app\lib\screens\signin_screen.dart:244:// TODO: Implement forgot password
+VectraApp\frontend\driver_app\lib\shared\widgets\rating_widget.dart:57:? () => _updateRating(starValue.toDouble())
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:47:final double rawDistance = (json['distanceMeters'] ?? json['distance'] ?? 0).toDouble();
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:55:double parsedFare = (json['fare'] ?? 0).toDouble();
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:57:parsedFare = (riders.first['fareShare'] ?? 0).toDouble();
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:64:pickupLat: (json['pickupLat'] ?? 0).toDouble(),
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:65:pickupLng: (json['pickupLng'] ?? 0).toDouble(),
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:66:destinationLat: (json['destinationLat'] ?? 0).toDouble(),
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:67:destinationLng: (json['destinationLng'] ?? 0).toDouble(),
+VectraApp\frontend\rider_app\lib\features\history\models\ride_history_model.dart:79:rating: json['rating']?.toDouble(),
+VectraApp\frontend\rider_app\lib\features\history\screens\ride_detail_screen.dart:29:// TODO: Show receipt
+VectraApp\frontend\rider_app\lib\features\history\screens\ride_detail_screen.dart:415:// TODO: Open rating dialog
+VectraApp\frontend\rider_app\lib\features\history\screens\ride_detail_screen.dart:436:// TODO: Get help
+VectraApp\frontend\rider_app\lib\features\home\screens\home_screen.dart:1886:// TODO: Call driver
+VectraApp\frontend\rider_app\lib\features\home\screens\home_screen.dart:2053:// TODO: Call driver
+VectraApp\frontend\rider_app\lib\features\ride\bloc\ride_bloc.dart:548:rating: (d['rating'] as num?)?.toDouble() ?? 4.5,
+VectraApp\frontend\rider_app\lib\features\ride\bloc\ride_bloc.dart:550:(d['lat'] as num?)?.toDouble() ?? state.pickup?.location?.latitude ?? 0.0,
+VectraApp\frontend\rider_app\lib\features\ride\bloc\ride_bloc.dart:551:(d['lng'] as num?)?.toDouble() ?? state.pickup?.location?.longitude ?? 0.0,
+VectraApp\frontend\rider_app\lib\features\ride\bloc\ride_bloc.dart:556:final distance = (event.payload['distance'] as num?)?.toDouble();
+VectraApp\frontend\rider_app\lib\features\ride\bloc\ride_bloc.dart:570:final fare = (event.payload['fare'] as num?)?.toDouble()
+VectraApp\frontend\rider_app\lib\features\ride\bloc\ride_state.dart:31:rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
+VectraApp\frontend\rider_app\lib\features\ride\models\place_model.dart:24:? LatLng((json['lat'] as num).toDouble(), (json['lng'] as num).toDouble())
+VectraApp\frontend\rider_app\lib\features\ride\models\place_model.dart:112:fare: (json['fare'] as num).toDouble(),
+VectraApp\frontend\rider_app\lib\features\ride\repository\places_repository.dart:201:(location['lat'] as num).toDouble(),
+VectraApp\frontend\rider_app\lib\features\ride\repository\places_repository.dart:202:(location['lng'] as num).toDouble(),
+VectraApp\frontend\rider_app\lib\features\ride\screens\ride_options_screen.dart:100:fare: _fareFor(v.id).toDouble(),
+VectraApp\frontend\rider_app\lib\features\ride\services\trip_socket_service.dart:173:lat: (data['lat'] as num?)?.toDouble() ?? 0,
+VectraApp\frontend\rider_app\lib\features\ride\services\trip_socket_service.dart:174:lng: (data['lng'] as num?)?.toDouble() ?? 0,

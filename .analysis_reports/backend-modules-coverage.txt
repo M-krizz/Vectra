@@ -1,0 +1,18 @@
+
+Module         Files Controllers Services Entities DTOs
+------         ----- ----------- -------- -------- ----
+Authentication    33           4        7        8    5
+cancellations      4           1        1        0    1
+chat               4           0        1        1    0
+fare               4           1        1        0    0
+location           2           0        0        0    0
+maps               3           1        1        0    0
+matching           3           0        1        0    0
+payments           6           1        1        2    1
+pooling            5           1        1        1    0
+ride_requests      6           1        1        1    1
+safety             6           1        1        2    0
+trips              8           1        2        3    1
+
+
+

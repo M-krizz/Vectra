@@ -1,0 +1,112 @@
+﻿Resolving dependencies...
+Downloading packages...
+  bloc 8.1.4 (9.2.0 available)
+  characters 1.4.0 (1.4.1 available)
+  dio 5.9.1 (5.9.2 available)
+  dio_web_adapter 2.1.1 (2.1.2 available)
+  flutter_bloc 8.1.6 (9.1.1 available)
+  flutter_polyline_points 2.1.0 (3.1.0 available)
+  flutter_secure_storage 9.2.4 (10.0.0 available)
+  flutter_secure_storage_linux 1.2.3 (3.0.0 available)
+  flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+  flutter_secure_storage_platform_interface 1.1.2 (2.0.1 available)
+  flutter_secure_storage_web 1.2.1 (2.1.0 available)
+  flutter_secure_storage_windows 3.1.2 (4.1.0 available)
+  formz 0.7.0 (0.8.0 available)
+  geocoding 2.2.2 (4.0.0 available)
+  geocoding_android 3.3.1 (5.0.0 available)
+  geocoding_ios 2.3.0 (3.1.0 available)
+  geocoding_platform_interface 3.2.0 (5.0.0 available)
+  geolocator 10.1.1 (14.0.2 available)
+  geolocator_android 4.6.2 (5.0.2 available)
+  geolocator_web 2.2.1 (4.1.3 available)
+  go_router 13.2.5 (17.1.0 available)
+  google_maps_flutter_android 2.19.1 (2.19.2 available)
+  google_maps_flutter_platform_interface 2.14.1 (2.14.2 available)
+  google_maps_flutter_web 0.5.14+3 (0.6.1 available)
+  intl 0.19.0 (0.20.2 available)
+  js 0.6.7 (0.7.2 available)
+  matcher 0.12.17 (0.12.19 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.17.0 (1.18.1 available)
+  shared_preferences_android 2.4.20 (2.4.21 available)
+  test_api 0.7.7 (0.7.10 available)
+  uuid 4.5.2 (4.5.3 available)
+  win32 5.15.0 (6.0.0 available)
+Got dependencies!
+33 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing rider_app...                                          
+
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:27:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:61:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:67:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:70:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:74:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:88:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:94:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:105:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\bloc\auth_bloc.dart:110:7 - avoid_print
+   info - Statements in a for should be enclosed in a block - lib\features\auth\screens\otp_verification_screen.dart:43:33 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\features\auth\screens\otp_verification_screen.dart:44:32 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\features\auth\screens\otp_verification_screen.dart:106:41 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of multiple underscores - lib\features\history\screens\ride_history_screen.dart:162:43 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\history\screens\ride_history_screen.dart:203:51 - unnecessary_underscores
+warning - The value of the field '_locationError' isn't used - lib\features\home\screens\home_screen.dart:29:11 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\features\home\screens\home_screen.dart:852:25 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\screens\home_screen.dart:1067:35 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\features\home\screens\home_screen.dart:1689:23 - use_build_context_synchronously
+   info - The variable name '_unused_showDrawer' isn't a lowerCamelCase identifier - lib\features\home\screens\home_screen.dart:2740:8 - non_constant_identifier_names
+warning - The declaration '_unused_showDrawer' isn't referenced - lib\features\home\screens\home_screen.dart:2740:8 - unused_element
+warning - Unused import: 'package:flutter/material.dart' - lib\features\profile\models\saved_place_model.dart:1:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\screens\saved_places_screen.dart:165:28 - deprecated_member_use
+warning - The declaration '_generateUniqueOTP' isn't referenced - lib\features\ride\bloc\ride_bloc.dart:347:10 - unused_element
+warning - The declaration '_getRandomNearbyLocation' isn't referenced - lib\features\ride\bloc\ride_bloc.dart:444:10 - unused_element
+warning - The declaration '_randomLetters' isn't referenced - lib\features\ride\bloc\ride_bloc.dart:469:10 - unused_element
+warning - The value of the field '_mockDriverNames' isn't used - lib\features\ride\bloc\ride_bloc.dart:477:16 - unused_field
+warning - The value of the field '_mockVehicleModels' isn't used - lib\features\ride\bloc\ride_bloc.dart:488:16 - unused_field
+warning - The value of the field '_mockColors' isn't used - lib\features\ride\bloc\ride_bloc.dart:497:16 - unused_field
+warning - The operand can't be 'null', so the condition is always 'false' - lib\features\ride\models\place_model.dart:18:14 - unnecessary_null_comparison
+warning - Dead code - lib\features\ride\models\place_model.dart:18:23 - dead_code
+   info - Don't invoke 'print' in production code - lib\features\ride\repository\places_repository.dart:99:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\ride\repository\places_repository.dart:102:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\ride\repository\places_repository.dart:166:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\ride\repository\places_repository.dart:203:7 - avoid_print
+warning - The value of the field '_mapController' isn't used - lib\features\ride\screens\in_trip_screen.dart:21:24 - unused_field
+warning - Unused import: '../../../../config/app_theme.dart' - lib\features\ride\screens\location_search_screen.dart:5:8 - unused_import
+   info - Unnecessary use of multiple underscores - lib\features\ride\screens\location_search_screen.dart:378:29 - unnecessary_underscores
+   info - Statements in a for should be enclosed in a block - lib\features\ride\screens\pickup_verification_screen.dart:47:37 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\features\ride\screens\pickup_verification_screen.dart:222:35 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\features\ride\screens\pickup_verification_screen.dart:223:31 - curly_braces_in_flow_control_structures
+warning - Unused import: '../models/place_model.dart' - lib\features\ride\screens\pool_preview_screen.dart:5:8 - unused_import
+warning - Unused import: 'driver_assigned_screen.dart' - lib\features\ride\screens\pool_preview_screen.dart:6:8 - unused_import
+   info - Unnecessary cascade expression - lib\features\ride\screens\pool_preview_screen.dart:29:5 - avoid_single_cascade_in_expression_statements
+  error - Expected to find ')' - lib\features\ride\screens\pool_preview_screen.dart:160:10 - expected_token
+   info - Constructors in '@immutable' classes should be declared as 'const' - lib\features\ride\screens\pool_preview_screen.dart:173:3 - prefer_const_constructors_in_immutables
+   info - Unnecessary use of multiple underscores - lib\features\ride\screens\ride_home_screen.dart:159:41 - unnecessary_underscores
+warning - The value of the field '_cancelled' isn't used - lib\features\ride\screens\searching_screen.dart:20:8 - unused_field
+   info - Unnecessary use of multiple underscores - lib\features\ride\screens\searching_screen.dart:96:28 - unnecessary_underscores
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\ride\screens\searching_screen.dart:372:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\ride\screens\searching_screen.dart:373:17 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\features\safety\screens\emergency_contacts_screen.dart:112:37 - unnecessary_underscores
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\safety\screens\incident_report_screen.dart:99:23 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\safety\screens\incident_report_screen.dart:100:23 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\features\safety\screens\sos_screen.dart:135:32 - unnecessary_underscores
+
+flutter : 54 issues found. (ran 
+in 7.2s)
+At line:1 char:1
++ flutter analyze 
+--no-fatal-warnings 
+--no-fatal-infos > 
+analyzer_outpu ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo          : N 
+   otSpecified: (54 issues fou  
+  nd. (ran in 7.2s):String) [   
+ ], RemoteException
+    + FullyQualifiedErrorId : N 
+   ativeCommandError
+ 
