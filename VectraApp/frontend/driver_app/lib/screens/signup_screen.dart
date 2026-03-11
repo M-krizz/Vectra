@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import 'home_screen.dart';
 import '../utils/notification_overlay.dart';
+import '../services/legacy_auth_service.dart';
+import '../models/signup_data.dart';
+import 'otp_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -70,20 +72,49 @@ class _SignUpScreenState extends State<SignUpScreen>
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final identifier = _phoneController.text.trim();
+        final otpResult = await LegacyAuthService.sendOtp(
+          identifier: identifier,
+          channel: 'phone',
+        );
 
-      setState(() => _isLoading = false);
+        if (!mounted) return;
 
-      if (mounted) {
-        // Navigate to home screen
-        Navigator.pushAndRemoveUntil(
+        if (!otpResult.success) {
+          NotificationOverlay.showMessage(
+            context,
+            'Unable to send OTP. Please try again.',
+            backgroundColor: AppColors.error,
+          );
+          return;
+        }
+
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(userName: _nameController.text),
+            builder: (context) => OTPVerificationScreen(
+              identifier: identifier,
+              devOtp: otpResult.devOtp,
+              pendingSignUpData: SignUpData()
+                ..phoneNumber = identifier
+                ..fullName = _nameController.text.trim()
+                ..email = _emailController.text.trim()
+                ..password = _passwordController.text,
+            ),
           ),
-          (route) => false,
         );
+      } catch (e) {
+        if (!mounted) return;
+        NotificationOverlay.showMessage(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+          backgroundColor: AppColors.error,
+        );
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }

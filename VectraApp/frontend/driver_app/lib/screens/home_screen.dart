@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +7,10 @@ import '../../models/signup_data.dart';
 import '../../models/ride_request.dart';
 import 'profile_screen.dart';
 import '../utils/notification_overlay.dart';
+import '../services/legacy_driver_status_service.dart';
+import '../services/legacy_rides_service.dart';
+import '../services/legacy_safety_service.dart';
+import 'profile/emergency_contacts_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -19,15 +22,25 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const List<String> _cancelReasons = [
+    'Rider no-show',
+    'Rider requested cancellation',
+    'Wrong pickup location',
+    'Vehicle issue',
+    'Safety concern',
+    'Traffic or road blocked',
+  ];
+
   int _selectedIndex = 0;
   bool _isOnline = false;
+  bool _isStatusUpdating = false;
+  bool _isRideActionLoading = false;
   RideStatus _rideStatus = RideStatus.idle;
   RideRequest? _currentRide;
-  Timer? _searchTimer;
   Timer? _requestTimer;
   double _requestProgress = 1.0;
-  int _requestCounter = 0; // For toggling ride types
 
   // Map Controller
   final MapController _mapController = MapController();
@@ -41,10 +54,45 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final List<RideRequest> _completedRides = [];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _syncOnlineStateFromBackend();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _forceOfflineOnBackground();
+    }
+  }
+
+  @override
   void dispose() {
-    _searchTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _requestTimer?.cancel();
+    LegacyRidesService.disconnect();
     super.dispose();
+  }
+
+  Future<void> _syncOnlineStateFromBackend() async {
+    try {
+      final profile = await LegacyDriverStatusService.getDriverProfile();
+      if (!mounted) return;
+      setState(() {
+        _isOnline = profile.onlineStatus;
+        _rideStatus = profile.onlineStatus ? RideStatus.searching : RideStatus.idle;
+      });
+      if (profile.onlineStatus) {
+        _startSearching();
+      } else {
+        LegacyRidesService.disconnect();
+      }
+    } catch (_) {
+      // Keep local fallback state when profile fetch fails.
+    }
   }
 
   String _getGreeting() {
@@ -60,55 +108,183 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _toggleOnlineStatus() {
-    setState(() {
-      _isOnline = !_isOnline;
-      if (_isOnline) {
-        _rideStatus = RideStatus.searching;
-        _startSearching();
-      } else {
-        _rideStatus = RideStatus.idle;
-        _searchTimer?.cancel();
-        _requestTimer?.cancel();
-        NotificationOverlay.hide();
-        _currentRide = null;
+  Future<void> _toggleOnlineStatus() async {
+    if (_isStatusUpdating) return;
+    if (_rideStatus != RideStatus.idle && _rideStatus != RideStatus.searching) {
+      return;
+    }
+
+    final targetOnline = !_isOnline;
+    setState(() => _isStatusUpdating = true);
+
+    try {
+      if (targetOnline) {
+        final eligibility = await LegacyDriverStatusService.validateOnlineEligibility();
+        if (eligibility['canGoOnline'] != true) {
+          if (!mounted) return;
+          NotificationOverlay.showMessage(
+            context,
+            (eligibility['reason'] as String?) ??
+                'You are not eligible to go online right now.',
+            backgroundColor: AppColors.error,
+          );
+          return;
+        }
       }
-    });
+
+      final updated = await LegacyDriverStatusService.updateOnlineStatus(targetOnline);
+      if (!updated) {
+        if (!mounted) return;
+        NotificationOverlay.showMessage(
+          context,
+          'Failed to update online status. Please try again.',
+          backgroundColor: AppColors.error,
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isOnline = targetOnline;
+        if (_isOnline) {
+          _rideStatus = RideStatus.searching;
+          _startSearching();
+        } else {
+          _rideStatus = RideStatus.idle;
+          _requestTimer?.cancel();
+          NotificationOverlay.hide();
+          _currentRide = null;
+          LegacyRidesService.disconnect();
+        }
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isStatusUpdating = false);
+      }
+    }
   }
 
-  void _startSearching() {
+  Future<void> _forceOfflineOnBackground() async {
+    if (!_isOnline || _isStatusUpdating) return;
+    final updated = await LegacyDriverStatusService.updateOnlineStatus(false);
+    if (!mounted || !updated) return;
+    setState(() {
+      _isOnline = false;
+      _rideStatus = RideStatus.idle;
+      _requestTimer?.cancel();
+      NotificationOverlay.hide();
+      _currentRide = null;
+    });
+    LegacyRidesService.disconnect();
+  }
+
+  void _startSearching() async {
     if (!_isOnline) return;
 
-    // Simulate finding a ride after 5 seconds
-    _searchTimer?.cancel();
-    _searchTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted && _isOnline && _rideStatus == RideStatus.searching) {
-        _handleNewRequest();
+    try {
+      await LegacyRidesService.connect();
+      _bindTripStatusUpdates();
+      LegacyRidesService.listenRideOffers((request) {
+        if (!mounted || !_isOnline || _rideStatus != RideStatus.searching) {
+          return;
+        }
+        _handleIncomingRequest(request);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'Unable to connect to ride offers. Please try again.',
+        backgroundColor: AppColors.error,
+      );
+    }
+  }
+
+  void _bindTripStatusUpdates() {
+    LegacyRidesService.listenTripStatusUpdates(({
+      required String tripId,
+      required String status,
+    }) {
+      if (!mounted) return;
+
+      final activeTripId = _currentRide?.id;
+      if (activeTripId == null || activeTripId != tripId) return;
+
+      switch (status) {
+        case 'ASSIGNED':
+        case 'ARRIVING':
+          setState(() => _rideStatus = RideStatus.goingToPickup);
+          break;
+        case 'IN_PROGRESS':
+          setState(() => _rideStatus = RideStatus.inProgress);
+          break;
+        case 'COMPLETED':
+          if (_rideStatus != RideStatus.completed) {
+            _completeRideFromServer();
+          }
+          break;
+        case 'CANCELLED':
+          _handleTripCancelledFromServer();
+          break;
       }
     });
   }
 
-  void _handleNewRequest() {
-    // Generate dummy request
-    final random = Random();
-    final request = RideRequest(
-      id: 'RIDE-${random.nextInt(10000)}',
-      passengerName: 'Passenger ${random.nextInt(100)}',
-      passengerRating: '4.${random.nextInt(9)}',
-      pickupLocation: const LatLng(
-        12.9716,
-        77.5946,
-      ), // Current location roughly
-      pickupAddress: 'MG Road, Bangalore',
-      dropLocation: const LatLng(12.9352, 77.6245), // Koramangala
-      dropAddress: 'Koramangala 5th Block',
-      fare: 150.0 + random.nextInt(100),
-      otp: '${random.nextInt(9000) + 1000}', // 4 digit OTP
-      distance: 4.5,
-      duration: '25 min',
-      isPooling: (_requestCounter++ % 2 != 0), // Alternate
-    );
+  void _completeRideFromServer() {
+    final trip = _currentRide;
+    if (trip == null) return;
 
+    setState(() {
+      _rideStatus = RideStatus.completed;
+      _totalEarnings += trip.fare;
+      _totalRides += 1;
+      _completedRides.insert(0, trip);
+    });
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ride Completed'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: AppColors.success, size: 64),
+            const SizedBox(height: 16),
+            Text(
+              'You earned Rs ${trip.fare.toStringAsFixed(0)}',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _rideStatus = RideStatus.searching;
+                _currentRide = null;
+              });
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleTripCancelledFromServer() {
+    setState(() {
+      _rideStatus = RideStatus.searching;
+      _currentRide = null;
+    });
+    NotificationOverlay.showMessage(
+      context,
+      'Trip was cancelled.',
+      backgroundColor: AppColors.error,
+    );
+  }
+
+  void _handleIncomingRequest(RideRequest request) {
     setState(() {
       _rideStatus = RideStatus.requestReceived;
       _currentRide = request;
@@ -380,20 +556,53 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _acceptRide() {
+  void _acceptRide() async {
+    if (_currentRide == null || _isRideActionLoading) return;
     _requestTimer?.cancel();
-    setState(() {
-      _rideStatus = RideStatus.goingToPickup;
-    });
+
+    setState(() => _isRideActionLoading = true);
+    try {
+      await LegacyRidesService.acceptRide(_currentRide!.id);
+      if (!mounted) return;
+      setState(() {
+        _rideStatus = RideStatus.goingToPickup;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'Failed to accept ride. Try again.',
+        backgroundColor: AppColors.error,
+      );
+      setState(() {
+        _rideStatus = RideStatus.searching;
+        _currentRide = null;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isRideActionLoading = false);
+      }
+    }
   }
 
-  void _rejectRide() {
+  void _rejectRide() async {
+    if (_currentRide == null || _isRideActionLoading) return;
     _requestTimer?.cancel();
-    setState(() {
-      _rideStatus = RideStatus.searching;
-      _currentRide = null;
-    });
-    _startSearching(); // Search for next
+
+    setState(() => _isRideActionLoading = true);
+    try {
+      await LegacyRidesService.rejectRide(_currentRide!.id);
+    } catch (_) {
+      // Keep UI flowing even if reject event fails.
+    } finally {
+      if (mounted) {
+        setState(() {
+          _rideStatus = RideStatus.searching;
+          _currentRide = null;
+          _isRideActionLoading = false;
+        });
+      }
+    }
   }
 
   void _arrivedAtPickup() {
@@ -408,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Enter OTP'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -420,9 +629,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             TextField(
               controller: otpController,
               keyboardType: TextInputType.number,
-              maxLength: 4,
+              maxLength: 6,
               decoration: const InputDecoration(
-                hintText: 'Enter 4-digit OTP',
+                hintText: 'Enter trip OTP',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -430,9 +639,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (otpController.text.isNotEmpty) {
-                Navigator.pop(context);
+                final trip = _currentRide;
+                if (trip == null) {
+                  Navigator.of(context).pop();
+                  return;
+                }
+
+                final isValid = await LegacyRidesService.verifyTripOtp(
+                  tripId: trip.id,
+                  riderId: trip.riderId,
+                  otp: otpController.text.trim(),
+                );
+
+                if (!mounted) return;
+                if (!isValid) {
+                  NotificationOverlay.showMessage(
+                    context,
+                    'Invalid OTP. Cannot start trip.',
+                    backgroundColor: AppColors.error,
+                  );
+                  return;
+                }
+
+                Navigator.of(context).pop();
                 _startRide();
               } else {
                 NotificationOverlay.showMessage(
@@ -450,20 +681,256 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _startRide() {
-    setState(() {
-      _rideStatus = RideStatus.inProgress;
+    final trip = _currentRide;
+    if (trip == null) return;
+
+    LegacyRidesService.startTrip(trip.id).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _rideStatus = RideStatus.inProgress;
+      });
+    }).catchError((_) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'Failed to start trip. Please retry.',
+        backgroundColor: AppColors.error,
+      );
     });
   }
 
-  void _completeRide() {
-    setState(() {
-      _rideStatus = RideStatus.completed;
-      if (_currentRide != null) {
-        _totalEarnings += _currentRide!.fare;
+  void _showCancelRideDialog() {
+    final trip = _currentRide;
+    if (trip == null || _isRideActionLoading) return;
+
+    String selectedReason = _cancelReasons.first;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel Ride'),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _cancelReasons
+                  .map(
+                    (reason) => ListTile(
+                      onTap: () => setDialogState(() => selectedReason = reason),
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        selectedReason == reason
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: selectedReason == reason
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                      title: Text(reason),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Keep Ride'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              setState(() => _isRideActionLoading = true);
+
+              try {
+                await LegacyRidesService.cancelTrip(
+                  tripId: trip.id,
+                  reason: selectedReason,
+                );
+                if (!mounted) return;
+                setState(() {
+                  _rideStatus = RideStatus.searching;
+                  _currentRide = null;
+                });
+                NotificationOverlay.showMessage(
+                  context,
+                  'Ride cancelled: $selectedReason',
+                  backgroundColor: AppColors.success,
+                );
+              } catch (_) {
+                if (!mounted) return;
+                NotificationOverlay.showMessage(
+                  context,
+                  'Unable to cancel ride. Please retry.',
+                  backgroundColor: AppColors.error,
+                );
+              } finally {
+                if (mounted) {
+                  setState(() => _isRideActionLoading = false);
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Cancel Ride'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _triggerSos() async {
+    final tripId = _currentRide?.id;
+    try {
+      await LegacySafetyService.triggerSos(
+        tripId: tripId,
+        lat: _currentLocation.latitude,
+        lng: _currentLocation.longitude,
+      );
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'SOS alert sent to safety team.',
+        backgroundColor: AppColors.error,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'Unable to send SOS. Please retry.',
+        backgroundColor: AppColors.error,
+      );
+    }
+  }
+
+  void _showIncidentReportDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Report Safety Incident'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Describe what happened',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final description = controller.text.trim();
+              if (description.isEmpty) return;
+              Navigator.of(dialogContext).pop();
+              try {
+                await LegacySafetyService.reportIncident(
+                  description: description,
+                  rideId: _currentRide?.id,
+                );
+                if (!mounted) return;
+                NotificationOverlay.showMessage(
+                  context,
+                  'Incident reported successfully.',
+                  backgroundColor: AppColors.success,
+                );
+              } catch (_) {
+                if (!mounted) return;
+                NotificationOverlay.showMessage(
+                  context,
+                  'Failed to report incident.',
+                  backgroundColor: AppColors.error,
+                );
+              }
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSafetyActionsSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.sos, color: AppColors.error),
+                  title: const Text('Trigger SOS'),
+                  subtitle: const Text('Alerts admins immediately'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _triggerSos();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.report_problem, color: AppColors.warning),
+                  title: const Text('Report Incident'),
+                  subtitle: const Text('Send details to safety team'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _showIncidentReportDialog();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.contacts, color: AppColors.primary),
+                  title: const Text('Emergency Contacts'),
+                  subtitle: const Text('View and manage SOS contacts'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EmergencyContactsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _completeRide() async {
+    final trip = _currentRide;
+    if (trip == null || _isRideActionLoading) return;
+
+    setState(() => _isRideActionLoading = true);
+    try {
+      await LegacyRidesService.completeTrip(trip.id);
+      if (!mounted) return;
+      setState(() {
+        _rideStatus = RideStatus.completed;
+        _totalEarnings += trip.fare;
         _totalRides += 1;
-        _completedRides.insert(0, _currentRide!);
+        _completedRides.insert(0, trip);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'Failed to complete trip. Please retry.',
+        backgroundColor: AppColors.error,
+      );
+      return;
+    } finally {
+      if (mounted) {
+        setState(() => _isRideActionLoading = false);
       }
-    });
+    }
 
     // Show Summary
     showDialog(
@@ -571,6 +1038,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
 
+          Positioned(
+            top: 60,
+            right: 16,
+            child: Material(
+              color: Colors.white,
+              elevation: 6,
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                onTap: _showSafetyActionsSheet,
+                borderRadius: BorderRadius.circular(999),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(Icons.shield, color: AppColors.error),
+                ),
+              ),
+            ),
+          ),
+
           // Bottom Status Card
           Positioned(
             bottom: 0,
@@ -610,6 +1095,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       child: ElevatedButton(
                         onPressed: _arrivedAtPickup,
                         child: const Text('Arrived at Location'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _showCancelRideDialog,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
+                        ),
+                        child: const Text('Cancel Ride'),
                       ),
                     ),
                   ] else if (_rideStatus == RideStatus.arrivedAtPickup) ...[
@@ -655,6 +1152,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           backgroundColor: AppColors.error,
                         ),
                         child: const Text('End Ride'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _showCancelRideDialog,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
+                        ),
+                        child: const Text('Cancel Ride'),
                       ),
                     ),
                   ],
@@ -715,7 +1224,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           // Online/Offline Button (Center)
           GestureDetector(
-            onTap: _toggleOnlineStatus,
+            onTap: _isStatusUpdating ? null : _toggleOnlineStatus,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -738,7 +1247,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               child: Row(
                 children: [
-                  if (_rideStatus == RideStatus.searching)
+                  if (_rideStatus == RideStatus.searching || _isStatusUpdating)
                     const Padding(
                       padding: EdgeInsets.only(right: 8.0),
                       child: SizedBox(
@@ -758,9 +1267,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SizedBox(width: 8),
                   Text(
                     _isOnline
-                        ? (_rideStatus == RideStatus.searching
+                    ? (_isStatusUpdating
+                      ? 'UPDATING'
+                      : (_rideStatus == RideStatus.searching
                               ? 'SEARCHING'
-                              : 'ONLINE')
+                      : 'ONLINE'))
                         : 'OFFLINE',
                     style: TextStyle(
                       color: _isOnline ? Colors.white : AppColors.textPrimary,

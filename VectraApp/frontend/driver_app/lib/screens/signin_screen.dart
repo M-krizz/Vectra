@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'phone_verification_screen.dart';
-import 'home_screen.dart';
+import 'otp_verification_screen.dart';
+import '../services/legacy_auth_service.dart';
+import '../features/auth/data/models/auth_tokens.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -13,13 +15,19 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
+  final _identifierController = TextEditingController();
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  /// Returns true when the text looks like a phone number (digits only, 8-15 chars)
+  bool get _isPhone {
+    final v = _identifierController.text.trim();
+    return RegExp(r'^\+?[0-9]{8,15}$').hasMatch(v);
+  }
+
+  String get _channel => _isPhone ? 'phone' : 'email';
 
   @override
   void initState() {
@@ -44,8 +52,7 @@ class _SignInScreenState extends State<SignInScreen>
   @override
   void dispose() {
     _animationController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _identifierController.dispose();
     super.dispose();
   }
 
@@ -53,33 +60,35 @@ class _SignInScreenState extends State<SignInScreen>
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final identifier = _identifierController.text.trim();
+        final result = await LegacyAuthService.sendOtp(
+          identifier: identifier,
+          channel: _channel,
+        );
 
-      setState(() => _isLoading = false);
-
-      if (mounted) {
-        // Extract name from email for demo purposes
-        String email = _emailController.text;
-        String userName = 'Driver';
-        if (email.contains('@')) {
-          String namePart = email.split('@')[0];
-          if (namePart.isNotEmpty) {
-            // Capitalize first letter
-            userName =
-                namePart[0].toUpperCase() +
-                (namePart.length > 1 ? namePart.substring(1) : '');
-          }
-        }
-
-        // Navigate to home screen
-        Navigator.pushAndRemoveUntil(
+        if (!mounted) return;
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(userName: userName),
+            builder: (context) => OTPVerificationScreen(
+              identifier: identifier,
+              devOtp: result.devOtp,
+            ),
           ),
-          (route) => false,
         );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e is AuthError ? e.message : 'Failed to send OTP'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -156,101 +165,51 @@ class _SignInScreenState extends State<SignInScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Email Address',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                          // Dynamic label
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: Text(
+                              _isPhone
+                                  ? 'Phone Number'
+                                  : 'Email or Phone Number',
+                              key: ValueKey(_isPhone),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
-                            controller: _emailController,
+                            controller: _identifierController,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              hintText: 'Enter your email',
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!RegExp(
-                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                              ).hasMatch(value)) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          const Text(
-                            'Password',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: !_isPasswordVisible,
+                            autocorrect: false,
+                            onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
-                              hintText: 'Enter your password',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
+                              hintText: 'Enter email or phone (e.g. +91XXXXXXXXXX)',
+                              prefixIcon: Icon(
+                                _isPhone
+                                    ? Icons.phone_outlined
+                                    : Icons.person_outline,
                                 color: AppColors.primary,
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _isPasswordVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: AppColors.textSecondary,
-                                ),
-                                onPressed: () {
-                                  setState(
-                                    () => _isPasswordVisible =
-                                        !_isPasswordVisible,
-                                  );
-                                },
                               ),
                             ),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter your email or phone number';
                               }
-                              if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
+                              final v = value.trim();
+                              final isPhone =
+                                  RegExp(r'^\+?[0-9]{8,15}$').hasMatch(v);
+                              final isEmail = RegExp(
+                                r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(v);
+                              if (!isPhone && !isEmail) {
+                                return 'Enter a valid email or phone number';
                               }
                               return null;
                             },
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Forgot Password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                // TODO: Implement forgot password
-                              },
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
                           ),
 
                           const SizedBox(height: 24),
@@ -276,7 +235,7 @@ class _SignInScreenState extends State<SignInScreen>
                                       ),
                                     )
                                   : const Text(
-                                      'Sign In',
+                                      'Send OTP',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
