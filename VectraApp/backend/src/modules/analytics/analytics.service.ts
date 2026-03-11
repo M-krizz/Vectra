@@ -31,7 +31,7 @@ export class AnalyticsService {
         };
     }
 
-    async getRevenueTrend() {
+    getRevenueTrend() {
         // Return dummy 7-day trend for the dashboard component
         return [
             { name: 'Mon', revenue: 2400 },
@@ -44,7 +44,7 @@ export class AnalyticsService {
         ];
     }
 
-    async getTripTrend() {
+    getTripTrend() {
         return [
             { name: 'Mon', trips: 145 },
             { name: 'Tue', trips: 230 },

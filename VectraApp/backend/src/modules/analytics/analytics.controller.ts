@@ -12,17 +12,17 @@ export class AnalyticsController {
     constructor(private readonly analyticsService: AnalyticsService) { }
 
     @Get('stats')
-    async getDashboardStats() {
+    getDashboardStats() {
         return this.analyticsService.getDashboardStats();
     }
 
     @Get('trends/revenue')
-    async getRevenueTrend() {
+    getRevenueTrend() {
         return this.analyticsService.getRevenueTrend();
     }
 
     @Get('trends/trips')
-    async getTripTrend() {
+    getTripTrend() {
         return this.analyticsService.getTripTrend();
     }
 }
