@@ -17,7 +17,7 @@ on:
       - ".github/workflows/backend-ci.yml"
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   PYTHON_VERSION: "3.11"
   WORKING_DIR: VectraApp/backend
 
