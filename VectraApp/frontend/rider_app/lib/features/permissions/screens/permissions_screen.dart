@@ -45,7 +45,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -58,25 +58,25 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               Container(
                 width: 72,
                 height: 72,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8F0FE),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.location_on_rounded,
                     size: 36, color: AppColors.primary),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Allow location\naccess',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.2,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Vectra needs your location to:\n\n'
                 '• Show nearby drivers\n'
                 '• Auto-detect pickup point\n'
@@ -84,7 +84,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 '• Enable trip safety features',
                 style: TextStyle(
                   fontSize: 15,
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   height: 1.7,
                 ),
               ),
@@ -97,7 +97,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
+                    color: AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFFFCC80)),
                   ),
@@ -133,12 +133,12 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       elevation: 0,
                     ),
                     child: _isRequesting
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                             ),
                           )
                         : const Text(

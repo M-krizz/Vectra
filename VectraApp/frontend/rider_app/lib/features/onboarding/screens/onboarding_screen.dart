@@ -14,13 +14,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _current = 0;
 
-  static const _slides = [
+  static final _slides = [
     _Slide(
       emoji: '🚗',
       title: 'Ride Solo or Share',
       subtitle:
           'Book a ride just for you, or share with others heading the same way — save money, save the planet.',
-      bg: Color(0xFFE8F0FE),
+      bg: AppColors.primary.withValues(alpha: 0.1),
       accent: AppColors.primary,
     ),
     _Slide(
@@ -28,7 +28,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Live Tracking',
       subtitle:
           'Watch your driver arrive in real-time. Share your trip status with family and friends.',
-      bg: Color(0xFFE8F5E9),
+      bg: AppColors.success.withValues(alpha: 0.1),
       accent: Color(0xFF2E7D32),
     ),
     _Slide(
@@ -36,7 +36,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Your Safety First',
       subtitle:
           'SOS button, emergency contacts, in-app incident reporting — we\'ve got you covered every ride.',
-      bg: Color(0xFFFFF3E0),
+      bg: AppColors.warning.withValues(alpha: 0.1),
       accent: Color(0xFFE65100),
     ),
     _Slide(
@@ -44,21 +44,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Seamless Payments',
       subtitle:
           'Pay with UPI, cards, or cash. Get a detailed receipt after every ride. No surprises.',
-      bg: Color(0xFFEDE7F6),
+      bg: AppColors.secondary.withValues(alpha: 0.1),
       accent: Color(0xFF6A1B9A),
     ),
   ];
 
   Future<void> _done() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_done', true);
-    if (mounted) context.go('/login');
+    await prefs.setBool('just_registered', false);
+    if (mounted) context.go('/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -195,16 +195,16 @@ class _SlideWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
             slide.subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               height: 1.6,
             ),
             textAlign: TextAlign.center,
