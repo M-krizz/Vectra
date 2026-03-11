@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/app_theme.dart';
 import '../bloc/ride_bloc.dart';
+import '../repository/ride_repository.dart';
 
 class RatingScreen extends StatefulWidget {
   const RatingScreen({super.key});
@@ -17,15 +18,46 @@ class _RatingScreenState extends State<RatingScreen> {
   final _tags = ['Polite driver', 'Clean vehicle', 'Safe driving', 'On time', 'Great route'];
   final Set<String> _selectedTags = {};
   bool _submitted = false;
+  bool _isSubmitting = false;
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a rating')),
       );
       return;
     }
-    setState(() => _submitted = true);
+
+    final rideState = context.read<RideBloc>().state;
+    final tripId = rideState.rideId;
+    if (tripId == null || tripId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trip details unavailable for rating.')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final repository = context.read<RideRepository>();
+      await repository.submitTripRating(
+        tripId: tripId,
+        rating: _rating,
+        feedback: _feedbackController.text,
+        tags: _selectedTags.toList(),
+      );
+      if (!mounted) return;
+      setState(() => _submitted = true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to submit rating. Please try again.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
@@ -33,19 +65,19 @@ class _RatingScreenState extends State<RatingScreen> {
     return BlocBuilder<RideBloc, RideState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
-            title: const Text('Rate Your Ride',
-                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            backgroundColor: Colors.white,
+            title: Text('Rate Your Ride',
+                style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+            backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => context.pop(),
             ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
-              child: Container(height: 1, color: AppColors.border),
+              child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
             ),
           ),
           body: _submitted ? _SuccessView(onDone: () {
@@ -66,6 +98,7 @@ class _RatingScreenState extends State<RatingScreen> {
               }
             }),
             onSubmit: _submit,
+            isSubmitting: _isSubmitting,
           ),
         );
       },
@@ -87,7 +120,8 @@ class _RatingForm extends StatelessWidget {
   final TextEditingController feedbackController;
   final Function(int) onRating;
   final Function(String) onTagToggle;
-  final VoidCallback onSubmit;
+  final Future<void> Function() onSubmit;
+  final bool isSubmitting;
 
   const _RatingForm({
     required this.driver,
@@ -98,6 +132,7 @@ class _RatingForm extends StatelessWidget {
     required this.onRating,
     required this.onTagToggle,
     required this.onSubmit,
+    required this.isSubmitting,
   });
 
   @override
@@ -111,15 +146,15 @@ class _RatingForm extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(color: Color(0xFFF5F7FA), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
               child: const Icon(Icons.person_rounded, size: 38, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 10),
             Text(driver?.name ?? 'Your Driver',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 2),
             Text(driver?.vehicleModel ?? '',
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ]),
         ),
 
@@ -138,7 +173,7 @@ class _RatingForm extends StatelessWidget {
                   child: Icon(
                     filled ? Icons.star_rounded : Icons.star_outline_rounded,
                     size: 44,
-                    color: filled ? const Color(0xFFFFA000) : AppColors.border,
+                    color: filled ? const Color(0xFFFFA000) : Theme.of(context).colorScheme.outline,
                   ),
                 ),
               );
@@ -153,7 +188,7 @@ class _RatingForm extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: rating > 0 ? AppColors.primary : AppColors.textSecondary,
+              color: rating > 0 ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -161,8 +196,8 @@ class _RatingForm extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Tags
-        const Text('What went well?',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('What went well?',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -175,10 +210,10 @@ class _RatingForm extends StatelessWidget {
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFFE8F0FE) : const Color(0xFFF5F7FA),
+                  color: selected ? AppColors.primary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: selected ? AppColors.primary : AppColors.border,
+                    color: selected ? AppColors.primary : Theme.of(context).colorScheme.outline,
                     width: selected ? 2 : 1,
                   ),
                 ),
@@ -186,7 +221,7 @@ class _RatingForm extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 13,
                         fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                        color: selected ? AppColors.primary : AppColors.textSecondary)),
+                        color: selected ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
             );
           }).toList(),
@@ -195,22 +230,22 @@ class _RatingForm extends StatelessWidget {
         const SizedBox(height: 20),
 
         // Feedback text
-        const Text('Additional feedback (optional)',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('Additional feedback (optional)',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F7FA),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: TextField(
             controller: feedbackController,
             maxLines: 3,
             style: const TextStyle(fontSize: 14),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Share your experience…',
-              hintStyle: TextStyle(color: AppColors.textSecondary),
+              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(14),
             ),
@@ -221,7 +256,7 @@ class _RatingForm extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: onSubmit,
+            onPressed: isSubmitting ? null : () => onSubmit(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -229,8 +264,17 @@ class _RatingForm extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 0,
             ),
-            child: const Text('Submit Rating',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text('Submit Rating',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
           ),
         ),
       ],
@@ -250,12 +294,12 @@ class _SuccessView extends StatelessWidget {
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           const Text('🙏', style: TextStyle(fontSize: 72)),
           const SizedBox(height: 20),
-          const Text('Thank you!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+          Text('Thank you!',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Your feedback helps us keep improving Vectra for everyone.',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 36),

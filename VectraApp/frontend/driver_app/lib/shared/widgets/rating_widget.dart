@@ -35,16 +35,20 @@ class _RatingWidgetState extends State<RatingWidget> {
 
   void _updateRating(double newRating) {
     if (!widget.isInteractive) return;
-    
     setState(() {
       _rating = newRating;
     });
-    
     widget.onRatingChanged?.call(newRating);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final defaultActive = isDark ? AppColors.hyperLime : colors.primary;
+    final defaultInactive = isDark ? AppColors.white30 : colors.outline.withValues(alpha: 0.3);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
@@ -65,8 +69,8 @@ class _RatingWidgetState extends State<RatingWidget> {
                       ? Icons.star
                       : Icons.star_border,
               color: isFilled || isHalfFilled
-                  ? (widget.activeColor ?? AppColors.hyperLime)
-                  : (widget.inactiveColor ?? AppColors.white30),
+                  ? (widget.activeColor ?? defaultActive)
+                  : (widget.inactiveColor ?? defaultInactive),
               size: widget.size,
             ),
           ),
@@ -76,7 +80,6 @@ class _RatingWidgetState extends State<RatingWidget> {
   }
 }
 
-// Display-only rating with text
 class RatingDisplay extends StatelessWidget {
   final double rating;
   final int? totalRatings;
@@ -91,19 +94,24 @@ class RatingDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           Icons.star,
-          color: AppColors.hyperLime,
+          color: accent,
           size: size,
         ),
         const SizedBox(width: 4),
         Text(
           rating.toStringAsFixed(1),
           style: GoogleFonts.dmSans(
-            color: Colors.white,
+            color: colors.onSurface,
             fontSize: size * 0.875,
             fontWeight: FontWeight.bold,
           ),
@@ -113,7 +121,7 @@ class RatingDisplay extends StatelessWidget {
           Text(
             '($totalRatings)',
             style: GoogleFonts.dmSans(
-              color: AppColors.white50,
+              color: colors.onSurfaceVariant,
               fontSize: size * 0.75,
             ),
           ),

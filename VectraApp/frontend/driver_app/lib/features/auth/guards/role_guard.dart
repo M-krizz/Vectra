@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/jwt_decoder.dart';
+import '../data/models/auth_tokens.dart';
 import '../presentation/providers/auth_providers.dart';
+
 
 /// Role guard widget that only allows drivers to access content
 class DriverRoleGuard extends ConsumerWidget {

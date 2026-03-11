@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../config/app_theme.dart';
+import '../../../../config/theme_cubit.dart';
 
 /// Content-first home/ride tab matching the reference app layout
 class RideHomeScreen extends StatelessWidget {
   const RideHomeScreen({super.key});
 
-  static const List<_ServiceItem> _quickServices = [
-    _ServiceItem(id: 'auto', label: 'Auto', emoji: '🛺', color: Color(0xFFFEF3E2)),
-    _ServiceItem(id: 'cab_economy', label: 'Cab Economy', emoji: '🚗', color: Color(0xFFE8F5E9)),
-    _ServiceItem(id: 'bike', label: 'Bike', emoji: '🏍️', color: Color(0xFFE3F2FD)),
-    _ServiceItem(id: 'cab_premium', label: 'Cab Premium', emoji: '🚙', color: Color(0xFFEDE7F6)),
+  static final List<_ServiceItem> _quickServices = [
+    _ServiceItem(id: 'auto', label: 'Auto', icon: Icons.electric_rickshaw, lightColor: Color(0xFFFEF3E2), darkColor: Color(0xFF3D2E14)),
+    _ServiceItem(id: 'cab_economy', label: 'Cab\nEconomy', icon: Icons.local_taxi, lightColor: Color(0xFFE8F5E9), darkColor: Color(0xFF1B3D1E)),
+    _ServiceItem(id: 'bike', label: 'Bike', icon: Icons.two_wheeler, lightColor: Color(0xFFE3F2FD), darkColor: Color(0xFF142838)),
+    _ServiceItem(id: 'cab_premium', label: 'Cab\nPremium', icon: Icons.directions_car, lightColor: Color(0xFFF3E5F5), darkColor: Color(0xFF2D1A33)),
   ];
 
   static const List<_PromoItem> _promos = [
@@ -18,94 +19,65 @@ class RideHomeScreen extends StatelessWidget {
       title: 'In a hurry?',
       subtitle: 'An auto will arrive in 5 mins.',
       cta: 'Book Now',
-      bgColor: Color(0xFFE8F0FE),
-      accentColor: AppColors.primary,
-      emoji: '🛺',
-    ),
-    _PromoItem(
-      title: 'Ride safe!',
-      subtitle: 'SOS & live tracking on every ride.',
-      cta: 'Learn More',
-      bgColor: Color(0xFFE8F5E9),
-      accentColor: Color(0xFF2E7D32),
-      emoji: '🛡️',
+      lightBg: Color(0xFFE8F5E9),
+      darkBg: Color(0xFF1A3D1E),
+      accentColor: Color(0xFF00B248),
+      icon: Icons.electric_rickshaw,
     ),
   ];
 
   static const List<_DestinationCard> _destinations = [
-    _DestinationCard(
-      title: 'Airport Rides',
-      subtitle: 'Hassle-Free Airport Drops',
-      emoji: '✈️',
-      bgColor: Color(0xFFFFF3E0),
-    ),
-    _DestinationCard(
-      title: 'Railway Station',
-      subtitle: 'Quick Rides to Railway Station',
-      emoji: '🚆',
-      bgColor: Color(0xFFE8F0FE),
-    ),
-    _DestinationCard(
-      title: 'Bus Terminal',
-      subtitle: 'Ride to Your Bus Terminal',
-      emoji: '🚌',
-      bgColor: Color(0xFFE8F5E9),
-    ),
+    _DestinationCard(title: 'Airport Rides', subtitle: 'Hassle-Free Airport\nDrops', icon: Icons.flight_takeoff, lightBg: Color(0xFFFFF8E1), darkBg: Color(0xFF3D3514)),
+    _DestinationCard(title: 'Railway Station', subtitle: 'Quick Rides to\nRailway Station', icon: Icons.train, lightBg: Color(0xFFE8F5E9), darkBg: Color(0xFF1A3D1E)),
+    _DestinationCard(title: 'Bus Terminal', subtitle: 'Ride to Your\nBus Terminal', icon: Icons.directions_bus, lightBg: Color(0xFFE3F2FD), darkBg: Color(0xFF142838)),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Search bar at top ────────────────────────────────────────
+            // Search bar at top
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: _SearchBar(),
+                child: Row(
+                  children: [
+                    Expanded(child: _SearchBar()),
+                    const SizedBox(width: 10),
+                    _ThemeToggleButton(),
+                  ],
+                ),
               ),
             ),
 
-            // ── Explore section ──────────────────────────────────────────
+            // Explore section
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Explore',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    Text('Explore', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.onSurface)),
                     GestureDetector(
-                      onTap: () {}, // navigate to all services tab
-                      child: const Row(
-                        children: [
-                          Text(
-                            'View All',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          SizedBox(width: 2),
-                          Icon(Icons.chevron_right, size: 16, color: AppColors.primary),
-                        ],
-                      ),
+                      onTap: () => context.push('/home/location-select'),
+                      child: Row(children: [
+                        Text('View All', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.primary)),
+                        const SizedBox(width: 2),
+                        Icon(Icons.chevron_right, size: 16, color: colors.primary),
+                      ]),
                     ),
                   ],
                 ),
               ),
             ),
 
-            // ── Quick service grid (2x2) ─────────────────────────────────
+            // Quick service grid
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -115,9 +87,7 @@ class RideHomeScreen extends StatelessWidget {
                     final s = entry.value;
                     return Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(
-                          right: idx == _quickServices.length - 1 ? 0 : 10,
-                        ),
+                        padding: EdgeInsets.only(right: idx == _quickServices.length - 1 ? 0 : 10),
                         child: _ServiceTile(item: s),
                       ),
                     );
@@ -126,7 +96,7 @@ class RideHomeScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Promo banner ─────────────────────────────────────────────
+            // Promo banner
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -134,18 +104,11 @@ class RideHomeScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Go Places section ────────────────────────────────────────
+            // Go Places section
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                child: Text(
-                  'Go Places with Vectra',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                child: Text('Go Places with Vectra', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.onSurface)),
               ),
             ),
 
@@ -156,7 +119,7 @@ class RideHomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   scrollDirection: Axis.horizontal,
                   itemCount: _destinations.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (context, index) => const SizedBox(width: 12),
                   itemBuilder: (context, i) => _DestinationTile(item: _destinations[i]),
                 ),
               ),
@@ -170,95 +133,79 @@ class RideHomeScreen extends StatelessWidget {
   }
 }
 
-// ─── Search bar widget ─────────────────────────────────────────────────────
-
+// Search bar widget
 class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => context.push('/home/location-select'),
       child: Container(
         height: 52,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F7FA),
+          color: isDark ? colors.surfaceContainerHighest : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
         ),
-        child: const Row(
-          children: [
-            Icon(Icons.search, color: AppColors.textSecondary, size: 22),
-            SizedBox(width: 10),
-            Text(
-              'Enter pickup location',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
+        child: Row(children: [
+          Icon(Icons.search, color: colors.onSurfaceVariant, size: 22),
+          const SizedBox(width: 10),
+          Text('Enter pickup location', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 15)),
+        ]),
       ),
     );
   }
 }
 
-// ─── Service tile ──────────────────────────────────────────────────────────
-
+// Service tile
 class _ServiceTile extends StatelessWidget {
   final _ServiceItem item;
   const _ServiceTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => context.push('/home/location-select'),
       child: Column(
         children: [
           Container(
-            width: 70,
-            height: 70,
+            width: 70, height: 70,
             decoration: BoxDecoration(
-              color: item.color,
+              color: isDark ? item.darkColor : item.lightColor,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Center(
-              child: Text(item.emoji, style: const TextStyle(fontSize: 32)),
-            ),
+            child: Center(child: Icon(item.icon, size: 32, color: isDark ? Colors.white70 : Colors.black54)),
           ),
           const SizedBox(height: 6),
-          Text(
-            item.label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-          ),
+          Text(item.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colors.onSurface), textAlign: TextAlign.center, maxLines: 2),
         ],
       ),
     );
   }
 }
 
-// ─── Promo banner ─────────────────────────────────────────────────────────
-
+// Promo banner
 class _PromoBanner extends StatelessWidget {
   final _PromoItem promo;
   const _PromoBanner({required this.promo});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = Theme.of(context).colorScheme;
     return Container(
-      height: 88,
+      constraints: const BoxConstraints(minHeight: 88),
       decoration: BoxDecoration(
-        color: promo.bgColor,
+        color: isDark ? promo.darkBg : promo.lightBg,
         borderRadius: BorderRadius.circular(14),
       ),
       clipBehavior: Clip.antiAlias,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Padding(
@@ -266,82 +213,50 @@ class _PromoBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    promo.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: promo.accentColor,
-                    ),
-                  ),
+                  Text(promo.title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: promo.accentColor)),
                   const SizedBox(height: 2),
-                  Text(
-                    promo.subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                  Text(promo.subtitle, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
                   const SizedBox(height: 4),
-                  Text(
-                    promo.cta,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: promo.accentColor,
-                    ),
-                  ),
+                  Text(promo.cta, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: promo.accentColor)),
                 ],
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(promo.emoji, style: const TextStyle(fontSize: 52)),
-          ),
+          Padding(padding: const EdgeInsets.all(12), child: Icon(promo.icon, size: 52, color: promo.accentColor.withValues(alpha: 0.7))),
         ],
       ),
     );
   }
 }
 
-// ─── Destination card ──────────────────────────────────────────────────────
-
+// Destination card
 class _DestinationTile extends StatelessWidget {
   final _DestinationCard item;
   const _DestinationTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () {},
+      onTap: () => context.push('/home/location-select'),
       child: Container(
         width: 150,
         decoration: BoxDecoration(
-          color: item.bgColor,
+          color: isDark ? item.darkBg : item.lightBg,
           borderRadius: BorderRadius.circular(14),
         ),
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.emoji, style: const TextStyle(fontSize: 36)),
+            Icon(item.icon, size: 36, color: isDark ? Colors.white70 : Colors.black54),
             const Spacer(),
-            Text(
-              item.title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Text(item.title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: colors.onSurface)),
             const SizedBox(height: 2),
-            Text(
-              item.subtitle,
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              maxLines: 2,
-            ),
+            Text(item.subtitle, style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant), maxLines: 2),
           ],
         ),
       ),
@@ -349,30 +264,48 @@ class _DestinationTile extends StatelessWidget {
   }
 }
 
-// ─── Data classes ──────────────────────────────────────────────────────────
+class _ThemeToggleButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: isDark ? colors.surfaceContainerHighest : const Color(0xFFF1F5F9),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.read<ThemeCubit>().toggleTheme(),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Icon(
+            isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            size: 20,
+            color: colors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+// Data classes
 class _ServiceItem {
-  final String id;
-  final String label;
-  final String emoji;
-  final Color color;
-  const _ServiceItem({required this.id, required this.label, required this.emoji, required this.color});
+  final String id, label;
+  final IconData icon;
+  final Color lightColor, darkColor;
+  const _ServiceItem({required this.id, required this.label, required this.icon, required this.lightColor, required this.darkColor});
 }
 
 class _PromoItem {
-  final String title;
-  final String subtitle;
-  final String cta;
-  final Color bgColor;
-  final Color accentColor;
-  final String emoji;
-  const _PromoItem({required this.title, required this.subtitle, required this.cta, required this.bgColor, required this.accentColor, required this.emoji});
+  final String title, subtitle, cta;
+  final IconData icon;
+  final Color lightBg, darkBg, accentColor;
+  const _PromoItem({required this.title, required this.subtitle, required this.cta, required this.lightBg, required this.darkBg, required this.accentColor, required this.icon});
 }
 
 class _DestinationCard {
-  final String title;
-  final String subtitle;
-  final String emoji;
-  final Color bgColor;
-  const _DestinationCard({required this.title, required this.subtitle, required this.emoji, required this.bgColor});
+  final String title, subtitle;
+  final IconData icon;
+  final Color lightBg, darkBg;
+  const _DestinationCard({required this.title, required this.subtitle, required this.icon, required this.lightBg, required this.darkBg});
 }

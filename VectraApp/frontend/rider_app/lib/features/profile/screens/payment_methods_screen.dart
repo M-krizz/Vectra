@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../config/app_theme.dart';
 
-/// Screen for managing payment methods
+/// Payments screen — Wallet / Pay Later / Others
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
 
@@ -9,576 +10,467 @@ class PaymentMethodsScreen extends StatefulWidget {
 }
 
 class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
-  String _selectedMethod = 'cash';
-
-  final List<PaymentMethod> _paymentMethods = [
-    const PaymentMethod(
-      id: 'cash',
-      name: 'Cash',
-      icon: Icons.money,
-      description: 'Pay with cash after your ride',
-      type: PaymentType.cash,
-    ),
-    const PaymentMethod(
-      id: 'upi_gpay',
-      name: 'Google Pay',
-      icon: Icons.account_balance_wallet,
-      description: 'user@okaxis',
-      type: PaymentType.upi,
-    ),
-    const PaymentMethod(
-      id: 'card_1',
-      name: '•••• •••• •••• 4242',
-      icon: Icons.credit_card,
-      description: 'Visa • Expires 12/26',
-      type: PaymentType.card,
-    ),
-  ];
+  double _walletBalance = 0.0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Payment Methods'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: const Text(
+          'Payments',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: const Color(0xFFEEEEEE)),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.help_outline_rounded, size: 16),
+              label: const Text('Help'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+                side: BorderSide(color: Colors.grey.shade300),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                textStyle: const TextStyle(fontSize: 13),
+              ),
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Default payment method
-          Text(
-            'DEFAULT PAYMENT',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: _paymentMethods
-                  .map((method) => _buildPaymentMethodTile(method))
-                  .toList(),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Add new payment method
-          Text(
-            'ADD PAYMENT METHOD',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                _buildAddMethodTile(
-                  icon: Icons.credit_card,
-                  title: 'Add Credit/Debit Card',
-                  onTap: _addCard,
+          // ── WALLETS ─────────────────────────────────────────────────
+          _sectionLabel('Wallets'),
+          const SizedBox(height: 8),
+          _card(
+            children: [
+              // Vectra Wallet
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Vectra Wallet',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            _walletBalance > 0
+                                ? 'Balance: ₹${_walletBalance.toStringAsFixed(1)}'
+                                : 'Low Balance: ₹0.0',
+                            style: TextStyle(
+                              color: _walletBalance > 0
+                                  ? Colors.green.shade700
+                                  : Colors.orange.shade700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const Divider(height: 1),
-                _buildAddMethodTile(
-                  icon: Icons.account_balance,
-                  title: 'Add UPI ID',
-                  onTap: _addUpi,
-                ),
-                const Divider(height: 1),
-                _buildAddMethodTile(
-                  icon: Icons.account_balance_wallet,
-                  title: 'Link Wallet',
-                  subtitle: 'Paytm, PhonePe, Amazon Pay',
-                  onTap: _linkWallet,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Promo code
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.local_offer, color: Colors.green.shade700),
               ),
-              title: const Text('Add Promo Code'),
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-              onTap: _addPromoCode,
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: OutlinedButton.icon(
+                  onPressed: () => _showAddMoneySheet(),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add Money'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade100),
+
+              // UPI option
+              _paymentTile(
+                icon: Icons.currency_rupee_rounded,
+                iconBg: Colors.purple.shade50,
+                iconColor: Colors.purple.shade700,
+                title: 'UPI',
+                subtitle: 'Link your UPI ID',
+                trailingText: 'LINK',
+                onTap: () => _showLinkUpiSheet(),
+                showDivider: false,
+              ),
+            ],
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
 
-          // Info text
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Your payment information is stored securely. We do not store your full card details.',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
+          // ── PAY LATER ────────────────────────────────────────────────
+          _sectionLabel('Pay Later'),
+          const SizedBox(height: 8),
+          _card(
+            children: [
+              _paymentTile(
+                icon: Icons.qr_code_scanner_rounded,
+                iconBg: Colors.blue.shade50,
+                iconColor: Colors.blue.shade700,
+                title: 'Pay at drop',
+                subtitle: 'Go cashless, after ride pay by scanning QR code',
+                showDivider: false,
+              ),
+            ],
           ),
+
+          const SizedBox(height: 20),
+
+          // ── OTHERS ───────────────────────────────────────────────────
+          _sectionLabel('Others'),
+          const SizedBox(height: 8),
+          _card(
+            children: [
+              _paymentTile(
+                icon: Icons.money_rounded,
+                iconBg: Colors.green.shade50,
+                iconColor: Colors.green.shade700,
+                title: 'Cash',
+                subtitle: 'Pay with cash after your ride',
+                showDivider: false,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Info
+          Text(
+            'Your payment information is stored securely.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildPaymentMethodTile(PaymentMethod method) {
-    final isSelected = _selectedMethod == method.id;
+  // ─── Helpers ────────────────────────────────────────────────────────────
 
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: _getMethodColor(method.type).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+  Widget _sectionLabel(String label) => Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textSecondary,
         ),
-        child: Icon(method.icon, color: _getMethodColor(method.type)),
-      ),
-      title: Text(
-        method.name,
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      subtitle: Text(
-        method.description,
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-      ),
-      trailing: isSelected
-          ? const Icon(Icons.check_circle, color: Colors.green)
-          : Radio<String>(
-              value: method.id,
-              groupValue: _selectedMethod,
-              onChanged: (value) {
-                setState(() => _selectedMethod = value!);
-              },
-            ),
-      onTap: () {
-        setState(() => _selectedMethod = method.id);
-      },
-    );
-  }
+      );
 
-  Widget _buildAddMethodTile({
+  Widget _card({required List<Widget> children}) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(children: children),
+      );
+
+  Widget _paymentTile({
     required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
     required String title,
     String? subtitle,
-    required VoidCallback onTap,
+    String? trailingText,
+    bool showChevron = false,
+    VoidCallback? onTap,
+    required bool showDivider,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: Colors.grey.shade700),
-      ),
-      title: Text(title),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-            )
-          : null,
-      trailing: const Icon(Icons.add, color: Colors.grey),
-      onTap: onTap,
-    );
-  }
-
-  Color _getMethodColor(PaymentType type) {
-    switch (type) {
-      case PaymentType.cash:
-        return Colors.green;
-      case PaymentType.upi:
-        return Colors.purple;
-      case PaymentType.card:
-        return Colors.blue;
-      case PaymentType.wallet:
-        return Colors.orange;
-    }
-  }
-
-  void _addCard() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => const _AddCardSheet(),
-    );
-  }
-
-  void _addUpi() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => _AddUpiSheet(
-        onSave: (upiId) {
-          setState(() {
-            _paymentMethods.add(
-              PaymentMethod(
-                id: 'upi_${DateTime.now().millisecondsSinceEpoch}',
-                name: 'UPI',
-                icon: Icons.account_balance,
-                description: upiId,
-                type: PaymentType.upi,
-              ),
-            );
-          });
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('UPI added successfully')),
-          );
-        },
-      ),
-    );
-  }
-
-  void _linkWallet() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Wallet linking coming soon')));
-  }
-
-  void _addPromoCode() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => _PromoCodeSheet(
-        onApply: (code) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Promo code "$code" applied!')),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _AddCardSheet extends StatefulWidget {
-  const _AddCardSheet();
-
-  @override
-  State<_AddCardSheet> createState() => _AddCardSheetState();
-}
-
-class _AddCardSheetState extends State<_AddCardSheet> {
-  final _cardNumberController = TextEditingController();
-  final _expiryController = TextEditingController();
-  final _cvvController = TextEditingController();
-  final _nameController = TextEditingController();
-
-  @override
-  void dispose() {
-    _cardNumberController.dispose();
-    _expiryController.dispose();
-    _cvvController.dispose();
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Add Card',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: _cardNumberController,
-              decoration: _inputDecoration('Card Number'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-
-            Row(
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
               children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
+                ),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: TextField(
-                    controller: _expiryController,
-                    decoration: _inputDecoration('MM/YY'),
-                    keyboardType: TextInputType.datetime,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _cvvController,
-                    decoration: _inputDecoration('CVV'),
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
+                if (trailingText != null)
+                  Text(
+                    trailingText,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  )
+                else if (showChevron)
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.textSecondary,
                   ),
-                ),
               ],
             ),
-            const SizedBox(height: 12),
+          ),
+        ),
+        if (showDivider)
+          Divider(height: 1, indent: 54, color: Colors.grey.shade100),
+      ],
+    );
+  }
 
-            TextField(
-              controller: _nameController,
-              decoration: _inputDecoration('Name on Card'),
-            ),
-            const SizedBox(height: 20),
+  void _showAddMoneySheet() {
+    final amounts = [50, 100, 200, 500];
+    final controller = TextEditingController();
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Card added successfully')),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Add Money to Wallet',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 10,
+                children: amounts
+                    .map(
+                      (a) => ActionChip(
+                        label: Text('₹$a'),
+                        onPressed: () {
+                          controller.text = a.toString();
+                        },
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Enter amount',
+                  prefixText: '₹ ',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
                 ),
-                child: const Text('Add Card'),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final val = double.tryParse(controller.text);
+                    if (val != null && val > 0) {
+                      setState(() => _walletBalance += val);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('₹${val.toStringAsFixed(0)} added!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Proceed to Pay',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      filled: true,
-      fillColor: Colors.grey.shade100,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+  void _showLinkUpiSheet() {
+    final controller = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
-}
-
-class _AddUpiSheet extends StatefulWidget {
-  final void Function(String) onSave;
-
-  const _AddUpiSheet({required this.onSave});
-
-  @override
-  State<_AddUpiSheet> createState() => _AddUpiSheetState();
-}
-
-class _AddUpiSheetState extends State<_AddUpiSheet> {
-  final _upiController = TextEditingController();
-
-  @override
-  void dispose() {
-    _upiController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Add UPI ID',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: _upiController,
-              decoration: InputDecoration(
-                hintText: 'yourname@upi',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_upiController.text.isNotEmpty) {
-                    widget.onSave(_upiController.text);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
+              const Text(
+                'Link UPI ID',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'yourname@upi',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
                 ),
-                child: const Text('Verify & Add'),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('UPI linked successfully!'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Verify & Link'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class _PromoCodeSheet extends StatefulWidget {
-  final void Function(String) onApply;
-
-  const _PromoCodeSheet({required this.onApply});
-
-  @override
-  State<_PromoCodeSheet> createState() => _PromoCodeSheetState();
-}
-
-class _PromoCodeSheetState extends State<_PromoCodeSheet> {
-  final _codeController = TextEditingController();
-
-  @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter Promo Code',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: _codeController,
-              decoration: InputDecoration(
-                hintText: 'Enter code',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_codeController.text.isNotEmpty) {
-                    widget.onApply(_codeController.text);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Apply'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-enum PaymentType { cash, upi, card, wallet }
-
-class PaymentMethod {
-  final String id;
-  final String name;
-  final IconData icon;
-  final String description;
-  final PaymentType type;
-
-  const PaymentMethod({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.type,
-  });
 }

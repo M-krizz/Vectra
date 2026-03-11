@@ -1,17 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../auth/bloc/auth_bloc.dart';
+import '../../../config/app_theme.dart';
+import '../../../config/maps_config.dart';
 import '../../ride/bloc/ride_bloc.dart';
 import '../../ride/models/place_model.dart';
 import '../../ride/repository/places_repository.dart';
 import '../../ride/screens/location_search_screen.dart';
 import '../../ride/widgets/rating_dialog.dart';
-import '../../profile/screens/profile_screen.dart';
-import '../../history/screens/ride_history_screen.dart';
 
 /// Home screen with map and ride booking
 class HomeScreen extends StatefulWidget {
@@ -22,17 +23,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   Position? _currentPosition;
   String? _currentAddress;
   bool _isLoadingLocation = true;
-  String? _locationError;
   String _selectedPaymentMethod = 'cash';
 
   final PlacesRepository _placesRepository = PlacesRepository();
 
   // Default location (Coimbatore, India)
-  static const LatLng _defaultLocation = LatLng(11.0168, 76.9558);
+  static final LatLng _defaultLocation = LatLng(11.0168, 76.9558);
 
   @override
   void initState() {
@@ -43,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoadingLocation = true;
-      _locationError = null;
     });
 
     try {
@@ -51,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
-          _locationError = 'Location services are disabled.';
           _isLoadingLocation = false;
         });
         return;
@@ -63,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() {
-            _locationError = 'Location permissions are denied.';
             _isLoadingLocation = false;
           });
           return;
@@ -72,7 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (permission == LocationPermission.deniedForever) {
         setState(() {
-          _locationError = 'Location permissions are permanently denied.';
           _isLoadingLocation = false;
         });
         return;
@@ -92,12 +88,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _getAddressFromLatLng(position.latitude, position.longitude);
 
       // Move camera to current location
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+      _mapController.move(
+        LatLng(position.latitude, position.longitude), 15,
       );
     } catch (e) {
       setState(() {
-        _locationError = 'Failed to get location: $e';
         _isLoadingLocation = false;
       });
     }
@@ -115,6 +110,25 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       // Ignore geocoding errors
+    }
+  }
+
+  Future<void> _callDriver(String phoneNumber) async {
+    final sanitized = phoneNumber.trim();
+    if (sanitized.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Driver phone number is unavailable')),
+      );
+      return;
+    }
+
+    final uri = Uri(scheme: 'tel', path: sanitized);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open dialer')),
+      );
     }
   }
 
@@ -149,20 +163,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Set<Marker> _buildMarkers(RideState rideState) {
-    final markers = <Marker>{};
+  List<Marker> _buildMarkers(RideState rideState) {
+    final markers = <Marker>[];
 
     // Current location marker (if no pickup set)
     if (rideState.pickup == null && _currentPosition != null) {
       markers.add(
         Marker(
-          markerId: const MarkerId('current'),
-          position: LatLng(
+          point: LatLng(
             _currentPosition!.latitude,
             _currentPosition!.longitude,
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-          infoWindow: const InfoWindow(title: 'You are here'),
+          width: 36,
+          height: 36,
+          child: const Icon(Icons.my_location, color: AppColors.info, size: 28),
         ),
       );
     }
@@ -171,15 +185,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (rideState.pickup?.location != null) {
       markers.add(
         Marker(
-          markerId: const MarkerId('pickup'),
-          position: rideState.pickup!.location!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueGreen,
-          ),
-          infoWindow: InfoWindow(
-            title: 'Pickup',
-            snippet: rideState.pickup!.name,
-          ),
+          point: rideState.pickup!.location!,
+          width: 36,
+          height: 36,
+          child: const Icon(Icons.circle, color: AppColors.success, size: 16),
         ),
       );
     }
@@ -188,13 +197,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (rideState.destination?.location != null) {
       markers.add(
         Marker(
-          markerId: const MarkerId('destination'),
-          position: rideState.destination!.location!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: InfoWindow(
-            title: 'Destination',
-            snippet: rideState.destination!.name,
-          ),
+          point: rideState.destination!.location!,
+          width: 36,
+          height: 36,
+          child: const Icon(Icons.location_on, color: AppColors.error, size: 32),
         ),
       );
     }
@@ -203,15 +209,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (rideState.driver?.location != null) {
       markers.add(
         Marker(
-          markerId: const MarkerId('driver'),
-          position: rideState.driver!.location!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange,
-          ),
-          infoWindow: InfoWindow(
-            title: rideState.driver!.name,
-            snippet: rideState.driver!.vehicleNumber,
-          ),
+          point: rideState.driver!.location!,
+          width: 36,
+          height: 36,
+          child: const Icon(Icons.local_taxi, color: AppColors.warning, size: 28),
         ),
       );
     }
@@ -219,19 +220,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return markers;
   }
 
-  Set<Polyline> _buildPolylines(RideState rideState) {
+  List<Polyline> _buildPolylines(RideState rideState) {
     if (rideState.route == null || rideState.route!.polylinePoints.isEmpty) {
-      return {};
+      return [];
     }
 
-    return {
+    return [
       Polyline(
-        polylineId: const PolylineId('route'),
         points: rideState.route!.polylinePoints,
-        color: Colors.blue,
-        width: 5,
+        color: AppColors.info,
+        strokeWidth: 5,
       ),
-    };
+    ];
   }
 
   void _fitRouteBounds(RouteModel route) {
@@ -239,26 +239,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final bounds = LatLngBounds(
-      southwest: LatLng(
-        route.pickup.location!.latitude < route.destination.location!.latitude
-            ? route.pickup.location!.latitude
-            : route.destination.location!.latitude,
-        route.pickup.location!.longitude < route.destination.location!.longitude
-            ? route.pickup.location!.longitude
-            : route.destination.location!.longitude,
-      ),
-      northeast: LatLng(
-        route.pickup.location!.latitude > route.destination.location!.latitude
-            ? route.pickup.location!.latitude
-            : route.destination.location!.latitude,
-        route.pickup.location!.longitude > route.destination.location!.longitude
-            ? route.pickup.location!.longitude
-            : route.destination.location!.longitude,
-      ),
-    );
+    final bounds = LatLngBounds.fromPoints([
+      route.pickup.location!,
+      route.destination.location!,
+    ]);
 
-    _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
+    _mapController.fitCamera(
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)),
+    );
   }
 
   @override
@@ -277,35 +265,29 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(
             children: [
               // Map
-              GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _currentPosition != null
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _currentPosition != null
                       ? LatLng(
                           _currentPosition!.latitude,
                           _currentPosition!.longitude,
                         )
                       : _defaultLocation,
-                  zoom: 15,
+                  initialZoom: 15,
                 ),
-                myLocationEnabled: true,
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
-                markers: _buildMarkers(rideState),
-                polylines: _buildPolylines(rideState),
-                onMapCreated: (controller) {
-                  _mapController = controller;
-                  if (_currentPosition != null) {
-                    controller.animateCamera(
-                      CameraUpdate.newLatLng(
-                        LatLng(
-                          _currentPosition!.latitude,
-                          _currentPosition!.longitude,
-                        ),
-                      ),
-                    );
-                  }
-                },
+                children: [
+                  TileLayer(
+                    urlTemplate: Theme.of(context).brightness == Brightness.dark
+                        ? MapsConfig.darkTileUrlTemplate
+                        : MapsConfig.tileUrlTemplate,
+                    userAgentPackageName: 'com.vectra.rider',
+                  ),
+                  if (_buildPolylines(rideState).isNotEmpty)
+                    PolylineLayer(polylines: _buildPolylines(rideState)),
+                  if (_buildMarkers(rideState).isNotEmpty)
+                    MarkerLayer(markers: _buildMarkers(rideState)),
+                ],
               ),
 
               // Top bar with menu and profile
@@ -328,13 +310,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (rideState.route == null) {
                             // Center on current location
                             if (_currentPosition != null) {
-                              _mapController?.animateCamera(
-                                CameraUpdate.newLatLng(
-                                  LatLng(
-                                    _currentPosition!.latitude,
-                                    _currentPosition!.longitude,
-                                  ),
+                              _mapController.move(
+                                LatLng(
+                                  _currentPosition!.latitude,
+                                  _currentPosition!.longitude,
                                 ),
+                                15,
                               );
                             }
                           }
@@ -348,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Loading overlay
               if (_isLoadingLocation || rideState.isLoading)
                 Container(
-                  color: Colors.black26,
+                  color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.2),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
 
@@ -369,13 +350,15 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required VoidCallback onPressed,
   }) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -384,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: IconButton(
         icon: Icon(icon),
         onPressed: onPressed,
-        color: Colors.black87,
+        color: colors.onSurface,
       ),
     );
   }
@@ -419,13 +402,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildInitialBottomSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -440,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: colors.outline.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -453,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Good ${_getGreeting()}!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -466,20 +451,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: colors.surface.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.search, color: Colors.black54),
+                        Icon(Icons.search, color: colors.onSurfaceVariant),
                         const SizedBox(width: 12),
                         Text(
                           rideState.destination?.name ?? 'Where to?',
                           style: TextStyle(
                             fontSize: 16,
                             color: rideState.destination != null
-                                ? Colors.black
-                                : Colors.black54,
+                                ? colors.onSurface
+                                : colors.onSurfaceVariant,
                           ),
                         ),
                         const Spacer(),
@@ -489,7 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -500,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Now',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.black87,
+                                  color: colors.onSurface,
                                 ),
                               ),
                               const Icon(Icons.arrow_drop_down, size: 20),
@@ -537,13 +522,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRouteConfirmedSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -557,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: colors.outline.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -568,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Route summary
                 _buildLocationRow(
                   icon: Icons.circle,
-                  iconColor: Colors.green,
+                  iconColor: AppColors.success,
                   title: rideState.pickup?.name ?? 'Pickup',
                   subtitle: rideState.pickup?.address ?? '',
                   onTap: () =>
@@ -578,11 +565,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   margin: const EdgeInsets.only(left: 11),
                   height: 20,
                   width: 2,
-                  color: Colors.grey.shade300,
+                  color: colors.outline.withValues(alpha: 0.5),
                 ),
                 _buildLocationRow(
                   icon: Icons.circle,
-                  iconColor: Colors.red,
+                  iconColor: AppColors.error,
                   title: rideState.destination?.name ?? 'Destination',
                   subtitle: rideState.destination?.address ?? '',
                   onTap: () =>
@@ -594,18 +581,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.route, size: 16, color: Colors.black54),
+                      Icon(Icons.route, size: 16, color: colors.onSurfaceVariant),
                       const SizedBox(width: 4),
                       Text(
                         rideState.route!.distanceText,
-                        style: TextStyle(color: Colors.black54),
+                        style: TextStyle(color: colors.onSurfaceVariant),
                       ),
                       const SizedBox(width: 16),
-                      Icon(Icons.access_time, size: 16, color: Colors.black54),
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: colors.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         rideState.route!.durationText,
-                        style: TextStyle(color: Colors.black54),
+                        style: TextStyle(color: colors.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -637,8 +628,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
+                          backgroundColor: colors.onSurface,
+                          foregroundColor: colors.surface,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -661,16 +652,18 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context,
     RideState rideState,
   ) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -684,7 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: colors.outline.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -724,7 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Ride Type',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black87,
+                    color: colors.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -742,13 +735,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: rideState.rideType == 'solo'
-                                ? Colors.blue.shade50
-                                : Colors.grey.shade100,
+                                ? colors.primaryContainer.withValues(alpha: 0.35)
+                                : colors.surface.withValues(alpha: 0.65),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: rideState.rideType == 'solo'
-                                  ? Colors.blue
-                                  : Colors.grey.shade300,
+                                  ? colors.primary
+                                  : colors.outline.withValues(alpha: 0.5),
                               width: rideState.rideType == 'solo' ? 2 : 1,
                             ),
                           ),
@@ -758,8 +751,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Icon(
                                   Icons.person,
                                   color: rideState.rideType == 'solo'
-                                      ? Colors.blue
-                                      : Colors.black54,
+                                    ? colors.primary
+                                    : colors.onSurfaceVariant,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -768,8 +761,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: rideState.rideType == 'solo'
-                                        ? Colors.blue.shade900
-                                        : Colors.black87,
+                                        ? colors.primary
+                                        : colors.onSurface,
                                   ),
                                 ),
                               ],
@@ -790,13 +783,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: rideState.rideType == 'pool'
-                                ? Colors.blue.shade50
-                                : Colors.grey.shade100,
+                                ? colors.primaryContainer.withValues(alpha: 0.35)
+                                : colors.surface.withValues(alpha: 0.65),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: rideState.rideType == 'pool'
-                                  ? Colors.blue
-                                  : Colors.grey.shade300,
+                                  ? colors.primary
+                                  : colors.outline.withValues(alpha: 0.5),
                               width: rideState.rideType == 'pool' ? 2 : 1,
                             ),
                           ),
@@ -806,8 +799,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Icon(
                                   Icons.people,
                                   color: rideState.rideType == 'pool'
-                                      ? Colors.blue
-                                      : Colors.black54,
+                                    ? colors.primary
+                                    : colors.onSurfaceVariant,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -816,8 +809,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: rideState.rideType == 'pool'
-                                        ? Colors.blue.shade900
-                                        : Colors.black87,
+                                        ? colors.primary
+                                        : colors.onSurface,
                                   ),
                                 ),
                               ],
@@ -848,8 +841,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     context.read<RideBloc>().add(RideVehicleSelected(vehicle));
                     // If pool ride, load pooled requests
                     if (rideState.rideType == 'pool') {
+                      final rideBloc = context.read<RideBloc>();
                       Future.delayed(const Duration(milliseconds: 300), () {
-                        context.read<RideBloc>().add(
+                        rideBloc.add(
                           const RidePooledRequestsRequested(),
                         );
                       });
@@ -871,7 +865,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -879,15 +873,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
+                        color: AppColors.warning.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.orange.shade300),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.info_outline,
-                            color: Colors.orange.shade800,
+                            color: AppColors.warning,
                             size: 18,
                           ),
                           const SizedBox(width: 10),
@@ -896,7 +892,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'No available pool riders. Ride will proceed solo.',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.orange.shade800,
+                                color: AppColors.warning,
                               ),
                             ),
                           ),
@@ -941,10 +937,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: AppColors.success.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.green.shade300,
+                      color: AppColors.success.withValues(alpha: 0.45),
                       width: 1.5,
                     ),
                   ),
@@ -953,7 +949,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade100,
+                          color: AppColors.success.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -962,7 +958,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               : _selectedPaymentMethod == 'upi'
                               ? Icons.account_balance
                               : Icons.credit_card,
-                          color: Colors.green.shade800,
+                          color: AppColors.success,
                           size: 22,
                         ),
                       ),
@@ -975,16 +971,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Payment Method',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.green.shade700,
+                                color: AppColors.success,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               _getPaymentMethodName(_selectedPaymentMethod),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: Colors.black87,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ],
@@ -993,12 +989,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade100,
+                          color: AppColors.success.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
                           Icons.chevron_right,
-                          color: Colors.green.shade800,
+                          color: AppColors.success,
                           size: 20,
                         ),
                       ),
@@ -1019,8 +1015,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.onSurface,
+                    foregroundColor: Theme.of(context).colorScheme.surface,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1050,21 +1046,27 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final colors = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.grey.shade100 : Colors.white,
+          color: isSelected
+              ? colors.surface.withValues(alpha: 0.65)
+              : colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.black : Colors.grey.shade300,
+            color: isSelected
+                ? colors.onSurface
+                : colors.outline.withValues(alpha: 0.5),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: colors.shadow.withValues(alpha: 0.06),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -1077,13 +1079,15 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.grey.shade200 : Colors.grey.shade100,
+                color: isSelected
+                    ? colors.surface.withValues(alpha: 0.8)
+                    : colors.surface.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 _getVehicleIcon(vehicle.id),
                 size: 24,
-                color: isSelected ? Colors.black : Colors.black87,
+                color: colors.onSurface,
               ),
             ),
             const SizedBox(width: 16),
@@ -1100,8 +1104,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           color: isSelected
-                              ? Colors.blue.shade800
-                              : Colors.black87,
+                              ? colors.primary
+                              : colors.onSurface,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1111,16 +1115,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: colors.surface.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.person, size: 12, color: Colors.black87),
+                            Icon(Icons.person, size: 12, color: colors.onSurface),
                             Text(
                               ' ${vehicle.capacity}',
                               style: TextStyle(
-                                color: Colors.black87,
+                                color: colors.onSurface,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1133,7 +1137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     vehicle.description,
-                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -1141,12 +1145,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(
                         Icons.access_time,
                         size: 12,
-                        color: Colors.green.shade600,
+                        color: AppColors.success,
                       ),
                       Text(
                         ' ${vehicle.etaMinutes} min away',
                         style: TextStyle(
-                          color: Colors.green.shade700,
+                          color: AppColors.success,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1160,7 +1164,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.grey.shade200 : Colors.grey.shade100,
+                color: isSelected
+                    ? colors.surface.withValues(alpha: 0.8)
+                    : colors.surface.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -1168,7 +1174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: isSelected ? Colors.blue.shade800 : Colors.black87,
+                  color: isSelected ? colors.primary : colors.onSurface,
                 ),
               ),
             ),
@@ -1213,6 +1219,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final colors = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1220,10 +1228,14 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(12),
         width: 100,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          color: isSelected
+              ? colors.primaryContainer.withValues(alpha: 0.35)
+              : colors.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade300,
+            color: isSelected
+                ? colors.primary
+                : colors.outline.withValues(alpha: 0.5),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1236,9 +1248,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey.shade300,
+                color: colors.surface.withValues(alpha: 0.75),
               ),
-              child: Icon(Icons.person, color: Colors.black87, size: 20),
+              child: Icon(Icons.person, color: colors.onSurface, size: 20),
             ),
             // Name
             Text(
@@ -1246,7 +1258,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
-                color: Colors.black87,
+                color: colors.onSurface,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1255,11 +1267,11 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.star, size: 12, color: Colors.amber),
+                Icon(Icons.star, size: 12, color: AppColors.accent),
                 const SizedBox(width: 2),
                 Text(
                   request.rating.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 10, color: Colors.black87),
+                  style: TextStyle(fontSize: 10, color: colors.onSurface),
                 ),
               ],
             ),
@@ -1283,6 +1295,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showPaymentSelector(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1294,12 +1308,12 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Select Payment Method',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colors.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -1333,29 +1347,35 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required String value,
   }) {
+    final colors = Theme.of(context).colorScheme;
     final isSelected = _selectedPaymentMethod == value;
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.green.shade50 : Colors.grey.shade100,
+          color: isSelected
+              ? AppColors.success.withValues(alpha: 0.12)
+              : colors.surface.withValues(alpha: 0.65),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: isSelected ? Colors.green : Colors.black87),
+        child: Icon(
+          icon,
+          color: isSelected ? AppColors.success : colors.onSurface,
+        ),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w500,
-          color: Colors.black87,
+          color: colors.onSurface,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.black54, fontSize: 12),
+        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
       ),
       trailing: isSelected
-          ? const Icon(Icons.check_circle, color: Colors.green)
+          ? Icon(Icons.check_circle, color: AppColors.success)
           : null,
       onTap: () {
         setState(() => _selectedPaymentMethod = value);
@@ -1370,6 +1390,8 @@ class _HomeScreenState extends State<HomeScreen> {
     PooledRiderRequest request,
     RideState rideState,
   ) {
+    final colors = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -1385,12 +1407,12 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Pooled Ride Details',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: colors.onSurface,
                     ),
                   ),
                   IconButton(
@@ -1405,9 +1427,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: colors.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -1416,9 +1438,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 50,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.blue.shade200,
+                        color: colors.primary.withValues(alpha: 0.2),
                       ),
-                      child: const Icon(Icons.person, color: Colors.blue),
+                      child: Icon(Icons.person, color: colors.primary),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -1427,25 +1449,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             request.riderName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: colors.onSurface,
                             ),
                           ),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.star,
                                 size: 14,
-                                color: Colors.amber,
+                                color: AppColors.accent,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${request.rating}/5.0',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.black87,
+                                  color: colors.onSurface,
                                 ),
                               ),
                             ],
@@ -1462,7 +1484,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: colors.surface.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
@@ -1473,7 +1495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: colors.onSurface,
                       ),
                     ), // Γ£à Now properly closed
                     const SizedBox(height: 10),
@@ -1483,9 +1505,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.green,
+                            color: AppColors.success,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1497,15 +1519,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Pickup',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.black54,
+                                  color: colors.onSurfaceVariant,
                                 ),
                               ),
                               Text(
                                 request.pickup.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   fontSize: 13,
-                                  color: Colors.black87,
+                                  color: colors.onSurface,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1522,7 +1544,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         width: 2,
                         height: 20,
-                        color: Colors.grey.shade300,
+                        color: colors.outline.withValues(alpha: 0.5),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1532,9 +1554,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.red,
+                            color: AppColors.error,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1546,15 +1568,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Destination',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.black54,
+                                  color: colors.onSurfaceVariant,
                                 ),
                               ),
                               Text(
                                 request.destination.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   fontSize: 13,
-                                  color: Colors.black87,
+                                  color: colors.onSurface,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1576,9 +1598,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
+                        color: AppColors.warning.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.orange.shade200),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.4),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1587,7 +1611,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Riders',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.orange.shade900,
+                              color: AppColors.warning,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1597,7 +1621,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.orange.shade900,
+                              color: AppColors.warning,
                             ),
                           ),
                         ],
@@ -1609,9 +1633,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade50,
+                        color: AppColors.success.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.green.shade200),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.4),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1620,7 +1646,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Vehicle',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.green.shade900,
+                              color: AppColors.success,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1630,7 +1656,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green.shade900,
+                              color: AppColors.success,
                             ),
                           ),
                         ],
@@ -1645,9 +1671,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.purple.shade50,
+                  color: colors.primaryContainer.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.purple.shade200),
+                  border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1656,7 +1682,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Your Fare',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.purple.shade900,
+                        color: colors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1665,7 +1691,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple.shade900,
+                        color: colors.primary,
                       ),
                     ),
                   ],
@@ -1685,24 +1711,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Close dialog
                     Navigator.pop(context);
                     // Proceed with ride request
+                    final rideBloc = context.read<RideBloc>();
                     Future.delayed(const Duration(milliseconds: 300), () {
-                      context.read<RideBloc>().add(const RideRequested());
+                      rideBloc.add(const RideRequested());
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
-                    foregroundColor: Colors.white,
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Confirm Pool Ride',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                     ),
                   ),
                 ),
@@ -1715,13 +1742,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchingDriverSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -1747,7 +1776,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               'This usually takes 1-3 minutes',
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: colors.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -1774,14 +1803,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDriverFoundSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
     final driver = rideState.driver!;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -1797,7 +1827,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: colors.outline.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1814,7 +1844,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Text(
                         'Arriving in ${rideState.estimatedArrivalMinutes} min',
-                        style: TextStyle(color: Colors.green.shade700),
+                        style: TextStyle(color: AppColors.success),
                       ),
                     ],
                   ),
@@ -1825,7 +1855,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: colors.surface.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -1846,7 +1876,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: colors.surface.withValues(alpha: 0.75),
                   child: const Icon(Icons.person, size: 32),
                 ),
                 const SizedBox(width: 16),
@@ -1863,10 +1893,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 16, color: Colors.amber),
+                          Icon(Icons.star, size: 16, color: AppColors.accent),
                           Text(
                             ' ${driver.rating.toStringAsFixed(1)}',
-                            style: TextStyle(color: Colors.black54),
+                            style: TextStyle(color: colors.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -1877,13 +1907,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
+                      color: AppColors.success.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.phone, color: Colors.green.shade700),
+                    child: Icon(Icons.phone, color: AppColors.success),
                   ),
                   onPressed: () {
-                    // TODO: Call driver
+                    _callDriver(driver.phone);
                   },
                 ),
               ],
@@ -1893,7 +1923,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: colors.surface.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -1901,7 +1931,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     _getVehicleIcon(rideState.selectedVehicle?.id ?? 'sedan'),
                     size: 32,
-                    color: Colors.black87,
+                    color: colors.onSurface,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1935,7 +1965,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
+                  foregroundColor: AppColors.error,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1951,14 +1981,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDriverArrivedSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
     final driver = rideState.driver!;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -1974,7 +2005,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: colors.outline.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1983,23 +2014,23 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: AppColors.success.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.shade200),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.check_circle,
-                    color: Colors.green.shade700,
+                    color: AppColors.success,
                     size: 24,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Driver has arrived!',
                     style: TextStyle(
-                      color: Colors.green.shade700,
+                      color: AppColors.success,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -2013,7 +2044,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: colors.surface.withValues(alpha: 0.75),
                   child: const Icon(Icons.person, size: 32),
                 ),
                 const SizedBox(width: 16),
@@ -2030,10 +2061,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 16, color: Colors.amber),
+                          Icon(Icons.star, size: 16, color: AppColors.accent),
                           Text(
                             ' ${driver.rating.toStringAsFixed(1)}',
-                            style: TextStyle(color: Colors.black54),
+                            style: TextStyle(color: colors.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -2044,13 +2075,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
+                      color: AppColors.success.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.phone, color: Colors.green.shade700),
+                    child: Icon(Icons.phone, color: AppColors.success),
                   ),
                   onPressed: () {
-                    // TODO: Call driver
+                    _callDriver(driver.phone);
                   },
                 ),
               ],
@@ -2060,7 +2091,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: colors.surface.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -2068,7 +2099,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     _getVehicleIcon(rideState.selectedVehicle?.id ?? 'sedan'),
                     size: 32,
-                    color: Colors.black87,
+                    color: colors.onSurface,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -2095,7 +2126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: colors.surface.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -2112,7 +2143,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Text(
               'Please meet your driver at the pickup point',
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: colors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -2125,7 +2156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
+                  foregroundColor: AppColors.error,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -2141,13 +2172,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildOTPDisplaySheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -2163,7 +2195,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: colors.outline.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -2172,23 +2204,23 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: AppColors.success.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.shade200),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.verified_user,
-                    color: Colors.green.shade700,
+                    color: AppColors.success,
                     size: 24,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Driver Verification',
                     style: TextStyle(
-                      color: Colors.green.shade700,
+                      color: AppColors.success,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -2200,7 +2232,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               'Share this OTP with your driver',
               style: TextStyle(
-                color: Colors.black87,
+                color: colors.onSurface,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -2209,7 +2241,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               'Driver will verify to confirm the ride',
-              style: TextStyle(color: Colors.black54, fontSize: 12),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -2217,16 +2249,16 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: colors.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue.shade300, width: 2),
+                border: Border.all(color: colors.primary.withValues(alpha: 0.5), width: 2),
               ),
               child: Column(
                 children: [
                   Text(
                     'Your OTP',
                     style: TextStyle(
-                      color: Colors.blue.shade700,
+                      color: colors.primary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
@@ -2236,10 +2268,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Large OTP Display
                   Text(
                     rideState.riderOtp!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 56,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: colors.primary,
                       letterSpacing: 12,
                       fontFamily: 'Courier',
                     ),
@@ -2251,7 +2283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
+                      color: colors.primaryContainer.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -2259,14 +2291,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.blue.shade700,
+                          color: colors.primary,
                           size: 16,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'Valid for this ride only',
                           style: TextStyle(
-                            color: Colors.blue.shade700,
+                            color: colors.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
@@ -2283,14 +2315,14 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: colors.surface.withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: Colors.grey.shade300,
+                      backgroundColor: colors.surface.withValues(alpha: 0.8),
                       child: const Icon(Icons.person, size: 28),
                     ),
                     const SizedBox(width: 12),
@@ -2300,16 +2332,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             rideState.driver!.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: colors.onSurface,
                             ),
                           ),
                           Text(
                             rideState.driver!.vehicleNumber,
                             style: TextStyle(
-                              color: Colors.black87,
+                              color: colors.onSurface,
                               fontSize: 12,
                             ),
                           ),
@@ -2324,9 +2356,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: colors.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -2337,7 +2369,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.blue.shade700,
+                        colors.primary,
                       ),
                     ),
                   ),
@@ -2345,7 +2377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Auto-starting ride in 7 seconds...',
                     style: TextStyle(
-                      color: Colors.blue.shade700,
+                      color: colors.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -2364,12 +2396,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
+                  foregroundColor: AppColors.error,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  side: const BorderSide(color: Colors.red),
+                  side: const BorderSide(color: AppColors.error),
                 ),
                 child: const Text(
                   'Cancel Ride',
@@ -2384,14 +2416,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRideInProgressSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
     final driver = rideState.driver;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -2407,7 +2440,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: colors.outline.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -2416,9 +2449,9 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: colors.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -2429,7 +2462,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.blue.shade700,
+                        colors.primary,
                       ),
                     ),
                   ),
@@ -2437,7 +2470,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Ride in progress',
                     style: TextStyle(
-                      color: Colors.blue.shade700,
+                      color: colors.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -2452,7 +2485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: colors.surface.withValues(alpha: 0.75),
                     child: const Icon(Icons.person, size: 28),
                   ),
                   const SizedBox(width: 12),
@@ -2469,7 +2502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Text(
                           '${driver.vehicleColor} ${driver.vehicleModel} • ${driver.vehicleNumber}',
-                          style: TextStyle(color: Colors.black54, fontSize: 13),
+                          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
                         ),
                       ],
                     ),
@@ -2480,7 +2513,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: colors.surface.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -2499,7 +2532,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: colors.surface.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -2507,12 +2540,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade100,
+                      color: AppColors.error.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.location_on,
-                      color: Colors.red.shade700,
+                      color: AppColors.error,
                       size: 20,
                     ),
                   ),
@@ -2523,7 +2556,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'Heading to',
-                          style: TextStyle(color: Colors.black54, fontSize: 12),
+                          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                         ),
                         Text(
                           rideState.destination?.name ?? 'Destination',
@@ -2537,7 +2570,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     rideState.route?.durationText ?? '',
                     style: TextStyle(
-                      color: Colors.blue.shade700,
+                      color: colors.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -2551,6 +2584,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRideCompletedSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
     final driver = rideState.driver;
     final fare = rideState.finalFare ?? rideState.selectedVehicle?.fare ?? 0;
 
@@ -2558,6 +2592,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       RatingDialog.show(
         context,
+        tripId: rideState.rideId ?? '',
         driverName: driver?.name ?? 'Driver',
         vehicleNumber: driver?.vehicleNumber ?? '',
         fare: fare,
@@ -2569,11 +2604,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -2584,7 +2619,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 64),
+            const Icon(Icons.check_circle, color: AppColors.success, size: 64),
             const SizedBox(height: 16),
             Text(
               'Ride Completed!',
@@ -2604,13 +2639,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRideCancelledSheet(BuildContext context, RideState rideState) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -2621,7 +2657,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cancel, color: Colors.red, size: 64),
+            const Icon(Icons.cancel, color: AppColors.error, size: 64),
             const SizedBox(height: 16),
             Text(
               'Ride Cancelled',
@@ -2632,7 +2668,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               rideState.cancellationReason ?? 'Your ride has been cancelled',
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: colors.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -2642,8 +2678,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   context.read<RideBloc>().add(const RideCleared());
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colors.onSurface,
+                  foregroundColor: colors.surface,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -2684,7 +2720,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (subtitle.isNotEmpty)
                   Text(
                     subtitle,
-                    style: TextStyle(color: Colors.black54, fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -2692,7 +2731,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           if (onTap != null)
-            Icon(Icons.edit, size: 16, color: Colors.grey.shade400),
+            Icon(
+              Icons.edit,
+              size: 16,
+              color: Theme.of(context).colorScheme.outline,
+            ),
         ],
       ),
     );
@@ -2709,7 +2752,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -2737,179 +2780,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return;
   }
 
-  void _unused_showDrawer(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          final user = state is AuthAuthenticated ? state.user : null;
-          return DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.3,
-            maxChildSize: 0.9,
-            expand: false,
-            builder: (context, scrollController) => SingleChildScrollView(
-              controller: scrollController,
-              child: Column(
-                children: [
-                  // Handle
-                  Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Profile section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          child: Text(
-                            user?.fullName.isNotEmpty == true
-                                ? user!.fullName[0].toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.fullName ?? 'User',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                user?.email ?? '',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  // Menu items
-                  _buildMenuItem(
-                    icon: Icons.person_outline,
-                    title: 'My Profile',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProfileScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.history,
-                    title: 'Your Trips',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RideHistoryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.payment,
-                    title: 'Payment',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProfileScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.settings,
-                    title: 'Settings',
-                    onTap: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Settings coming soon')),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.help_outline,
-                    title: 'Help',
-                    onTap: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Help coming soon')),
-                      );
-                    },
-                  ),
-                  const Divider(),
-                  _buildMenuItem(
-                    icon: Icons.logout,
-                    title: 'Logout',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.read<AuthBloc>().add(AuthLogoutRequested());
-                    },
-                    isDestructive: true,
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: isDestructive ? Colors.red : null),
-      title: Text(
-        title,
-        style: TextStyle(color: isDestructive ? Colors.red : null),
-      ),
-      onTap: onTap,
-    );
-  }
-
   @override
   void dispose() {
-    // _mapController?.dispose(); // Causes crash on web
+    _mapController.dispose();
     super.dispose();
   }
 }

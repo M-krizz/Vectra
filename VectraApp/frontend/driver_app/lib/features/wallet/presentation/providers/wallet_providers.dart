@@ -3,13 +3,11 @@ import '../../data/wallet_repository.dart';
 import '../../data/models/transaction.dart';
 import '../../data/models/rate_card.dart';
 import '../../../../core/api/api_client.dart';
-import '../../../../core/storage/secure_storage_service.dart';
 
 // Repository provider
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  final storage = ref.watch(secureStorageServiceProvider);
-  return WalletRepository(apiClient, storage);
+  return WalletRepository(apiClient);
 });
 
 // Balance provider

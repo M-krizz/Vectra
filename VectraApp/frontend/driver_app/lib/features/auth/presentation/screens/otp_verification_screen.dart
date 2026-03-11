@@ -1,21 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../theme/app_colors.dart';
-import '../../../../shared/widgets/active_eco_background.dart';
 import '../../../../shared/widgets/otp_input.dart';
 import '../providers/auth_providers.dart';
-import '../../../map_home/presentation/screens/driver_dashboard_screen.dart';
 
 /// OTP verification screen
 class OtpVerificationScreen extends ConsumerStatefulWidget {
-  final String phoneNumber;
+  final String identifier;
 
   const OtpVerificationScreen({
     super.key,
-    required this.phoneNumber,
+    required this.identifier,
   });
 
   @override
@@ -26,6 +24,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   String _enteredOtp = '';
   int _resendSeconds = 30;
   Timer? _resendTimer;
+  bool _isVerifying = false;
 
   @override
   void initState() {
@@ -54,12 +53,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   Future<void> _handleVerify() async {
-    if (_enteredOtp.length != 4) return;
+    if (_enteredOtp.length != 6 || _isVerifying) return;
+    setState(() { _isVerifying = true; });
 
-    final success = await ref.read(authProvider.notifier).verifyOtp(_enteredOtp);
+    try {
+      final success = await ref.read(authProvider.notifier).verifyOtp(_enteredOtp);
 
-    if (success && mounted) {
-      // Navigation is handled by main.dart based on auth state changes
+      if (success && mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } finally {
+      if (mounted) setState(() { _isVerifying = false; });
     }
   }
 
@@ -69,75 +73,89 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final success = await ref.read(authProvider.notifier).resendOtp();
     if (success) {
       _startResendTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'OTP sent successfully',
-            style: GoogleFonts.dmSans(),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('OTP sent successfully', style: GoogleFonts.dmSans()),
+            backgroundColor: AppColors.successGreen,
           ),
-          backgroundColor: AppColors.successGreen,
-        ),
-      );
+        );
+      }
     }
+  }
+
+  Future<void> _useDebugOtp(String otp) async {
+    await Clipboard.setData(ClipboardData(text: otp));
+    if (!mounted) return;
+    ref.read(authProvider.notifier).clearError();
+    setState(() {
+      _enteredOtp = otp;
+    });
+    await _handleVerify();
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          const ActiveEcoBackground(),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 48),
-                  _buildTitle(),
-                  const SizedBox(height: 48),
-                  _buildOtpInput(),
-                  const SizedBox(height: 16),
-                  if (authState.error != null) _buildErrorMessage(authState.error!.message),
-                  const SizedBox(height: 32),
-                  _buildVerifyButton(authState.isLoading),
-                  const SizedBox(height: 24),
-                  _buildResendButton(),
-                ],
-              ),
-            ),
+      backgroundColor: colors.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(colors, isDark),
+              const SizedBox(height: 48),
+              _buildTitle(colors, isDark),
+              const SizedBox(height: 48),
+              if (authState.debugOtp != null) ...[
+                _buildDebugOtpCard(authState.debugOtp!, colors, isDark),
+                const SizedBox(height: 20),
+              ],
+              _buildOtpInput(colors, isDark),
+              const SizedBox(height: 16),
+              if (authState.error != null) _buildErrorMessage(authState.error!.message),
+              const SizedBox(height: 32),
+              _buildVerifyButton(authState.isLoading, colors, isDark),
+              const SizedBox(height: 24),
+              _buildResendButton(colors, isDark),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme colors, bool isDark) {
     return Row(
       children: [
         IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
           style: IconButton.styleFrom(
-            backgroundColor: AppColors.white10,
+            backgroundColor: isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.1),
             padding: const EdgeInsets.all(12),
           ),
         ),
       ],
-    ).animate().fadeIn(duration: 600.ms);
+    );
   }
 
-  Widget _buildTitle() {
+  Widget _buildTitle(ColorScheme colors, bool isDark) {
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Verification',
           style: GoogleFonts.outfit(
-            color: Colors.white,
+            color: colors.onSurface,
             fontSize: 36,
             fontWeight: FontWeight.bold,
             height: 1.1,
@@ -146,7 +164,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         Text(
           'Code',
           style: GoogleFonts.outfit(
-            color: AppColors.hyperLime,
+            color: accent,
             fontSize: 36,
             fontWeight: FontWeight.bold,
             height: 1.1,
@@ -155,16 +173,16 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         const SizedBox(height: 16),
         RichText(
           text: TextSpan(
-            text: 'Enter the 4-digit code sent to ',
+            text: 'Enter the 6-digit code sent to ',
             style: GoogleFonts.dmSans(
-              color: AppColors.white70,
+              color: colors.onSurfaceVariant,
               fontSize: 16,
             ),
             children: [
               TextSpan(
-                text: widget.phoneNumber,
+                text: widget.identifier,
                 style: GoogleFonts.dmSans(
-                  color: Colors.white,
+                  color: colors.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -172,36 +190,84 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
         ),
       ],
-    ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.2);
+    );
   }
 
-  Widget _buildOtpInput() {
+  Widget _buildOtpInput(ColorScheme colors, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       decoration: BoxDecoration(
-        color: AppColors.carbonGrey.withOpacity(0.4),
+        color: isDark ? AppColors.carbonGrey.withValues(alpha: 0.4) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.white10),
+        border: Border.all(color: isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.2)),
+        boxShadow: isDark
+            ? null
+            : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
       ),
       child: OtpInput(
-        length: 4,
+        length: 6,
         onCompleted: (otp) {
+          ref.read(authProvider.notifier).clearError();
           setState(() {
             _enteredOtp = otp;
           });
-          _handleVerify();
         },
       ),
-    ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.2);
+    );
+  }
+
+  Widget _buildDebugOtpCard(String otp, ColorScheme colors, bool isDark) {
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Development OTP',
+            style: GoogleFonts.dmSans(
+              color: colors.onSurface,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            otp,
+            style: GoogleFonts.outfit(
+              color: accent,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 6,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: _isVerifying ? null : () => _useDebugOtp(otp),
+            child: Text(
+              'Use development OTP',
+              style: GoogleFonts.dmSans(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildErrorMessage(String message) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.errorRed.withOpacity(0.1),
+        color: AppColors.errorRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.errorRed.withOpacity(0.3)),
+        border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -210,75 +276,70 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.dmSans(
-                color: AppColors.errorRed,
-                fontSize: 14,
-              ),
+              style: GoogleFonts.dmSans(color: AppColors.errorRed, fontSize: 14),
             ),
           ),
         ],
       ),
-    ).animate().fadeIn().shake();
+    );
   }
 
-  Widget _buildVerifyButton(bool isLoading) {
-    final isValid = _enteredOtp.length == 4;
+  Widget _buildVerifyButton(bool isLoading, ColorScheme colors, bool isDark) {
+    final isValid = _enteredOtp.length == 6;
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
 
     return GestureDetector(
-      onTap: isLoading || !isValid ? null : _handleVerify,
+      onTap: isLoading || !isValid || _isVerifying ? null : _handleVerify,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           gradient: isValid
-              ? const LinearGradient(
-                  colors: [AppColors.hyperLime, AppColors.neonGreen],
+              ? LinearGradient(
+                  colors: isDark
+                      ? [AppColors.hyperLime, AppColors.neonGreen]
+                      : [colors.primary, colors.primary.withValues(alpha: 0.8)],
                 )
               : null,
-          color: isValid ? null : AppColors.white10,
+          color: isValid ? null : (isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.15)),
           borderRadius: BorderRadius.circular(16),
           boxShadow: isValid
-              ? [
-                  BoxShadow(
-                    color: AppColors.hyperLime.withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
+              ? [BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))]
               : null,
         ),
         child: Center(
           child: isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.black,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? Colors.black : Colors.white),
                 )
               : Text(
                   'Verify & Continue',
                   style: GoogleFonts.dmSans(
-                    color: isValid ? Colors.black : AppColors.white50,
+                    color: isValid
+                        ? (isDark ? Colors.black : Colors.white)
+                        : colors.onSurfaceVariant,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
         ),
       ),
-    ).animate().fadeIn(delay: 600.ms, duration: 600.ms);
+    );
   }
 
-  Widget _buildResendButton() {
+  Widget _buildResendButton(ColorScheme colors, bool isDark) {
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
+
     return Center(
       child: GestureDetector(
         onTap: _resendSeconds == 0 ? _handleResend : null,
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 300),
           style: GoogleFonts.dmSans(
-            color: _resendSeconds == 0 ? AppColors.hyperLime : AppColors.white50,
+            color: _resendSeconds == 0 ? accent : colors.onSurfaceVariant,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -289,6 +350,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
         ),
       ),
-    ).animate().fadeIn(delay: 800.ms, duration: 600.ms);
+    );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../theme/app_colors.dart';
 import '../services/wallet_service.dart';
 import '../utils/notification_overlay.dart';
+import 'wallet_transactions_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -12,6 +14,18 @@ class WalletScreen extends StatefulWidget {
 
 class _WalletScreenState extends State<WalletScreen> {
   final TextEditingController _amountController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WalletService().initialize();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +128,12 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    // Navigate to full history
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const WalletTransactionsScreen(),
+                      ),
+                    );
                   },
                   child: const Text(
                     'View All',
@@ -125,41 +144,157 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
 
             const SizedBox(height: 16),
+            ValueListenableBuilder<bool>(
+              valueListenable: WalletService().transactionsLoadingNotifier,
+              builder: (context, loading, _) {
+                if (loading) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-            _buildTransactionItem(
-              title: 'Ride Payment',
-              date: 'Today, 10:30 AM',
-              amount: '+₹150.00',
-              isCredit: true,
+                return ValueListenableBuilder<List<WalletTransaction>>(
+                  valueListenable: WalletService().transactionsNotifier,
+                  builder: (context, transactions, _) {
+                    if (transactions.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'No transactions yet',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: transactions
+                          .map(
+                            (tx) => _buildTransactionItem(
+                              title: tx.description,
+                              date: DateFormat('MMM dd, hh:mm a').format(tx.timestamp),
+                              amount:
+                                  '${_isCreditType(tx.type) ? '+' : '-'}₹${tx.amount.toStringAsFixed(2)}',
+                              isCredit: _isCreditType(tx.type),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                );
+              },
             ),
-            _buildTransactionItem(
-              title: 'Ride Payment',
-              date: 'Yesterday, 06:45 PM',
-              amount: '+₹240.50',
-              isCredit: true,
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Rate Card',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-            _buildTransactionItem(
-              title: 'Weekly Payout',
-              date: 'Mon, 10:00 AM',
-              amount: '-₹5,000.00',
-              isCredit: false,
-            ),
-            _buildTransactionItem(
-              title: 'Ride Payment',
-              date: 'Sun, 02:15 PM',
-              amount: '+₹85.00',
-              isCredit: true,
-            ),
-            _buildTransactionItem(
-              title: 'Fuel Bonus',
-              date: 'Sat, 09:00 AM',
-              amount: '+₹500.00',
-              isCredit: true,
+
+            const SizedBox(height: 16),
+
+            ValueListenableBuilder<bool>(
+              valueListenable: WalletService().rateCardsLoadingNotifier,
+              builder: (context, loading, _) {
+                if (loading) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                return ValueListenableBuilder<List<WalletRateCard>>(
+                  valueListenable: WalletService().rateCardsNotifier,
+                  builder: (context, cards, _) {
+                    if (cards.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'Rate card unavailable',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: cards
+                          .map(
+                            (card) => _buildRateCardItem(card),
+                          )
+                          .toList(),
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildRateCardItem(WalletRateCard card) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _formatVehicleType(card.vehicleType),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Base Fare: ₹${card.baseFare.toStringAsFixed(0)}',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          Text(
+            'Per Km: ₹${card.perKmRate.toStringAsFixed(2)}',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          Text(
+            'Waiting / min: ₹${card.waitingChargePerMin.toStringAsFixed(2)}',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          Text(
+            'Cancellation: ₹${card.cancellationFee.toStringAsFixed(0)}',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatVehicleType(String value) {
+    if (value.isEmpty) return 'Vehicle';
+    final normalized = value.replaceAll('_', ' ').toLowerCase();
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
+
+  bool _isCreditType(String type) {
+    const creditTypes = {'earning', 'bonus', 'refund'};
+    return creditTypes.contains(type.toLowerCase());
   }
 
   Widget _buildActionButton(
@@ -273,9 +408,10 @@ class _WalletScreenState extends State<WalletScreen> {
 
   void _showAddMoneyDialog(BuildContext context) {
     _amountController.clear();
+    final screenContext = this.context;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Add Money'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -309,21 +445,33 @@ class _WalletScreenState extends State<WalletScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final amountStr = _amountController.text;
               final amount = double.tryParse(amountStr);
 
               if (amount != null && amount > 0) {
-                WalletService().addTransaction(amount);
-                Navigator.pop(context);
-                NotificationOverlay.showMessage(
-                  context,
-                  '₹$amount added to wallet.',
-                  backgroundColor: AppColors.success,
-                );
+                final success = await WalletService().addMoney(amount);
+                if (!mounted || !dialogContext.mounted || !screenContext.mounted) {
+                  return;
+                }
+
+                if (success) {
+                  Navigator.pop(dialogContext);
+                  NotificationOverlay.showMessage(
+                    screenContext,
+                    'Rs $amount added to wallet.',
+                    backgroundColor: AppColors.success,
+                  );
+                } else {
+                  NotificationOverlay.showMessage(
+                    screenContext,
+                    'Top-up failed. Check your amount and try again.',
+                    backgroundColor: AppColors.error,
+                  );
+                }
               } else {
                 NotificationOverlay.showMessage(
-                  context,
+                  screenContext,
                   'Please enter a valid amount',
                   backgroundColor: AppColors.error,
                 );
@@ -375,30 +523,42 @@ class _WalletScreenState extends State<WalletScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final amountStr = _amountController.text;
               final amount = double.tryParse(amountStr);
 
-              if (amount != null && amount > 0) {
-                if (amount <= WalletService().balance) {
-                  WalletService().deductTransaction(amount);
-                  Navigator.pop(context);
-                  NotificationOverlay.showMessage(
-                    context,
-                    '₹$amount withdrawn successfully.',
-                    backgroundColor: AppColors.success,
-                  );
-                } else {
-                  NotificationOverlay.showMessage(
-                    context,
-                    'Insufficient balance',
-                    backgroundColor: AppColors.error,
-                  );
-                }
-              } else {
+              if (amount == null || amount <= 0) {
                 NotificationOverlay.showMessage(
                   context,
                   'Please enter a valid amount',
+                  backgroundColor: AppColors.error,
+                );
+                return;
+              }
+
+              if (amount > WalletService().balance) {
+                NotificationOverlay.showMessage(
+                  context,
+                  'Insufficient balance',
+                  backgroundColor: AppColors.error,
+                );
+                return;
+              }
+
+              final success = await WalletService().withdrawMoney(amount);
+              if (!mounted || !context.mounted) return;
+
+              if (success) {
+                Navigator.pop(context);
+                NotificationOverlay.showMessage(
+                  this.context,
+                  'Rs $amount withdrawn successfully.',
+                  backgroundColor: AppColors.success,
+                );
+              } else {
+                NotificationOverlay.showMessage(
+                  this.context,
+                  'Withdrawal failed. Please retry.',
                   backgroundColor: AppColors.error,
                 );
               }

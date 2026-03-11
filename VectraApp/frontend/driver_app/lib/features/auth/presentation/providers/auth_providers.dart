@@ -1,34 +1,44 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/auth_repository.dart';
 import '../../data/models/auth_tokens.dart';
-import '../../../../core/storage/secure_storage_service.dart';
-import '../../../../core/api/api_client.dart';
 
 /// Auth state class
 class AuthStateData {
   final AuthState state;
   final AuthTokens? tokens;
   final AuthError? error;
-  final String? phoneNumber;
+  final String? identifier;
+  final String channel;
+  final bool requiresOnboarding;
+  final String? debugOtp;
 
   AuthStateData({
     this.state = AuthState.initial,
     this.tokens,
     this.error,
-    this.phoneNumber,
+    this.identifier,
+    this.channel = 'phone',
+    this.requiresOnboarding = false,
+    this.debugOtp,
   });
 
   AuthStateData copyWith({
     AuthState? state,
     AuthTokens? tokens,
     AuthError? error,
-    String? phoneNumber,
+    String? identifier,
+    String? channel,
+    bool? requiresOnboarding,
+    String? debugOtp,
   }) {
     return AuthStateData(
       state: state ?? this.state,
       tokens: tokens ?? this.tokens,
       error: error,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
+      identifier: identifier ?? this.identifier,
+      channel: channel ?? this.channel,
+      requiresOnboarding: requiresOnboarding ?? this.requiresOnboarding,
+      debugOtp: debugOtp ?? this.debugOtp,
     );
   }
 
@@ -39,13 +49,10 @@ class AuthStateData {
 /// Auth state notifier for managing authentication
 class AuthNotifier extends StateNotifier<AuthStateData> {
   final AuthRepository _repository;
-  final SecureStorageService _storage;
 
   AuthNotifier({
     required AuthRepository repository,
-    required SecureStorageService storage,
   })  : _repository = repository,
-        _storage = storage,
         super(AuthStateData()) {
     _checkAuthStatus();
   }
@@ -65,6 +72,7 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
             refreshToken: '',
             role: role ?? 'DRIVER',
           ),
+          requiresOnboarding: false,
         );
       } else {
         state = state.copyWith(state: AuthState.unauthenticated);
@@ -75,20 +83,23 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
   }
 
   /// Send OTP to phone number
-  Future<bool> sendOtp(String phoneNumber) async {
+  Future<bool> sendOtp(String identifier, {String channel = 'phone'}) async {
     state = state.copyWith(
       state: AuthState.loading,
-      phoneNumber: phoneNumber,
+      identifier: identifier,
+      channel: channel,
+      debugOtp: null,
     );
 
     try {
-      print('AuthNotifier: Sending OTP to $phoneNumber');
-      final request = OtpRequest(phoneNumber: phoneNumber);
-      final success = await _repository.sendOtp(request);
-      print('AuthNotifier: Repository matched success: $success');
+      final request = OtpRequest(identifier: identifier, channel: channel);
+      final result = await _repository.sendOtp(request);
 
-      if (success) {
-        state = state.copyWith(state: AuthState.otpSent);
+      if (result.success) {
+        state = state.copyWith(
+          state: AuthState.otpSent,
+          debugOtp: result.devOtp,
+        );
         return true;
       } else {
         state = state.copyWith(
@@ -108,7 +119,7 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
 
   /// Verify OTP
   Future<bool> verifyOtp(String otp) async {
-    if (state.phoneNumber == null) {
+    if (state.identifier == null) {
       state = state.copyWith(
         state: AuthState.error,
         error: AuthError(message: 'Phone number not set'),
@@ -120,7 +131,7 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
 
     try {
       final verification = OtpVerification(
-        phoneNumber: state.phoneNumber!,
+        identifier: state.identifier!,
         otp: otp,
       );
       final tokens = await _repository.verifyOtp(verification);
@@ -141,6 +152,8 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
       state = state.copyWith(
         state: AuthState.authenticated,
         tokens: tokens,
+        requiresOnboarding: tokens.isNewUser,
+        debugOtp: null,
       );
       return true;
     } catch (e) {
@@ -154,8 +167,8 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
 
   /// Resend OTP
   Future<bool> resendOtp() async {
-    if (state.phoneNumber == null) return false;
-    return await sendOtp(state.phoneNumber!);
+    if (state.identifier == null) return false;
+    return await sendOtp(state.identifier!, channel: state.channel);
   }
 
   /// Logout
@@ -179,13 +192,16 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
   void reset() {
     state = AuthStateData(state: AuthState.unauthenticated);
   }
+
+  void completeOnboarding() {
+    state = state.copyWith(requiresOnboarding: false);
+  }
 }
 
 // Provider for AuthNotifier
 final authProvider = StateNotifierProvider<AuthNotifier, AuthStateData>((ref) {
   final repository = ref.watch(authRepositoryProvider);
-  final storage = ref.watch(secureStorageServiceProvider);
-  return AuthNotifier(repository: repository, storage: storage);
+  return AuthNotifier(repository: repository);
 });
 
 // Convenience providers

@@ -1,7 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { UserEntity, UserRole } from './user.entity';
 import { CreateRiderDto, CreateDriverDto } from './dto/users.dto';
 import {
@@ -15,7 +14,7 @@ export class UsersService {
     @InjectRepository(UserEntity) private usersRepo: Repository<UserEntity>,
     @InjectRepository(DriverProfileEntity)
     private driverProfileRepo: Repository<DriverProfileEntity>,
-  ) {}
+  ) { }
 
   async findById(id: string) {
     return this.usersRepo.findOne({ where: { id } });
@@ -40,7 +39,6 @@ export class UsersService {
       phone: dto.phone || null,
       fullName: dto.fullName,
       role: UserRole.RIDER,
-      passwordHash: dto.password ? await bcrypt.hash(dto.password, 12) : null,
     });
 
     return this.usersRepo.save(user);
@@ -57,7 +55,6 @@ export class UsersService {
       phone: dto.phone || null,
       fullName: dto.fullName,
       role: UserRole.DRIVER,
-      passwordHash: dto.password ? await bcrypt.hash(dto.password, 12) : null,
     });
 
     const savedUser = await this.usersRepo.save(user);

@@ -77,7 +77,7 @@ class _SavedPlaceFormScreenState extends State<SavedPlaceFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Place' : 'Add New Place'),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Colors.black,
         elevation: 0,
       ),

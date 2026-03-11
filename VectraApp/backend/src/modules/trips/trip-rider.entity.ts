@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { UserEntity } from '../Authentication/users/user.entity';
 import { TripEntity } from './trip.entity';
 import { GeoPoint } from '../../common/types/geo-point.type';
+import { PaymentStatus } from '../payments/entities/payment.entity';
 
 export enum TripRiderStatus {
   JOINED = 'JOINED',
@@ -55,6 +56,14 @@ export class TripRiderEntity {
     default: TripRiderStatus.JOINED,
   })
   status!: TripRiderStatus;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+    name: 'payment_status',
+  })
+  paymentStatus!: PaymentStatus;
 
   // Relations
   @ManyToOne(() => TripEntity, (trip) => trip.tripRiders, {

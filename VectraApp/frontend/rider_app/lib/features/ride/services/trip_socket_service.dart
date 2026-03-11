@@ -53,12 +53,16 @@ class TripNotificationEvent {
 class TripSocketService {
   final String baseUrl;
 
+  TripSocketService({required this.baseUrl});
+
   io.Socket? _socket;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   bool _intentionalDisconnect = false;
   String? _currentToken;
   String? _currentTripId;
+
+  bool get isConnected => _socket?.connected ?? false;
 
   // Stream controllers — broadcast so multiple listeners are OK
   final _statusController =
@@ -68,20 +72,19 @@ class TripSocketService {
   final _notificationController =
       StreamController<TripNotificationEvent>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
+  final _otpController = StreamController<Map<String, dynamic>>.broadcast();
+  final _poolTimeoutController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<TripStatusEvent> get tripStatusStream => _statusController.stream;
   Stream<LocationUpdateEvent> get locationStream => _locationController.stream;
   Stream<TripNotificationEvent> get notificationStream =>
       _notificationController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
-
-  bool get isConnected => _socket?.connected ?? false;
-
-  TripSocketService({required this.baseUrl});
-
-  // ── Public API ─────────────────────────────────────────────────────────
-
-  /// Connect and authenticate. Safe to call multiple times.
+  Stream<Map<String, dynamic>> get otpStream => _otpController.stream;
+  /// Emits when the server signals a pool search has timed out with no match.
+  Stream<Map<String, dynamic>> get poolTimeoutStream =>
+      _poolTimeoutController.stream;
   void connect({required String token}) {
     if (_socket?.connected == true && _currentToken == token) return;
     _currentToken = token;
@@ -92,12 +95,12 @@ class TripSocketService {
   /// Subscribe to a specific trip's room.
   void joinTripRoom(String tripId) {
     _currentTripId = tripId;
-    _socket?.emit('join_trip_room', {'tripId': tripId});
+    _socket?.emit('join_trip', {'tripId': tripId});
   }
 
   /// Leave a trip room.
   void leaveTripRoom(String tripId) {
-    _socket?.emit('leave_trip_room', {'tripId': tripId});
+    _socket?.emit('leave_trip', {'tripId': tripId});
     if (_currentTripId == tripId) _currentTripId = null;
   }
 
@@ -117,6 +120,8 @@ class TripSocketService {
     _locationController.close();
     _notificationController.close();
     _connectionController.close();
+    _otpController.close();
+    _poolTimeoutController.close();
   }
 
   // ── Socket initialisation ──────────────────────────────────────────────
@@ -129,8 +134,7 @@ class TripSocketService {
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .setExtraHeaders({'Authorization': 'Bearer $token'})
-          .setQuery({'token': token})
+          .setAuth({'token': token})
           .build(),
     );
 
@@ -139,9 +143,6 @@ class TripSocketService {
         _reconnectAttempts = 0;
         _reconnectTimer?.cancel();
         _connectionController.add(true);
-
-        // Authenticate via socket event (some backends require this)
-        _socket!.emit('authenticate', {'token': token});
 
         // Re-join trip room if we had one
         if (_currentTripId != null) {
@@ -157,19 +158,19 @@ class TripSocketService {
         if (!_intentionalDisconnect) _scheduleReconnect();
       })
       // ── Trip events ────────────────────────────────────────────────────
-      ..on('trip_status', (data) {
+      ..on('trip_status_changed', (data) {
         if (data is Map) {
           _statusController.add(TripStatusEvent(
             tripId: data['tripId']?.toString() ?? '',
-            status: data['status']?.toString() ?? '',
+            status: data['newStatus']?.toString() ?? '',
             payload: Map<String, dynamic>.from(data),
           ));
         }
       })
-      ..on('location_update', (data) {
+      ..on('driver_moved', (data) {
         if (data is Map) {
           _locationController.add(LocationUpdateEvent(
-            tripId: data['tripId']?.toString() ?? '',
+            tripId: _currentTripId ?? '',
             lat: (data['lat'] as num?)?.toDouble() ?? 0,
             lng: (data['lng'] as num?)?.toDouble() ?? 0,
             etaSeconds: data['etaSeconds'] as int?,
@@ -188,14 +189,50 @@ class TripSocketService {
           ));
         }
       })
+      // ── OTP events (sent directly to rider) ────────────────────────────
+      ..on('trip_otp', (data) {
+        if (data is Map) {
+          _otpController.add(Map<String, dynamic>.from(data));
+        }
+      })
+      ..on('otp_verified', (data) {
+        if (data is Map) {
+          _statusController.add(TripStatusEvent(
+            tripId: data['tripId']?.toString() ?? '',
+            status: 'OTP_VERIFIED',
+            payload: Map<String, dynamic>.from(data),
+          ));
+        }
+      })
       // ── Session events ─────────────────────────────────────────────────
       ..on('token_expired', (_) {
         _notificationController.add(const TripNotificationEvent(
           type: 'session_expired',
           title: 'Session Expired',
           body: 'Please log in again.',
-        ));
-      });
+        ));      })
+      // ── Trip created (SOLO): auto-join room so status events reach the rider ─
+      ..on('trip_created', (data) {
+        if (data is Map) {
+          final tripId = data['tripId']?.toString();
+          if (tripId != null && tripId.isNotEmpty) {
+            joinTripRoom(tripId);
+          }
+        }
+      })
+      // ── Pool timeout: no match found within window ─────────────────────────
+      ..on('pool_timeout', (data) {
+        if (data is Map) {
+          _poolTimeoutController.add(Map<String, dynamic>.from(data));
+          // Also surface as a notification so any generic listener is aware
+          _notificationController.add(TripNotificationEvent(
+            type: 'pool_timeout',
+            title: 'No Pool Found',
+            body: data['message']?.toString() ??
+                'No pool match found. Please try again.',
+            data: Map<String, dynamic>.from(data),
+          ));
+        }      });
 
     _socket!.connect();
   }

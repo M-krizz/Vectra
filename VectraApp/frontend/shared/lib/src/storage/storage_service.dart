@@ -1,8 +1,17 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Secure storage service for JWT tokens and user data
+/// Secure storage service for JWT tokens and user data.
+///
+/// On native platforms (Android/iOS): uses [FlutterSecureStorage] with
+/// hardware-backed encryption.
+///
+/// On web (Chrome dev): uses [SharedPreferences] which maps to `localStorage`.
+/// The `flutter_secure_storage` Web Crypto API is unavailable over plain HTTP,
+/// so this fallback ensures the auth flow works in local development.
 class StorageService {
-  static const FlutterSecureStorage _storage = FlutterSecureStorage(
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
     ),
@@ -27,6 +36,49 @@ class StorageService {
   static const String _refreshTokenIdKey = 'refresh_token_id';
   static const String _userDataKey = 'user_data';
 
+  // ─── Platform-aware read/write ───────────────────────────────────────────
+
+  Future<void> _write(String key, String value) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, value);
+    } else {
+      await _secureStorage.write(key: key, value: value);
+    }
+  }
+
+  Future<String?> _read(String key) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(key);
+    } else {
+      return await _secureStorage.read(key: key);
+    }
+  }
+
+  Future<void> _delete(String key) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(key);
+    } else {
+      await _secureStorage.delete(key: key);
+    }
+  }
+
+  Future<void> _deleteAll() async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_accessTokenKey);
+      await prefs.remove(_refreshTokenKey);
+      await prefs.remove(_refreshTokenIdKey);
+      await prefs.remove(_userDataKey);
+    } else {
+      await _secureStorage.deleteAll();
+    }
+  }
+
+  // ─── Public API ──────────────────────────────────────────────────────────
+
   /// Save access, refresh tokens and refresh token ID
   Future<void> saveTokens({
     required String accessToken,
@@ -34,36 +86,28 @@ class StorageService {
     required String refreshTokenId,
   }) async {
     await Future.wait([
-      _storage.write(key: _accessTokenKey, value: accessToken),
-      _storage.write(key: _refreshTokenKey, value: refreshToken),
-      _storage.write(key: _refreshTokenIdKey, value: refreshTokenId),
+      _write(_accessTokenKey, accessToken),
+      _write(_refreshTokenKey, refreshToken),
+      _write(_refreshTokenIdKey, refreshTokenId),
     ]);
   }
 
   /// Get access token
-  Future<String?> getAccessToken() async {
-    return await _storage.read(key: _accessTokenKey);
-  }
+  Future<String?> getAccessToken() async => await _read(_accessTokenKey);
 
   /// Get refresh token
-  Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _refreshTokenKey);
-  }
+  Future<String?> getRefreshToken() async => await _read(_refreshTokenKey);
 
   /// Get refresh token ID
-  Future<String?> getRefreshTokenId() async {
-    return await _storage.read(key: _refreshTokenIdKey);
-  }
+  Future<String?> getRefreshTokenId() async => await _read(_refreshTokenIdKey);
 
   /// Save user data as JSON string
   Future<void> saveUserData(String userData) async {
-    await _storage.write(key: _userDataKey, value: userData);
+    await _write(_userDataKey, userData);
   }
 
   /// Get user data as JSON string
-  Future<String?> getUserData() async {
-    return await _storage.read(key: _userDataKey);
-  }
+  Future<String?> getUserData() async => await _read(_userDataKey);
 
   /// Check if user is logged in (has valid access token)
   Future<bool> isLoggedIn() async {
@@ -71,23 +115,15 @@ class StorageService {
     return token != null && token.isNotEmpty;
   }
 
-  /// Clear all stored data (for logout)
-  Future<void> clearAll() async {
-    await _storage.deleteAll();
-  }
+  /// Clear all stored auth data (for logout)
+  Future<void> clearAll() async => await _deleteAll();
 
   /// Write a custom key-value pair
-  Future<void> write(String key, String value) async {
-    await _storage.write(key: key, value: value);
-  }
+  Future<void> write(String key, String value) async => await _write(key, value);
 
   /// Read a custom key
-  Future<String?> read(String key) async {
-    return await _storage.read(key: key);
-  }
+  Future<String?> read(String key) async => await _read(key);
 
   /// Delete a custom key
-  Future<void> delete(String key) async {
-    await _storage.delete(key: key);
-  }
+  Future<void> delete(String key) async => await _delete(key);
 }

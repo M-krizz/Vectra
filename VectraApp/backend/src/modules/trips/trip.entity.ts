@@ -11,6 +11,7 @@ import {
 import { UserEntity } from '../Authentication/users/user.entity';
 import { TripRiderEntity } from './trip-rider.entity';
 import { TripEventEntity } from './trip-event.entity';
+import { VehicleType, RideType } from '../ride_requests/ride-request.enums';
 
 export enum TripStatus {
   REQUESTED = 'REQUESTED',
@@ -35,6 +36,18 @@ export class TripEntity {
     default: TripStatus.REQUESTED,
   })
   status!: TripStatus;
+
+  /** Vehicle type required for this trip — set at creation time. */
+  @Column({ type: 'enum', enum: VehicleType, nullable: true, name: 'vehicle_type' })
+  vehicleType!: VehicleType | null;
+
+  /** Whether the trip is SOLO or POOL — set at creation time. */
+  @Column({ type: 'enum', enum: RideType, nullable: true, name: 'ride_type' })
+  rideType!: RideType | null;
+
+  /** Route distance in metres — set after trip completes for fare calculation. */
+  @Column({ type: 'int', nullable: true, name: 'distance_meters' })
+  distanceMeters!: number | null;
 
   @Column({ type: 'timestamptz', nullable: true, name: 'assigned_at' })
   assignedAt!: Date | null;

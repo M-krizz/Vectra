@@ -1,0 +1,6 @@
+VectraApp\backend\src\app.service.spec.ts
+VectraApp\backend\test\app.e2e-spec.ts
+VectraApp\backend\test\jest-e2e.json
+VectraApp\backend\test\simulate-pooling.ts
+VectraApp\frontend\driver_app\test\widget_test.dart
+VectraApp\frontend\rider_app\test\widget_test.dart

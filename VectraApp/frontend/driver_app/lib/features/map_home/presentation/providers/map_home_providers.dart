@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/socket/socket_service.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/api/api_endpoints.dart';
+import '../../../rides/data/models/trip.dart';
 
 /// Heatmap hexagon data
 class HeatmapHexagon {
@@ -114,6 +118,7 @@ class MapHomeState {
 class MapHomeNotifier extends StateNotifier<MapHomeState> {
   final SocketService _socketService;
   final ApiClient _apiClient;
+  StreamSubscription<Map<String, dynamic>>? _heatmapSubscription;
 
   MapHomeNotifier({
     required SocketService socketService,
@@ -130,27 +135,13 @@ class MapHomeNotifier extends StateNotifier<MapHomeState> {
   }
 
   Future<void> _loadInitialData() async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Load earnings and heatmap data
-      // In production, fetch from API
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Mock data
-      final mockEarnings = TodayEarnings(
-        totalAmount: 2847.50,
-        tripCount: 12,
-        onlineHours: 8.5,
-        co2Saved: 24.0,
-      );
-
-      final mockHeatmap = _generateMockHeatmap();
+      final earnings = await _fetchTodayEarnings();
 
       state = state.copyWith(
-        earnings: mockEarnings,
-        heatmapData: mockHeatmap,
-        currentLocation: LatLng(12.9716, 77.5946), // MG Road, Bangalore
+        earnings: earnings,
         isLoading: false,
       );
     } catch (e) {
@@ -161,66 +152,191 @@ class MapHomeNotifier extends StateNotifier<MapHomeState> {
     }
   }
 
-  List<HeatmapHexagon> _generateMockHeatmap() {
-    // Generate mock hexagon data for Bangalore
-    return [
-      HeatmapHexagon(
-        center: LatLng(12.9716, 77.5946),
-        demandLevel: 0.8,
-        surgeMultiplier: 1.5,
-        zoneName: 'MG Road',
-      ),
-      HeatmapHexagon(
-        center: LatLng(12.9352, 77.6245),
-        demandLevel: 0.6,
-        surgeMultiplier: 1.0,
-        zoneName: 'Koramangala',
-      ),
-      HeatmapHexagon(
-        center: LatLng(12.9784, 77.6408),
-        demandLevel: 0.9,
-        surgeMultiplier: 1.8,
-        zoneName: 'Indiranagar',
-      ),
-      HeatmapHexagon(
-        center: LatLng(12.9569, 77.7011),
-        demandLevel: 0.5,
-        surgeMultiplier: 1.2,
-        zoneName: 'Marathahalli',
-      ),
-      HeatmapHexagon(
-        center: LatLng(13.0067, 77.5695),
-        demandLevel: 0.7,
-        surgeMultiplier: 1.0,
-        zoneName: 'Malleshwaram',
-      ),
-      HeatmapHexagon(
-        center: LatLng(12.9141, 77.6411),
-        demandLevel: 0.65,
-        surgeMultiplier: 1.3,
-        zoneName: 'HSR Layout',
-      ),
-    ];
+  Future<TodayEarnings> _fetchTodayEarnings() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.tripHistory);
+      final trips = _extractTrips(response.data);
+
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+
+      var todayAmount = 0.0;
+      var todayTrips = 0;
+
+      for (final trip in trips) {
+        if (trip.status != TripStatus.completed || trip.completedAt == null) {
+          continue;
+        }
+
+        if (trip.completedAt!.isBefore(todayStart)) {
+          continue;
+        }
+
+        todayAmount += trip.fare;
+        todayTrips += 1;
+      }
+
+      // Online hours and CO2 savings will come from dedicated backend metrics in next phase.
+      return TodayEarnings(
+        totalAmount: todayAmount,
+        tripCount: todayTrips,
+        onlineHours: state.earnings.onlineHours,
+        co2Saved: state.earnings.co2Saved,
+      );
+    } catch (_) {
+      return state.earnings;
+    }
+  }
+
+  List<Trip> _extractTrips(dynamic payload) {
+    final rawList = _extractList(payload);
+    return rawList
+        .whereType<Map>()
+        .map((entry) => Trip.fromJson(Map<String, dynamic>.from(entry)))
+        .toList();
+  }
+
+  List<dynamic> _extractList(dynamic payload) {
+    if (payload is List) return payload;
+    if (payload is Map<String, dynamic>) {
+      final data = payload['data'];
+      if (data is List) return data;
+
+      final items = payload['items'];
+      if (items is List) return items;
+
+      if (data is Map<String, dynamic>) {
+        final nestedItems = data['items'];
+        if (nestedItems is List) return nestedItems;
+      }
+    }
+    return const [];
   }
 
   void _subscribeToHeatmapUpdates() {
-    _socketService.heatmapStream.listen((data) {
+    _heatmapSubscription?.cancel();
+    _heatmapSubscription = _socketService.heatmapStream.listen((data) {
       if (data['type'] == 'surge') {
-        // Update surge data
-        _updateSurgeData(data['data']);
+        _updateSurgeData(data);
       } else {
-        // Update demand data
         _updateHeatmapData(data);
       }
     });
   }
 
   void _updateHeatmapData(Map<String, dynamic> data) {
-    // Parse and update heatmap
+    final incoming = _parseHexagons(data);
+    if (incoming.isEmpty) return;
+
+    final merged = _mergeHexagons(
+      base: state.heatmapData,
+      incoming: incoming,
+      overwriteDemand: true,
+      overwriteSurge: false,
+    );
+
+    state = state.copyWith(heatmapData: merged, error: null);
   }
 
   void _updateSurgeData(Map<String, dynamic> data) {
-    // Parse and update surge multipliers
+    final incoming = _parseHexagons(data);
+    if (incoming.isEmpty) return;
+
+    final merged = _mergeHexagons(
+      base: state.heatmapData,
+      incoming: incoming,
+      overwriteDemand: false,
+      overwriteSurge: true,
+    );
+
+    state = state.copyWith(heatmapData: merged, error: null);
+  }
+
+  List<HeatmapHexagon> _parseHexagons(Map<String, dynamic> payload) {
+    final candidates = <dynamic>[
+      payload['data'],
+      payload['hotspots'],
+      payload['hexagons'],
+      payload['zones'],
+      payload,
+    ];
+
+    for (final candidate in candidates) {
+      final list = _extractList(candidate);
+      if (list.isEmpty) continue;
+
+      final parsed = list
+          .whereType<Map>()
+          .map((entry) => _tryHexagonFromDynamic(entry))
+          .whereType<HeatmapHexagon>()
+          .toList();
+
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+
+    return const [];
+  }
+
+  HeatmapHexagon? _tryHexagonFromDynamic(Map<dynamic, dynamic> raw) {
+    final map = Map<String, dynamic>.from(raw);
+
+    final latRaw = map['lat'] ?? map['latitude'];
+    final lngRaw = map['lng'] ?? map['lon'] ?? map['longitude'];
+    if (latRaw is! num || lngRaw is! num) {
+      return null;
+    }
+
+    final demandRaw = map['demand_level'] ?? map['demandLevel'] ?? map['demand'] ?? 0;
+    final surgeRaw = map['surge_multiplier'] ?? map['surgeMultiplier'] ?? map['surge'] ?? 1;
+
+    return HeatmapHexagon(
+      center: LatLng(latRaw.toDouble(), lngRaw.toDouble()),
+      demandLevel: (demandRaw as num?)?.toDouble() ?? 0,
+      surgeMultiplier: (surgeRaw as num?)?.toDouble() ?? 1,
+      zoneName: (map['zone_name'] ?? map['zoneName']) as String?,
+    );
+  }
+
+  List<HeatmapHexagon> _mergeHexagons({
+    required List<HeatmapHexagon> base,
+    required List<HeatmapHexagon> incoming,
+    required bool overwriteDemand,
+    required bool overwriteSurge,
+  }) {
+    final merged = <String, HeatmapHexagon>{
+      for (final item in base) _hexagonKey(item): item,
+    };
+
+    for (final item in incoming) {
+      final key = _hexagonKey(item);
+      final existing = merged[key];
+
+      if (existing == null) {
+        merged[key] = item;
+        continue;
+      }
+
+      merged[key] = HeatmapHexagon(
+        center: existing.center,
+        demandLevel: overwriteDemand ? item.demandLevel : existing.demandLevel,
+        surgeMultiplier:
+            overwriteSurge ? item.surgeMultiplier : existing.surgeMultiplier,
+        zoneName: item.zoneName ?? existing.zoneName,
+      );
+    }
+
+    return merged.values.toList();
+  }
+
+  String _hexagonKey(HeatmapHexagon hexagon) {
+    final zone = hexagon.zoneName?.trim().toLowerCase();
+    if (zone != null && zone.isNotEmpty) return 'zone:$zone';
+
+    final lat = hexagon.center.latitude.toStringAsFixed(4);
+    final lng = hexagon.center.longitude.toStringAsFixed(4);
+    return 'coord:$lat,$lng';
   }
 
   /// Toggle demand layer visibility
@@ -260,6 +376,12 @@ class MapHomeNotifier extends StateNotifier<MapHomeState> {
   /// Refresh data
   Future<void> refresh() async {
     await _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _heatmapSubscription?.cancel();
+    super.dispose();
   }
 }
 

@@ -1,132 +1,191 @@
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
-import '../../../core/storage/secure_storage_service.dart';
-import 'models/ride_request.dart';
+import '../../../core/socket/socket_service.dart';
 import 'models/trip.dart';
-import 'package:latlong2/latlong.dart';
 
+/// Repository for ride/trip operations — connects to real backend APIs.
+/// Accept/reject are handled via Socket.IO; status updates via REST.
 class RidesRepository {
   final ApiClient _apiClient;
-  final SecureStorageService _storage;
+  final SocketService _socketService;
 
-  RidesRepository(this._apiClient, this._storage);
+  RidesRepository(this._apiClient, this._socketService);
 
-  // Mock in-memory state
-  Trip? _mockActiveTrip;
-
-  /// Accept a ride request
-  Future<Trip> acceptRide(String rideRequestId) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    _mockActiveTrip = Trip(
-      id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
-      riderId: 'rider_001',
-      riderName: 'Alice Wonderland',
-      riderPhone: '+919876543210',
-      riderRating: 4.8,
-      pickupLocation: LatLng(12.9716, 77.5946),
-      pickupAddress: 'MG Road Metro Station, Bangalore',
-      dropoffLocation: LatLng(12.9352, 77.6245),
-      dropoffAddress: 'Forum Mall, Koramangala',
-      fare: 250.0,
-      distance: 5.2,
-      status: TripStatus.assigned,
-      vehicleType: 'Sedan',
-      otp: '1234',
-      startedAt: null,
-      completedAt: null,
-    );
-    return _mockActiveTrip!;
+  /// Extract response payload, handling { data: ... } wrapper if present.
+  Map<String, dynamic> _extractPayload(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final inner = data['data'];
+      if (inner is Map<String, dynamic>) return inner;
+      return data;
+    }
+    return <String, dynamic>{};
   }
 
-  /// Reject a ride request
-  Future<void> rejectRide(String rideRequestId) async {
-    await Future.delayed(const Duration(seconds: 1));
+  List<dynamic> _extractListPayload(dynamic data) {
+    if (data is List) return data;
+    if (data is Map<String, dynamic>) {
+      final inner = data['data'];
+      if (inner is List) return inner;
+      if (inner is Map<String, dynamic> && inner['items'] is List) {
+        return inner['items'] as List;
+      }
+      if (data['items'] is List) return data['items'] as List;
+    }
+    return const [];
   }
 
-  /// Update trip status
+  /// Accept a ride offer via Socket.IO.
+  /// Then fetch the trip details from REST to get full trip data.
+  Future<Trip> acceptRide(String tripId) async {
+    // 1. Emit socket event for real-time acceptance
+    _socketService.acceptRide(tripId);
+    _socketService.joinTrip(tripId);
+
+    // 2. Fetch the trip to get full details
+    final response = await _apiClient.get(ApiEndpoints.tripById(tripId));
+    final payload = _extractPayload(response.data);
+    return Trip.fromJson(payload);
+  }
+
+  /// Reject a ride offer via Socket.IO.
+  Future<void> rejectRide(String tripId) async {
+    _socketService.rejectRide(tripId);
+  }
+
+  /// Update trip status via REST: PATCH /api/v1/trips/:id/status
   Future<Trip> updateTripStatus(String tripId, TripStatus status) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (_mockActiveTrip != null) {
-      _mockActiveTrip = _mockActiveTrip!.copyWith(status: status);
-      return _mockActiveTrip!;
-    }
-    throw Exception('No active trip found');
+    final response = await _apiClient.patch(
+      ApiEndpoints.tripStatus(tripId),
+      data: {'status': _tripStatusToBackendString(status)},
+    );
+    final payload = _extractPayload(response.data);
+    return Trip.fromJson(payload);
   }
 
-  /// Start trip with OTP verification
+  /// Generate OTP when arriving: POST /api/v1/trips/:id/otp/generate
+  Future<String> generateOtp(String tripId, String riderId) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.tripOtpGenerate(tripId),
+      data: {'riderId': riderId},
+    );
+    final payload = _extractPayload(response.data);
+    return (payload['otp'] ?? '') as String;
+  }
+
+  /// Verify OTP to start trip: POST /api/v1/trips/:id/otp/verify
+  Future<bool> verifyOtp(String tripId, String riderId, String otp) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.tripOtpVerify(tripId),
+      data: {'riderId': riderId, 'otp': otp},
+    );
+    final payload = _extractPayload(response.data);
+    return (payload['success'] ?? false) as bool;
+  }
+
+  /// Start trip (after OTP verification): transition ARRIVING → IN_PROGRESS
   Future<Trip> startTrip(String tripId, String otp) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (otp != '1234') {
-      throw Exception('Invalid OTP');
-    }
-
-    if (_mockActiveTrip != null) {
-      _mockActiveTrip = _mockActiveTrip!.copyWith(
-        status: TripStatus.started,
-        startedAt: DateTime.now(),
-      );
-      return _mockActiveTrip!;
-    }
-    throw Exception('No active trip found');
+    // The OTP verification is done separately, so startTrip just updates status
+    final response = await _apiClient.patch(
+      ApiEndpoints.tripStatus(tripId),
+      data: {'status': 'IN_PROGRESS'},
+    );
+    final payload = _extractPayload(response.data);
+    return Trip.fromJson(payload);
   }
 
-  /// Complete trip
+  /// Complete trip: transition IN_PROGRESS → COMPLETED
   Future<Trip> completeTrip(String tripId) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (_mockActiveTrip != null) {
-      _mockActiveTrip = _mockActiveTrip!.copyWith(
-        status: TripStatus.completed,
-        completedAt: DateTime.now(),
-      );
-      final completedTrip = _mockActiveTrip!;
-      _mockActiveTrip = null; // Clear active trip
-      return completedTrip;
-    }
-    throw Exception('No active trip found');
+    final response = await _apiClient.patch(
+      ApiEndpoints.tripStatus(tripId),
+      data: {'status': 'COMPLETED'},
+    );
+    final payload = _extractPayload(response.data);
+    // Leave the trip room
+    _socketService.leaveTrip(tripId);
+    return Trip.fromJson(payload);
   }
 
-  /// Cancel trip
+  /// Cancel trip with reason
   Future<void> cancelTrip(String tripId, String reason) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (_mockActiveTrip != null) {
-      _mockActiveTrip = _mockActiveTrip!.copyWith(
-        status: TripStatus.cancelled,
-        cancellationReason: reason,
-      );
-      _mockActiveTrip = null;
+    await _apiClient.patch(
+      ApiEndpoints.tripStatus(tripId),
+      data: {'status': 'CANCELLED'},
+    );
+    _socketService.leaveTrip(tripId);
+  }
+
+  /// Get a specific trip: GET /api/v1/trips/:id
+  Future<Trip?> getTrip(String tripId) async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.tripById(tripId));
+      final payload = _extractPayload(response.data);
+      if (payload.isNotEmpty) return Trip.fromJson(payload);
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
-  /// Get active trip
+  /// Get active trip (first non-completed/cancelled trip for this driver)
   Future<Trip?> getActiveTrip() async {
-    return _mockActiveTrip;
+    try {
+      final response = await _apiClient.get(ApiEndpoints.trips);
+      final list = _extractListPayload(response.data);
+      // Find first trip that is active (not completed or cancelled)
+      for (final item in list) {
+        if (item is Map<String, dynamic>) {
+          final status = (item['status'] as String?)?.toUpperCase();
+          if (status != null &&
+              status != 'COMPLETED' &&
+              status != 'CANCELLED') {
+            return Trip.fromJson(item);
+          }
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
-  /// Get trip history
+  /// Get trip fare breakdown: GET /api/v1/trips/:id/fare
+  Future<Map<String, dynamic>> getTripFare(String tripId) async {
+    final response = await _apiClient.get(ApiEndpoints.tripFare(tripId));
+    return _extractPayload(response.data);
+  }
+
+  /// Get trip history: GET /api/v1/trips
   Future<List<Trip>> getTripHistory({int page = 1, int limit = 20}) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // Return some mock history
-    return [
-      Trip(
-        id: 'trip_history_1',
-        riderId: 'rider_002',
-        riderName: 'Bob Builder',
-        pickupLocation: LatLng(12.9279, 77.6271),
-        pickupAddress: 'Koramangala 5th Block',
-        dropoffLocation: LatLng(12.9698, 77.7500),
-        dropoffAddress: 'Whitefield',
-        fare: 450.0,
-        distance: 12.5,
-        status: TripStatus.completed,
-        vehicleType: 'Sedan',
-        completedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
+    try {
+      final response = await _apiClient.get(
+        ApiEndpoints.trips,
+        queryParameters: {'page': page, 'limit': limit},
+      );
+      final list = _extractListPayload(response.data);
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map(Trip.fromJson)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+}
+
+/// Helper to convert TripStatus enum to backend UPPERCASE string.
+String _tripStatusToBackendString(TripStatus status) {
+  switch (status) {
+    case TripStatus.requested:
+      return 'REQUESTED';
+    case TripStatus.assigned:
+      return 'ASSIGNED';
+    case TripStatus.arriving:
+      return 'ARRIVING';
+    case TripStatus.inProgress:
+      return 'IN_PROGRESS';
+    case TripStatus.completed:
+      return 'COMPLETED';
+    case TripStatus.cancelled:
+      return 'CANCELLED';
   }
 }

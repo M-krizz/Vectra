@@ -109,9 +109,9 @@ class _ActiveEcoBackgroundState extends State<ActiveEcoBackground>
                     endAngle: 2 * pi,
                     colors: [
                       Colors.transparent,
-                      AppColors.hyperLime.withOpacity(0.02), // Very subtle
+                      AppColors.hyperLime.withValues(alpha: 0.02), // Very subtle
                       Colors.transparent,
-                      AppColors.neonGreen.withOpacity(0.02),
+                      AppColors.neonGreen.withValues(alpha: 0.02),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.2, 0.4, 0.6, 1.0],
@@ -186,7 +186,7 @@ class ParticlePainter extends CustomPainter {
       final double y = particle.y * size.height;
       
       final paint = Paint()
-        ..color = particle.color.withOpacity(particle.opacity)
+        ..color = particle.color.withValues(alpha: particle.opacity)
         ..style = PaintingStyle.fill;
 
       if (particle.isLeaf) {
@@ -203,7 +203,7 @@ class ParticlePainter extends CustomPainter {
         
         // Glow
         canvas.drawPath(path, Paint()
-          ..color = particle.color.withOpacity(particle.opacity * 0.5)
+          ..color = particle.color.withValues(alpha: particle.opacity * 0.5)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
           
         canvas.restore();
@@ -212,7 +212,7 @@ class ParticlePainter extends CustomPainter {
         canvas.drawCircle(Offset(x, y), particle.size / 2, paint);
         // Glow
         canvas.drawCircle(Offset(x, y), particle.size, Paint()
-          ..color = particle.color.withOpacity(particle.opacity * 0.3)
+          ..color = particle.color.withValues(alpha: particle.opacity * 0.3)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
       }
     }

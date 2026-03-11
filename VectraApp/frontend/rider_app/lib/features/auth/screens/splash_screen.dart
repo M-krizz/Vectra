@@ -26,10 +26,10 @@ class SplashScreen extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.directions_car,
                   size: 64,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                 ),
               ),
               const SizedBox(height: 24),

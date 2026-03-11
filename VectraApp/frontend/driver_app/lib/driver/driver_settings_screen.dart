@@ -1,46 +1,49 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_mode_provider.dart';
 import '../shared/widgets/active_eco_background.dart';
 
-/// Settings Screen for driver preferences
-class DriverSettingsScreen extends StatefulWidget {
+class DriverSettingsScreen extends ConsumerStatefulWidget {
   const DriverSettingsScreen({super.key});
 
   @override
-  State<DriverSettingsScreen> createState() => _DriverSettingsScreenState();
+  ConsumerState<DriverSettingsScreen> createState() => _DriverSettingsScreenState();
 }
 
-class _DriverSettingsScreenState extends State<DriverSettingsScreen> {
+class _DriverSettingsScreenState extends ConsumerState<DriverSettingsScreen> {
   bool _pushNotifications = true;
   bool _emailNotifications = false;
   bool _smsNotifications = true;
   bool _soundEffects = true;
   bool _vibration = true;
-  bool _darkMode = true;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: colors.surface,
       body: Stack(
         children: [
-          const ActiveEcoBackground(),
+          if (isDark) const ActiveEcoBackground(),
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(),
+                _buildHeader(colors, isDark),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(24),
                     children: [
-                      _buildNotificationSettings(),
+                      _buildNotificationSettings(colors, isDark),
                       const SizedBox(height: 24),
-                      _buildAppSettings(),
+                      _buildAppSettings(colors, isDark),
                       const SizedBox(height: 24),
-                      _buildPrivacySettings(),
-                      const SizedBox(height: 24),
-                      _buildAboutSection(),
+                      _buildAboutSection(colors, isDark),
                     ],
                   ),
                 ),
@@ -52,267 +55,127 @@ class _DriverSettingsScreenState extends State<DriverSettingsScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme colors, bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            icon: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.white10,
-              padding: const EdgeInsets.all(12),
+                backgroundColor: isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.1),
+                padding: const EdgeInsets.all(12),
             ),
           ),
           const SizedBox(width: 16),
-          Text(
-            'Settings',
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('Settings', style: GoogleFonts.outfit(color: colors.onSurface, fontSize: 28, fontWeight: FontWeight.bold)),
         ],
       ),
     ).animate().fadeIn(duration: 600.ms);
   }
 
-  Widget _buildNotificationSettings() {
+  Widget _buildNotificationSettings(ColorScheme colors, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Notifications',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text('Notifications', style: GoogleFonts.outfit(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        _buildSettingToggle(
-          'Push Notifications',
-          'Receive ride requests and updates',
-          _pushNotifications,
-          (value) => setState(() => _pushNotifications = value),
-        ),
+        _buildSettingToggle('Push Notifications', 'Receive ride requests and updates', _pushNotifications, (v) => setState(() => _pushNotifications = v), colors, isDark),
         const SizedBox(height: 12),
-        _buildSettingToggle(
-          'Email Notifications',
-          'Weekly earnings and updates',
-          _emailNotifications,
-          (value) => setState(() => _emailNotifications = value),
-        ),
+        _buildSettingToggle('Email Notifications', 'Weekly earnings and updates', _emailNotifications, (v) => setState(() => _emailNotifications = v), colors, isDark),
         const SizedBox(height: 12),
-        _buildSettingToggle(
-          'SMS Notifications',
-          'Important alerts via SMS',
-          _smsNotifications,
-          (value) => setState(() => _smsNotifications = value),
-        ),
+        _buildSettingToggle('SMS Notifications', 'Important alerts via SMS', _smsNotifications, (v) => setState(() => _smsNotifications = v), colors, isDark),
       ],
     ).animate().fadeIn(delay: 200.ms, duration: 600.ms);
   }
 
-  Widget _buildAppSettings() {
+  Widget _buildAppSettings(ColorScheme colors, bool isDark) {
+    final isDarkMode = ref.watch(themeModeProvider) == ThemeMode.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'App Preferences',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text('App Preferences', style: GoogleFonts.outfit(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        _buildSettingToggle(
-          'Sound Effects',
-          'Play sounds for notifications',
-          _soundEffects,
-          (value) => setState(() => _soundEffects = value),
-        ),
+        _buildSettingToggle('Sound Effects', 'Play sounds for notifications', _soundEffects, (v) => setState(() => _soundEffects = v), colors, isDark),
         const SizedBox(height: 12),
-        _buildSettingToggle(
-          'Vibration',
-          'Vibrate on notifications',
-          _vibration,
-          (value) => setState(() => _vibration = value),
-        ),
+        _buildSettingToggle('Vibration', 'Vibrate on notifications', _vibration, (v) => setState(() => _vibration = v), colors, isDark),
         const SizedBox(height: 12),
-        _buildSettingToggle(
-          'Dark Mode',
-          'Use dark theme',
-          _darkMode,
-          (value) => setState(() => _darkMode = value),
-        ),
+        _buildSettingToggle('Dark Mode', 'Use dark theme', isDarkMode, (v) {
+          ref.read(themeModeProvider.notifier).state = v ? ThemeMode.dark : ThemeMode.light;
+        }, colors, isDark),
       ],
     ).animate().fadeIn(delay: 400.ms, duration: 600.ms);
   }
 
-  Widget _buildPrivacySettings() {
+  Widget _buildAboutSection(ColorScheme colors, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Privacy & Security',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text('About', style: GoogleFonts.outfit(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        _buildSettingItem(
-          Icons.lock_outline,
-          'Change Password',
-          'Update your account password',
-          () {},
-        ),
-        const SizedBox(height: 12),
-        _buildSettingItem(
-          Icons.privacy_tip_outlined,
-          'Privacy Policy',
-          'Read our privacy policy',
-          () {},
-        ),
-        const SizedBox(height: 12),
-        _buildSettingItem(
-          Icons.description_outlined,
-          'Terms of Service',
-          'View terms and conditions',
-          () {},
-        ),
+        _buildSettingItem(Icons.info_outline, 'App Version', 'v1.0.0', null, colors, isDark),
       ],
     ).animate().fadeIn(delay: 600.ms, duration: 600.ms);
   }
 
-  Widget _buildAboutSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'About',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildSettingItem(
-          Icons.info_outline,
-          'App Version',
-          'v1.0.0',
-          null,
-        ),
-        const SizedBox(height: 12),
-        _buildSettingItem(
-          Icons.update_outlined,
-          'Check for Updates',
-          'You\'re up to date',
-          () {},
-        ),
-      ],
-    ).animate().fadeIn(delay: 800.ms, duration: 600.ms);
-  }
-
-  Widget _buildSettingToggle(
-    String title,
-    String subtitle,
-    bool value,
-    Function(bool) onChanged,
-  ) {
+  Widget _buildSettingToggle(String title, String subtitle, bool value, Function(bool) onChanged, ColorScheme colors, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.carbonGrey.withOpacity(0.6),
+            color: isDark ? AppColors.carbonGrey.withValues(alpha: 0.6) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.white10),
+            border: Border.all(color: isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.2)),
+            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
       ),
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.dmSans(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.dmSans(
-                    color: AppColors.white70,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: GoogleFonts.dmSans(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text(subtitle, style: GoogleFonts.dmSans(color: colors.onSurfaceVariant, fontSize: 13)),
+            ]),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppColors.hyperLime,
-            activeTrackColor: AppColors.neonGreen.withOpacity(0.5),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              thumbColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? (isDark ? AppColors.hyperLime : AppColors.primary) : null),
+              trackColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? (isDark ? AppColors.neonGreen : colors.primary).withValues(alpha: 0.5)
+                    : null,
+              ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingItem(
-    IconData icon,
-    String title,
-    String subtitle,
-    VoidCallback? onTap,
-  ) {
+  Widget _buildSettingItem(IconData icon, String title, String subtitle, VoidCallback? onTap, ColorScheme colors, bool isDark) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.carbonGrey.withOpacity(0.6),
+              color: isDark ? AppColors.carbonGrey.withValues(alpha: 0.6) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.white10),
+              border: Border.all(color: isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.2)),
+              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.hyperLime, size: 24),
+            Icon(icon, color: isDark ? AppColors.hyperLime : AppColors.primary, size: 24),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.dmSans(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.dmSans(
-                      color: AppColors.white70,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: GoogleFonts.dmSans(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: GoogleFonts.dmSans(color: colors.onSurfaceVariant, fontSize: 13)),
+              ]),
             ),
             if (onTap != null)
-              Icon(Icons.arrow_forward_ios, color: AppColors.white70, size: 16),
+              Icon(Icons.arrow_forward_ios, color: colors.onSurfaceVariant, size: 16),
           ],
         ),
       ),

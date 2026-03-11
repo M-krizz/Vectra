@@ -14,7 +14,7 @@ class SavedPlacesScreen extends StatelessWidget {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Saved Places'),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
@@ -162,7 +162,7 @@ class SavedPlacesScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: iconColor),
@@ -191,7 +191,7 @@ class SavedPlacesScreen extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.surface),
       ),
       onDismissed: (_) {
         context.read<SavedPlacesBloc>().add(DeleteSavedPlace(place.id));

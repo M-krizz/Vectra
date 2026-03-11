@@ -14,9 +14,15 @@ class TripCompletedScreen extends StatelessWidget {
         final fare = state.finalFare ?? state.selectedVehicle?.fare ?? 85.0;
         final isPool = state.rideType == 'pool';
         final vehicle = state.selectedVehicle;
+        final distanceText = state.tripDistanceKm != null
+          ? '${state.tripDistanceKm!.toStringAsFixed(1)} km'
+          : '--';
+        final durationText = state.tripDurationMinutes != null
+          ? '${state.tripDurationMinutes} min'
+          : '--';
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             child: Column(
               children: [
@@ -31,8 +37,8 @@ class TripCompletedScreen extends StatelessWidget {
                         Container(
                           width: 100,
                           height: 100,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE8F5E9),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.check_circle_rounded,
@@ -40,19 +46,19 @@ class TripCompletedScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
 
-                        const Text(
+                        Text(
                           'Ride Completed!',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'You\'ve arrived at ${state.destination?.name ?? 'destination'}',
-                          style: const TextStyle(
-                              fontSize: 14, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           textAlign: TextAlign.center,
                         ),
 
@@ -63,26 +69,26 @@ class TripCompletedScreen extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F7FA),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: Theme.of(context).colorScheme.outline),
                           ),
                           child: Column(
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Total Fare',
+                                  Text('Total Fare',
                                       style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
-                                          color: AppColors.textSecondary)),
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant)),
                                   Text(
                                     '₹${fare.toStringAsFixed(0)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 28,
                                       fontWeight: FontWeight.w900,
-                                      color: AppColors.textPrimary,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                     ),
                                   ),
                                 ],
@@ -106,19 +112,19 @@ class TripCompletedScreen extends StatelessWidget {
                               ],
                               if (vehicle != null) ...[
                                 const SizedBox(height: 12),
-                                const Divider(height: 1, color: AppColors.border),
+                                Divider(height: 1, color: Theme.of(context).colorScheme.outline),
                                 const SizedBox(height: 12),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(vehicle.name,
-                                        style: const TextStyle(
-                                            fontSize: 13,
-                                            color: AppColors.textSecondary)),
-                                    const Text('4.2 km • 14 min',
                                         style: TextStyle(
                                             fontSize: 13,
-                                            color: AppColors.textSecondary)),
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                                    Text('$distanceText • $durationText',
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant)),
                                   ],
                                 ),
                               ],
@@ -172,8 +178,8 @@ class TripCompletedScreen extends StatelessWidget {
                             context.go('/home');
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.textPrimary,
-                            side: const BorderSide(color: AppColors.border),
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                            side: BorderSide(color: Theme.of(context).colorScheme.outline),
                             minimumSize: const Size.fromHeight(50),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)),
@@ -205,9 +211,9 @@ class _RouteRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -218,17 +224,17 @@ class _RouteRow extends StatelessWidget {
             Container(width: 1, height: 28, color: Colors.grey.shade200),
             Container(
                 width: 8, height: 8,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle)),
           ]),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(pickup,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                   maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 22),
               Text(destination,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                   maxLines: 1, overflow: TextOverflow.ellipsis),
             ]),
           ),

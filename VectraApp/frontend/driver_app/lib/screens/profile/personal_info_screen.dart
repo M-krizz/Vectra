@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../models/signup_data.dart';
 import '../../utils/notification_overlay.dart';
+import '../../services/legacy_driver_profile_service.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   final SignUpData? signUpData;
@@ -13,6 +14,7 @@ class PersonalInfoScreen extends StatefulWidget {
 
 class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   bool _isEditing = false;
+  bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
 
   // Controllers for the fields
@@ -23,16 +25,29 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize with provided data or dummy data
     _nameController = TextEditingController(
-      text: widget.signUpData?.fullName ?? 'Ravindran',
+      text: widget.signUpData?.fullName ?? '',
     );
     _phoneController = TextEditingController(
-      text: widget.signUpData?.phoneNumber ?? '+91 98765 43210',
+      text: widget.signUpData?.phoneNumber ?? '',
     );
     _emailController = TextEditingController(
-      text: widget.signUpData?.email ?? 'ravindran@example.com',
+      text: widget.signUpData?.email ?? '',
     );
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await LegacyDriverProfileService.fetchProfile();
+      if (!mounted) return;
+
+      _nameController.text = (profile['fullName'] ?? '').toString();
+      _phoneController.text = (profile['phone'] ?? '').toString();
+      _emailController.text = (profile['email'] ?? '').toString();
+    } catch (_) {
+      // Keep existing values if backend fetch fails.
+    }
   }
 
   @override
@@ -44,29 +59,37 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   }
 
   void _toggleEdit() {
-    setState(() {
-      if (_isEditing) {
-        // Save logic would go here
-        // For now, we just validate if needed and switch back to view mode
-        if (_formKey.currentState!.validate()) {
-          // In a real app, update the SignUpData or backend here
-          if (widget.signUpData != null) {
-            widget.signUpData!.fullName = _nameController.text;
-            widget.signUpData!.phoneNumber = _phoneController.text;
-            widget.signUpData!.email = _emailController.text;
-          }
+    if (_isLoading) return;
 
+    if (!_isEditing) {
+      setState(() => _isEditing = true);
+      return;
+    }
+
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+    LegacyDriverProfileService.updateFullName(_nameController.text.trim())
+        .then((_) {
+          if (!mounted) return;
           NotificationOverlay.showMessage(
             context,
             'Profile updated successfully',
             backgroundColor: AppColors.success,
           );
-          _isEditing = false;
-        }
-      } else {
-        _isEditing = true;
-      }
-    });
+          setState(() => _isEditing = false);
+        })
+        .catchError((_) {
+          if (!mounted) return;
+          NotificationOverlay.showMessage(
+            context,
+            'Failed to update profile',
+            backgroundColor: AppColors.error,
+          );
+        })
+        .whenComplete(() {
+          if (mounted) setState(() => _isLoading = false);
+        });
   }
 
   @override
@@ -85,7 +108,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           TextButton(
             onPressed: _toggleEdit,
             child: Text(
-              _isEditing ? 'Save' : 'Edit',
+              _isLoading ? 'Saving...' : (_isEditing ? 'Save' : 'Edit'),
               style: TextStyle(
                 color: _isEditing ? AppColors.primary : AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
@@ -114,8 +137,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 title: 'Phone Number',
                 controller: _phoneController,
                 icon: Icons.phone_outlined,
-                isEditable:
-                    true, // Phone might be non-editable in some apps, but assuming editable here or maybe restricted
+                isEditable: false,
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
@@ -124,7 +146,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 title: 'Email Address',
                 controller: _emailController,
                 icon: Icons.email_outlined,
-                isEditable: true,
+                isEditable: false,
                 keyboardType: TextInputType.emailAddress,
               ),
             ],

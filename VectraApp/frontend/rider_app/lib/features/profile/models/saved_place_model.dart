@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum PlaceType { home, work, favorite }
 
 class SavedPlace {

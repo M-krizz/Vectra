@@ -3,11 +3,22 @@ import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import 'signup_stages/basic_details_screen.dart';
 import '../utils/notification_overlay.dart';
+import '../services/legacy_auth_service.dart';
+import '../features/auth/data/models/auth_tokens.dart';
+import '../models/signup_data.dart';
+import '../features/map_home/presentation/screens/driver_dashboard_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
-  final String phoneNumber;
+  final String identifier;
+  final String? devOtp;
+  final SignUpData? pendingSignUpData;
 
-  const OTPVerificationScreen({super.key, required this.phoneNumber});
+  const OTPVerificationScreen({
+    super.key,
+    required this.identifier,
+    this.devOtp,
+    this.pendingSignUpData,
+  });
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -22,6 +33,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   bool _isLoading = false;
   bool _canResend = false;
   int _resendTimer = 30;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -61,6 +73,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   }
 
   void _verifyOTP() async {
+    if (_isSubmitting) return;
+
     String otp = _otpControllers.map((c) => c.text).join();
 
     if (otp.length != 6) {
@@ -72,36 +86,98 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isSubmitting = true;
+    });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-
-    setState(() => _isLoading = false);
-
-    if (mounted) {
-      // Navigate directly to basic details screen for new user sign up
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              BasicDetailsScreen(phoneNumber: widget.phoneNumber),
-        ),
+    try {
+      final tokens = await LegacyAuthService.verifyOtp(
+        identifier: widget.identifier,
+        otp: otp,
       );
+
+      if (!mounted) return;
+
+      if (tokens.role != 'DRIVER') {
+        NotificationOverlay.showMessage(
+          context,
+          'This app is only for drivers',
+          backgroundColor: AppColors.error,
+        );
+        return;
+      }
+
+      if (tokens.isNewUser) {
+        final cleanedPhone = widget.identifier.startsWith('+91')
+            ? widget.identifier.substring(3)
+            : widget.identifier;
+
+        final signUpData = widget.pendingSignUpData;
+        if (signUpData != null) {
+          signUpData.phoneNumber = cleanedPhone;
+        }
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BasicDetailsScreen(
+              phoneNumber: cleanedPhone,
+              existingData: signUpData,
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const DriverDashboardScreen(),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        e is AuthError ? e.message : 'Invalid OTP. Please try again.',
+        backgroundColor: AppColors.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
   void _resendOTP() async {
     if (!_canResend) return;
 
-    // Simulate API call
-    NotificationOverlay.showMessage(
-      context,
-      'OTP sent successfully!',
-      backgroundColor: AppColors.success,
-    );
+    try {
+      final channel = widget.identifier.contains('@') ? 'email' : 'phone';
+      await LegacyAuthService.sendOtp(
+        identifier: widget.identifier,
+        channel: channel,
+      );
 
-    _startResendTimer();
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        'OTP sent successfully!',
+        backgroundColor: AppColors.success,
+      );
+      _startResendTimer();
+    } catch (e) {
+      if (!mounted) return;
+      NotificationOverlay.showMessage(
+        context,
+        e is AuthError ? e.message : 'Failed to resend OTP',
+        backgroundColor: AppColors.error,
+      );
+    }
   }
 
   @override
@@ -140,12 +216,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Enter the 6-digit code sent to\n+91 ${widget.phoneNumber}',
+                        'Enter the 6-digit code sent to\n${widget.identifier}',
                         style: const TextStyle(
                           fontSize: 16,
                           color: AppColors.textSecondary,
                         ),
                       ),
+
+
 
                       const SizedBox(height: 48),
 

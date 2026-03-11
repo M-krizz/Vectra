@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 enum AlertType { info, success, warning, error }
 
@@ -49,25 +49,12 @@ class _AlertBannerState extends State<AlertBanner> {
     widget.onClose?.call();
   }
 
-  Color _getBackgroundColor() {
-    switch (widget.type) {
-      case AlertType.info:
-        return AppColors.skyBlue.withOpacity(0.2);
-      case AlertType.success:
-        return AppColors.hyperLime.withOpacity(0.2);
-      case AlertType.warning:
-        return Colors.orange.withOpacity(0.2);
-      case AlertType.error:
-        return AppColors.errorRed.withOpacity(0.2);
-    }
-  }
-
-  Color _getBorderColor() {
+  Color _getTypeColor() {
     switch (widget.type) {
       case AlertType.info:
         return AppColors.skyBlue;
       case AlertType.success:
-        return AppColors.hyperLime;
+        return AppColors.successGreen;
       case AlertType.warning:
         return Colors.orange;
       case AlertType.error:
@@ -92,18 +79,22 @@ class _AlertBannerState extends State<AlertBanner> {
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final typeColor = _getTypeColor();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _getBackgroundColor(),
+        color: typeColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _getBorderColor()),
+        border: Border.all(color: typeColor),
       ),
       child: Row(
         children: [
           Icon(
             widget.icon ?? _getDefaultIcon(),
-            color: _getBorderColor(),
+            color: typeColor,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -111,7 +102,7 @@ class _AlertBannerState extends State<AlertBanner> {
             child: Text(
               widget.message,
               style: GoogleFonts.dmSans(
-                color: Colors.white,
+                color: colors.onSurface,
                 fontSize: 14,
                 height: 1.4,
               ),
@@ -123,7 +114,7 @@ class _AlertBannerState extends State<AlertBanner> {
               onTap: _dismiss,
               child: Icon(
                 Icons.close,
-                color: AppColors.white70,
+                color: colors.onSurfaceVariant,
                 size: 20,
               ),
             ),
@@ -134,20 +125,11 @@ class _AlertBannerState extends State<AlertBanner> {
   }
 }
 
-// Static helper methods for common use cases
 class AlertBannerHelper {
-  static void showInfo(
-    BuildContext context,
-    String message, {
-    Duration? duration,
-  }) {
+  static void showInfo(BuildContext context, String message, {Duration? duration}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: AlertBanner(
-          type: AlertType.info,
-          message: message,
-          isCloseable: false,
-        ),
+        content: AlertBanner(type: AlertType.info, message: message, isCloseable: false),
         backgroundColor: Colors.transparent,
         elevation: 0,
         duration: duration ?? const Duration(seconds: 3),
@@ -155,18 +137,10 @@ class AlertBannerHelper {
     );
   }
 
-  static void showSuccess(
-    BuildContext context,
-    String message, {
-    Duration? duration,
-  }) {
+  static void showSuccess(BuildContext context, String message, {Duration? duration}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: AlertBanner(
-          type: AlertType.success,
-          message: message,
-          isCloseable: false,
-        ),
+        content: AlertBanner(type: AlertType.success, message: message, isCloseable: false),
         backgroundColor: Colors.transparent,
         elevation: 0,
         duration: duration ?? const Duration(seconds: 3),
@@ -174,18 +148,10 @@ class AlertBannerHelper {
     );
   }
 
-  static void showWarning(
-    BuildContext context,
-    String message, {
-    Duration? duration,
-  }) {
+  static void showWarning(BuildContext context, String message, {Duration? duration}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: AlertBanner(
-          type: AlertType.warning,
-          message: message,
-          isCloseable: false,
-        ),
+        content: AlertBanner(type: AlertType.warning, message: message, isCloseable: false),
         backgroundColor: Colors.transparent,
         elevation: 0,
         duration: duration ?? const Duration(seconds: 4),
@@ -193,18 +159,10 @@ class AlertBannerHelper {
     );
   }
 
-  static void showError(
-    BuildContext context,
-    String message, {
-    Duration? duration,
-  }) {
+  static void showError(BuildContext context, String message, {Duration? duration}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: AlertBanner(
-          type: AlertType.error,
-          message: message,
-          isCloseable: false,
-        ),
+        content: AlertBanner(type: AlertType.error, message: message, isCloseable: false),
         backgroundColor: Colors.transparent,
         elevation: 0,
         duration: duration ?? const Duration(seconds: 4),

@@ -12,6 +12,7 @@ enum RideStatus {
 
 class RideRequest {
   final String id;
+  final String riderId;
   final String passengerName;
   final String passengerRating;
   final LatLng pickupLocation;
@@ -26,6 +27,7 @@ class RideRequest {
 
   RideRequest({
     required this.id,
+    this.riderId = '',
     required this.passengerName,
     required this.passengerRating,
     required this.pickupLocation,

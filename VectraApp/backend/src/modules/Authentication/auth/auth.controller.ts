@@ -7,19 +7,20 @@ import {
   UseGuards,
   Ip,
   Headers,
+  Patch,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import {
   RequestOtpDto,
   VerifyOtpDto,
-  LoginDto,
   RefreshDto,
+  CompleteProfileDto,
 } from './dto/auth.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('request-otp')
   requestOtp(@Body() dto: RequestOtpDto) {
@@ -31,29 +32,24 @@ export class AuthController {
     @Body() dto: VerifyOtpDto,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
+    @Headers('x-role-hint') roleHint: string,
   ) {
     return this.authService.verifyOtpAndLogin(
       dto.identifier,
       dto.code,
-      undefined,
+      roleHint as any,
       userAgent,
       ip,
     );
   }
 
-  @Post('login')
-  async login(
-    @Body() dto: LoginDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
+  @Patch('complete-profile')
+  @UseGuards(JwtAuthGuard)
+  completeProfile(
+    @Req() req: { user: { userId: string } },
+    @Body() dto: CompleteProfileDto,
   ) {
-    const user = await this.authService.validateLogin(
-      dto.email,
-      dto.phone,
-      dto.password,
-      dto.otp,
-    );
-    return this.authService.createSessionAndTokens(user, userAgent, ip);
+    return this.authService.completeProfile(req.user.userId, dto.fullName);
   }
 
   @Post('refresh')

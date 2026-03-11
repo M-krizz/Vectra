@@ -1,9 +1,20 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/utils/jwt_decoder.dart';
 import 'models/auth_tokens.dart';
+
+class OtpRequestResult {
+  final bool success;
+  final String? devOtp;
+
+  const OtpRequestResult({
+    required this.success,
+    this.devOtp,
+  });
+}
 
 /// Repository for authentication operations
 class AuthRepository {
@@ -16,23 +27,24 @@ class AuthRepository {
   })  : _apiClient = apiClient,
         _storage = storage;
 
-  /// Send OTP to phone number
-  Future<bool> sendOtp(OtpRequest request) async {
+  /// Send OTP to phone number or email (identifier)
+  Future<OtpRequestResult> sendOtp(OtpRequest request) async {
     try {
-      // In production, this would call the actual API
-      // For now, simulate a successful OTP send
-      print('AuthRepository: Simulating API call...');
-      await Future.delayed(const Duration(seconds: 1));
-      print('AuthRepository: API call simulated');
-
-      // Mock API call:
-      // final response = await _apiClient.post(
-      //   ApiEndpoints.sendOtp,
-      //   data: request.toJson(),
-      // );
-      // return response.statusCode == 200;
-
-      return true;
+      final response = await _apiClient.post(
+        ApiEndpoints.requestOtp,
+        data: {
+          'identifier': request.identifier,
+          'channel': request.channel,
+        },
+      );
+      final data = response.data as Map<String, dynamic>?;
+      return OtpRequestResult(
+        success: response.statusCode == 200 || response.statusCode == 201,
+        devOtp: data?['devOtp'] as String?,
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] as String?;
+      throw AuthError(message: msg ?? 'Failed to send OTP. Please try again.');
     } catch (e) {
       throw AuthError(message: 'Failed to send OTP. Please try again.');
     }
@@ -41,37 +53,42 @@ class AuthRepository {
   /// Verify OTP and get tokens
   Future<AuthTokens> verifyOtp(OtpVerification verification) async {
     try {
-      // In production, this would call the actual API
-      // For now, simulate a successful verification
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Mock response - in production, use actual API:
-      // final response = await _apiClient.post(
-      //   ApiEndpoints.verifyOtp,
-      //   data: verification.toJson(),
-      // );
-      // final tokens = AuthTokens.fromJson(response.data);
-
-      // Mock tokens for development
-      final mockTokens = AuthTokens(
-        accessToken: 'mock_access_token_${DateTime.now().millisecondsSinceEpoch}',
-        refreshToken: 'mock_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-        role: UserRoles.driver,
-        userId: 'driver_123',
-        expiresAt: DateTime.now().add(const Duration(days: 7)),
+      final response = await _apiClient.post(
+        ApiEndpoints.verifyOtp,
+        data: {
+          'identifier': verification.identifier,
+          'code': verification.otp,
+        },
+        options: Options(headers: {'x-role-hint': 'DRIVER'}),
+      );
+      
+      final data = response.data;
+      final tokens = AuthTokens(
+        accessToken: data['accessToken'],
+        refreshToken: data['refreshToken'],
+        role: data['user']['role'] ?? 'DRIVER',
+        userId: data['user']['id'],
+        isNewUser: (data['user']?['fullName'] as String?)?.trim().isEmpty ?? true,
       );
 
       // Store tokens
       await _storage.saveTokens(
-        accessToken: mockTokens.accessToken,
-        refreshToken: mockTokens.refreshToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       );
-      await _storage.saveUserRole(mockTokens.role);
-      if (mockTokens.userId != null) {
-        await _storage.saveUserId(mockTokens.userId!);
+      final refreshTokenId = data['refreshTokenId'] as String?;
+      if (refreshTokenId != null && refreshTokenId.isNotEmpty) {
+        await _storage.saveRefreshTokenId(refreshTokenId);
+      }
+      await _storage.saveUserRole(tokens.role);
+      if (tokens.userId != null) {
+        await _storage.saveUserId(tokens.userId!);
       }
 
-      return mockTokens;
+      return tokens;
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] as String?;
+      throw AuthError(message: msg ?? 'Invalid OTP. Please try again.');
     } catch (e) {
       throw AuthError(message: 'Invalid OTP. Please try again.');
     }
@@ -81,24 +98,36 @@ class AuthRepository {
   Future<AuthTokens?> refreshToken() async {
     try {
       final refreshToken = await _storage.getRefreshToken();
+      final refreshTokenId = await _storage.getRefreshTokenId();
       if (refreshToken == null) return null;
+      if (refreshTokenId == null || refreshTokenId.isEmpty) return null;
 
-      // In production, call the actual refresh API
-      await Future.delayed(const Duration(milliseconds: 500));
+      final response = await _apiClient.post(
+        ApiEndpoints.refreshToken,
+        data: {
+          'refreshToken': refreshToken,
+        },
+        options: Options(
+          headers: {'x-refresh-token-id': refreshTokenId},
+        ),
+      );
 
-      // Mock new tokens
+      final data = response.data;
       final newTokens = AuthTokens(
-        accessToken: 'refreshed_access_token_${DateTime.now().millisecondsSinceEpoch}',
-        refreshToken: 'refreshed_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-        role: UserRoles.driver,
+        accessToken: data['accessToken'],
+        refreshToken: data['refreshToken'],
+        role: data['user']?['role'] ?? 'DRIVER',
         userId: await _storage.getUserId(),
-        expiresAt: DateTime.now().add(const Duration(days: 7)),
       );
 
       await _storage.saveTokens(
         accessToken: newTokens.accessToken,
         refreshToken: newTokens.refreshToken,
       );
+      final newRefreshTokenId = data['refreshTokenId'] as String?;
+      if (newRefreshTokenId != null && newRefreshTokenId.isNotEmpty) {
+        await _storage.saveRefreshTokenId(newRefreshTokenId);
+      }
 
       return newTokens;
     } catch (e) {

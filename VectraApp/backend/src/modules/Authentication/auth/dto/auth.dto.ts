@@ -1,9 +1,7 @@
 import {
-  IsEmail,
-  IsOptional,
   IsString,
+  IsOptional,
   IsNotEmpty,
-  ValidateIf,
   IsIn,
 } from 'class-validator';
 
@@ -14,10 +12,6 @@ export class RequestOtpDto {
   @IsString()
   @IsNotEmpty()
   identifier!: string;
-
-  @IsOptional()
-  @IsIn(['RIDER', 'DRIVER', 'ADMIN'])
-  roleHint?: 'RIDER' | 'DRIVER' | 'ADMIN';
 }
 
 export class VerifyOtpDto {
@@ -30,22 +24,10 @@ export class VerifyOtpDto {
   code!: string;
 }
 
-export class LoginDto {
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
+export class CompleteProfileDto {
   @IsString()
-  phone?: string;
-
-  @ValidateIf((o: LoginDto) => !o.otp)
-  @IsString()
-  password?: string;
-
-  @ValidateIf((o: LoginDto) => !o.password)
-  @IsString()
-  otp?: string;
+  @IsNotEmpty()
+  fullName!: string;
 }
 
 export class RefreshDto {

@@ -1,17 +1,18 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../config/app_theme.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
+import '../../../config/maps_config.dart';
 import '../bloc/ride_bloc.dart';
 import '../models/place_model.dart';
 import '../repository/places_repository.dart';
 
-/// Enum to track which field is being edited
 enum SearchField { pickup, destination }
 
-/// Screen for searching and selecting pickup/destination locations
 class LocationSearchScreen extends StatefulWidget {
   final PlaceModel? initialPickup;
   final PlaceModel? initialDestination;
@@ -40,27 +41,28 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   List<PlaceModel> _searchResults = [];
   bool _isLoading = false;
   Timer? _debounceTimer;
+  final MapController _mapController = MapController();
+  RouteModel? _previewRoute;
 
   PlaceModel? _selectedPickup;
   PlaceModel? _selectedDestination;
 
+  /// Current device location used to centre the map initially.
+  LatLng _currentLatLng = MapsConfig.defaultLatLng;
+  bool _gotCurrentLocation = false;
+
   @override
   void initState() {
     super.initState();
-
     _selectedPickup = widget.initialPickup;
     _selectedDestination = widget.initialDestination;
 
-    _pickupController = TextEditingController(
-      text: widget.initialPickup?.name ?? '',
-    );
-    _destinationController = TextEditingController(
-      text: widget.initialDestination?.name ?? '',
-    );
-
+    _pickupController =
+        TextEditingController(text: widget.initialPickup?.name ?? '');
+    _destinationController =
+        TextEditingController(text: widget.initialDestination?.name ?? '');
     _pickupFocusNode = FocusNode();
     _destinationFocusNode = FocusNode();
-
     _activeField = widget.focusField;
 
     _pickupFocusNode.addListener(() {
@@ -69,7 +71,6 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         _search(_pickupController.text);
       }
     });
-
     _destinationFocusNode.addListener(() {
       if (_destinationFocusNode.hasFocus) {
         setState(() => _activeField = SearchField.destination);
@@ -77,7 +78,9 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       }
     });
 
-    // Focus appropriate field after build
+    // Grab the device location so we can centre the map.
+    _fetchCurrentLocation();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.focusField == SearchField.destination) {
         _destinationFocusNode.requestFocus();
@@ -87,23 +90,62 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Location helpers
+  // ---------------------------------------------------------------------------
+
+  Future<void> _fetchCurrentLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return; // keep default
+      }
+      final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      if (!mounted) return;
+      setState(() {
+        _currentLatLng = LatLng(pos.latitude, pos.longitude);
+        _gotCurrentLocation = true;
+      });
+      // If no pickup/destination yet, move the camera to current location.
+      if (_selectedPickup?.location == null &&
+          _selectedDestination?.location == null) {
+        _mapController.move(_currentLatLng, 15);
+      }
+    } catch (_) {
+      // silently keep default position
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Search — calls the Mapbox Geocoding API via backend proxy
+  // ---------------------------------------------------------------------------
+
   void _search(String query) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
-      if (query.isEmpty) {
+    _debounceTimer = Timer(const Duration(milliseconds: 350), () async {
+      if (!mounted) return;
+      if (query.trim().isEmpty) {
         setState(() => _searchResults = []);
         return;
       }
-
       setState(() => _isLoading = true);
-
       try {
-        final results = await _placesRepository.searchPlaces(query);
+        final results = await _placesRepository.searchPlaces(
+          query,
+          nearLocation: _gotCurrentLocation ? _currentLatLng : null,
+        );
+        if (!mounted) return;
         setState(() {
           _searchResults = results;
           _isLoading = false;
         });
-      } catch (e) {
+      } catch (_) {
+        if (!mounted) return;
         setState(() {
           _searchResults = [];
           _isLoading = false;
@@ -112,17 +154,18 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Place selection / route preview
+  // ---------------------------------------------------------------------------
+
   Future<void> _onPlaceSelected(PlaceModel place) async {
     setState(() => _isLoading = true);
-
-    // Fetch full place details with lat/lng if not already present
     PlaceModel placeWithLocation = place;
     if (place.location == null) {
       final details = await _placesRepository.getPlaceDetails(place.placeId);
       if (details != null) {
         placeWithLocation = details;
       } else {
-        // Show error if we couldn't get location
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Could not get location details')),
@@ -140,11 +183,11 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         _searchResults = [];
         _isLoading = false;
       });
-      // Move focus to destination if empty
+      _mapController.move(placeWithLocation.location!, 15);
       if (_selectedDestination == null) {
         _destinationFocusNode.requestFocus();
       } else {
-        _confirmSelection();
+        await _refreshRoutePreview();
       }
     } else {
       setState(() {
@@ -153,12 +196,34 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         _searchResults = [];
         _isLoading = false;
       });
-      // Confirm if both are selected
+      _mapController.move(placeWithLocation.location!, 15);
       if (_selectedPickup != null) {
-        _confirmSelection();
+        await _refreshRoutePreview();
       } else {
         _pickupFocusNode.requestFocus();
       }
+    }
+  }
+
+  Future<void> _refreshRoutePreview() async {
+    if (_selectedPickup?.location == null ||
+        _selectedDestination?.location == null) {
+      setState(() => _previewRoute = null);
+      return;
+    }
+    try {
+      final route = await _placesRepository.getRoute(
+          _selectedPickup!, _selectedDestination!);
+      setState(() => _previewRoute = route);
+
+      final pickup = _selectedPickup!.location!;
+      final destination = _selectedDestination!.location!;
+      final bounds = LatLngBounds.fromPoints([pickup, destination]);
+      _mapController.fitCamera(
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(56)),
+      );
+    } catch (_) {
+      setState(() => _previewRoute = null);
     }
   }
 
@@ -175,157 +240,252 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     setState(() {
       final tempPlace = _selectedPickup;
       final tempText = _pickupController.text;
-
       _selectedPickup = _selectedDestination;
       _pickupController.text = _destinationController.text;
-
       _selectedDestination = tempPlace;
       _destinationController.text = tempText;
     });
+    _refreshRoutePreview();
   }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() => _isLoading = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied')),
+            );
+          }
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Location permissions permanently denied. Enable in Settings.'),
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      final place = _placesRepository.createCurrentLocationPlace(
+          LatLng(position.latitude, position.longitude));
+      _onPlaceSelected(place);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not get location: $e')));
+      }
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Set your route',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-        ),
-      ),
+      backgroundColor: colors.surface,
       body: Column(
         children: [
-          // Search fields
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                // Location indicators
-                Column(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: _activeField == SearchField.pickup
-                            ? Colors.green
-                            : Colors.green.shade200,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.green, width: 2),
-                      ),
-                    ),
-                    Container(
-                      width: 2,
-                      height: 30,
-                      color: Colors.grey.shade300,
-                    ),
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: _activeField == SearchField.destination
-                            ? Colors.red
-                            : Colors.red.shade200,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.red, width: 2),
-                      ),
+          // ── Map (always visible) ───────────────────────────────────
+          _buildMapPreview(colors, isDark),
+
+          // ── Search fields ──────────────────────────────────────────
+          _buildSearchPanel(colors, isDark),
+
+          if (_isLoading) LinearProgressIndicator(color: colors.primary),
+
+          // ── Search results or quick actions ────────────────────────
+          Expanded(
+            child: _searchResults.isNotEmpty
+                ? _buildSearchResults(colors, isDark)
+                : _buildQuickActions(colors, isDark),
+          ),
+
+          // ── Route info + confirm button ────────────────────────────
+          if (_selectedPickup != null && _selectedDestination != null)
+            _buildConfirmBar(colors, isDark),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Map (always visible – centres on current location fallback)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildMapPreview(ColorScheme colors, bool isDark) {
+    final LatLng target = _selectedPickup?.location ??
+        _selectedDestination?.location ??
+        _currentLatLng;
+
+    final markers = <Marker>[];
+    if (_selectedPickup?.location != null) {
+      markers.add(Marker(
+        point: _selectedPickup!.location!,
+        width: 36,
+        height: 36,
+        child: const Icon(Icons.circle, color: Colors.green, size: 16),
+      ));
+    }
+    if (_selectedDestination?.location != null) {
+      markers.add(Marker(
+        point: _selectedDestination!.location!,
+        width: 36,
+        height: 36,
+        child: const Icon(Icons.location_on, color: Colors.red, size: 32),
+      ));
+    }
+
+    return SizedBox(
+      height: 250,
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: target,
+              initialZoom: 14,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: isDark
+                    ? MapsConfig.darkTileUrlTemplate
+                    : MapsConfig.tileUrlTemplate,
+                userAgentPackageName: 'com.vectra.rider',
+              ),
+              if (_previewRoute != null &&
+                  _previewRoute!.polylinePoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _previewRoute!.polylinePoints,
+                      color: const Color(0xFF1E88E5),
+                      strokeWidth: 5,
                     ),
                   ],
                 ),
-                const SizedBox(width: 12),
-                // Text fields
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildSearchField(
-                        controller: _pickupController,
-                        focusNode: _pickupFocusNode,
-                        hint: 'Pickup location',
-                        isActive: _activeField == SearchField.pickup,
-                        onChanged: _search,
-                        onClear: () {
-                          _pickupController.clear();
-                          setState(() {
-                            _selectedPickup = null;
-                            _searchResults = [];
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildSearchField(
-                        controller: _destinationController,
-                        focusNode: _destinationFocusNode,
-                        hint: 'Where to?',
-                        isActive: _activeField == SearchField.destination,
-                        onChanged: _search,
-                        onClear: () {
-                          _destinationController.clear();
-                          setState(() {
-                            _selectedDestination = null;
-                            _searchResults = [];
-                          });
-                        },
-                      ),
-                    ],
-                  ),
+              if (markers.isNotEmpty) MarkerLayer(markers: markers),
+            ],
+          ),
+          // Back button floating over the map
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 12,
+            child: CircleAvatar(
+              backgroundColor: colors.surface.withAlpha(220),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: colors.onSurface),
+                onPressed: () => context.pop(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Search panel (pickup + destination text fields)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSearchPanel(ColorScheme colors, bool isDark) {
+    return Container(
+      color: colors.surface,
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+      child: Row(
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _activeField == SearchField.pickup
+                      ? Colors.green
+                      : Colors.green.shade200,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.green, width: 2),
                 ),
-                // Swap button
-                IconButton(
-                  icon: const Icon(Icons.swap_vert),
-                  onPressed: _swapLocations,
-                  color: Colors.grey.shade600,
+              ),
+              Container(
+                  width: 2, height: 30, color: colors.outline.withAlpha(77)),
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _activeField == SearchField.destination
+                      ? Colors.red
+                      : Colors.red.shade200,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.red, width: 2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              children: [
+                _buildSearchField(
+                  controller: _pickupController,
+                  focusNode: _pickupFocusNode,
+                  hint: 'Pickup location',
+                  isActive: _activeField == SearchField.pickup,
+                  onChanged: _search,
+                  onClear: () {
+                    _pickupController.clear();
+                    setState(() {
+                      _selectedPickup = null;
+                      _previewRoute = null;
+                      _searchResults = [];
+                    });
+                  },
+                  colors: colors,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 8),
+                _buildSearchField(
+                  controller: _destinationController,
+                  focusNode: _destinationFocusNode,
+                  hint: 'Where to?',
+                  isActive: _activeField == SearchField.destination,
+                  onChanged: _search,
+                  onClear: () {
+                    _destinationController.clear();
+                    setState(() {
+                      _selectedDestination = null;
+                      _previewRoute = null;
+                      _searchResults = [];
+                    });
+                  },
+                  colors: colors,
+                  isDark: isDark,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          const Divider(height: 1),
-
-          // Loading indicator
-          if (_isLoading) const LinearProgressIndicator(),
-
-          // Search results or saved places
-          Expanded(
-            child: _searchResults.isNotEmpty
-                ? _buildSearchResults()
-                : _buildSavedPlaces(),
+          IconButton(
+            icon: Icon(Icons.swap_vert, color: colors.onSurfaceVariant),
+            onPressed: _swapLocations,
           ),
-
-          // Confirm button
-          if (_selectedPickup != null && _selectedDestination != null)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _confirmSelection,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Confirm Route',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -338,30 +498,36 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     required bool isActive,
     required Function(String) onChanged,
     required VoidCallback onClear,
+    required ColorScheme colors,
+    required bool isDark,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: isActive ? Colors.grey.shade100 : Colors.grey.shade50,
+        color: isDark
+            ? colors.surfaceContainerHighest
+            : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isActive ? Colors.blue : Colors.grey.shade200,
+          color: isActive ? colors.primary : colors.outline.withAlpha(102),
           width: isActive ? 2 : 1,
         ),
       ),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
+        style: TextStyle(color: colors.onSurface),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade500),
+          hintStyle: TextStyle(color: colors.onSurfaceVariant),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          prefixIcon:
+              Icon(Icons.search, size: 20, color: colors.onSurfaceVariant),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
+                  icon: Icon(Icons.clear,
+                      size: 20, color: colors.onSurfaceVariant),
                   onPressed: onClear,
                 )
               : null,
@@ -371,11 +537,16 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     );
   }
 
-  Widget _buildSearchResults() {
+  // ---------------------------------------------------------------------------
+  // Autocomplete results dropdown
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSearchResults(ColorScheme colors, bool isDark) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       itemCount: _searchResults.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+      separatorBuilder: (context, index) =>
+          Divider(height: 1, indent: 56, color: colors.outline.withAlpha(51)),
       itemBuilder: (context, index) {
         final place = _searchResults[index];
         return ListTile(
@@ -383,21 +554,24 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: isDark
+                  ? colors.surfaceContainerHighest
+                  : const Color(0xFFF1F5F9),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.location_on, color: Colors.grey),
+            child: Icon(Icons.location_on, color: colors.onSurfaceVariant),
           ),
           title: Text(
             place.name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: TextStyle(
+                fontWeight: FontWeight.w500, color: colors.onSurface),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           subtitle: Text(
             place.address,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-            maxLines: 1,
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           onTap: () => _onPlaceSelected(place),
@@ -406,33 +580,32 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     );
   }
 
-  Widget _buildSavedPlaces() {
+  // ---------------------------------------------------------------------------
+  // Quick actions (shown when search field is empty)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildQuickActions(ColorScheme colors, bool isDark) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Current location option (only for pickup)
         if (_activeField == SearchField.pickup)
           _buildQuickOption(
             icon: Icons.my_location,
             iconColor: Colors.blue,
             title: 'Use current location',
             subtitle: 'Your GPS location',
-            onTap: () {
-              // We'll use the pickup from the home screen which has current location
-              if (widget.initialPickup != null) {
-                _onPlaceSelected(widget.initialPickup!);
-              }
-            },
+            onTap: _useCurrentLocation,
+            colors: colors,
+            isDark: isDark,
           ),
 
         const SizedBox(height: 16),
         Text(
           'Saved Places',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade600,
-          ),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: colors.onSurfaceVariant),
         ),
         const SizedBox(height: 8),
         _buildQuickOption(
@@ -440,49 +613,22 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
           iconColor: Colors.orange,
           title: 'Home',
           subtitle: 'Add home address',
-          onTap: () {
-            // In real app, this would open address setting
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Home address not set')),
-            );
-          },
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Home address not set')),
+          ),
+          colors: colors,
+          isDark: isDark,
         ),
         _buildQuickOption(
           icon: Icons.work,
-          iconColor: Colors.purple,
+          iconColor: isDark ? const Color(0xFFCE93D8) : Colors.purple,
           title: 'Work',
           subtitle: 'Add work address',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Work address not set')),
-            );
-          },
-        ),
-
-        const SizedBox(height: 16),
-        Text(
-          'Recent Places',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade600,
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Work address not set')),
           ),
-        ),
-        const SizedBox(height: 8),
-        // Show some mock recent places
-        _buildQuickOption(
-          icon: Icons.history,
-          iconColor: Colors.grey,
-          title: 'Brookefields Mall',
-          subtitle: 'Brookefields, Coimbatore',
-          onTap: () => _search('Brookefields'),
-        ),
-        _buildQuickOption(
-          icon: Icons.history,
-          iconColor: Colors.grey,
-          title: 'Coimbatore Junction',
-          subtitle: 'Railway Station Rd, Coimbatore',
-          onTap: () => _search('Junction'),
+          colors: colors,
+          isDark: isDark,
         ),
       ],
     );
@@ -494,6 +640,8 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required ColorScheme colors,
+    required bool isDark,
   }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -501,23 +649,88 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
+            color: iconColor.withAlpha(25), shape: BoxShape.circle),
         child: Icon(icon, color: iconColor, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-      ),
+      title: Text(title,
+          style:
+              TextStyle(fontWeight: FontWeight.w500, color: colors.onSurface)),
+      subtitle: Text(subtitle,
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
       onTap: onTap,
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Confirm bar (route info + button)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildConfirmBar(ColorScheme colors, bool isDark) {
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border:
+              Border(top: BorderSide(color: colors.outline.withAlpha(51))),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_previewRoute != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.directions_car,
+                        size: 16, color: colors.primary),
+                    const SizedBox(width: 6),
+                    Text(_previewRoute!.distanceText,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: colors.onSurface)),
+                    const SizedBox(width: 16),
+                    Icon(Icons.access_time,
+                        size: 16, color: colors.primary),
+                    const SizedBox(width: 6),
+                    Text(_previewRoute!.durationText,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: colors.onSurface)),
+                  ],
+                ),
+              ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _confirmSelection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Confirm Route',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dispose
+  // ---------------------------------------------------------------------------
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _mapController.dispose();
     _pickupController.dispose();
     _destinationController.dispose();
     _pickupFocusNode.dispose();

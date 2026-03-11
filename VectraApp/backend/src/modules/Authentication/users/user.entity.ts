@@ -52,8 +52,8 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 150, nullable: true, name: 'full_name' })
   fullName!: string | null;
 
-  @Column({ type: 'text', nullable: true, name: 'password_hash' })
-  passwordHash!: string | null;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  gender!: string | null;
 
   // ===== Role & Status =====
   @Column({ type: 'enum', enum: UserRole, default: UserRole.RIDER })

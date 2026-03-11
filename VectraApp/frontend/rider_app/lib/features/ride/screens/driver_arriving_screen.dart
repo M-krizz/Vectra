@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/app_theme.dart';
+import '../../../../config/maps_config.dart';
 import '../bloc/ride_bloc.dart';
 import '../widgets/safety_fab.dart';
 import 'pickup_verification_screen.dart';
@@ -16,16 +20,28 @@ class DriverArrivingScreen extends StatefulWidget {
 class _DriverArrivingScreenState extends State<DriverArrivingScreen> {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RideBloc, RideState>(
-      builder: (context, state) {
-        final driver = state.driver;
-        return Scaffold(
-          backgroundColor: Colors.white,
+    return BlocListener<RideBloc, RideState>(
+      listenWhen: (previous, current) => previous.status != current.status,
+      listener: (context, state) {
+        final tripId = state.rideId ?? 'current';
+        if (state.status == RideStatus.inProgress) {
+          context.go('/trip/$tripId/in-progress');
+        } else if (state.status == RideStatus.completed) {
+          context.go('/trip/$tripId/completed');
+        } else if (state.status == RideStatus.cancelled) {
+          context.go('/trip/$tripId/cancelled');
+        }
+      },
+      child: BlocBuilder<RideBloc, RideState>(
+        builder: (context, state) {
+          final driver = state.driver;
+          return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             child: Column(
               children: [
-                // Map placeholder - driver arrived
-                _ArrivedMapPlaceholder(),
+                // Map view - driver arrived
+                _ArrivedMapPlaceholder(state: state),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -37,7 +53,7 @@ class _DriverArrivingScreenState extends State<DriverArrivingScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
+                            color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: const Color(0xFFA5D6A7)),
                           ),
@@ -68,9 +84,6 @@ class _DriverArrivingScreenState extends State<DriverArrivingScreen> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              context
-                                  .read<RideBloc>()
-                                  .add(const RideOTPGenerated());
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -104,6 +117,7 @@ class _DriverArrivingScreenState extends State<DriverArrivingScreen> {
           floatingActionButton: const SafetyFab(),
         );
       },
+      ),
     );
   }
 }
@@ -111,29 +125,66 @@ class _DriverArrivingScreenState extends State<DriverArrivingScreen> {
 // ─── Local widgets ─────────────────────────────────────────────────────────
 
 class _ArrivedMapPlaceholder extends StatelessWidget {
+  final RideState state;
+  const _ArrivedMapPlaceholder({required this.state});
+
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 220,
-      color: const Color(0xFFE8F5E9),
-      child: const Stack(
+      color: AppColors.success.withValues(alpha: 0.1),
+      child: Stack(
         children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.location_on_rounded,
-                    size: 48, color: Color(0xFF2E7D32)),
-                SizedBox(height: 8),
-                Text(
-                  'Driver has arrived!',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2E7D32)),
-                ),
-              ],
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: LatLng(
+                state.driver?.location?.latitude ?? state.pickup?.location?.latitude ?? 11.0168,
+                state.driver?.location?.longitude ?? state.pickup?.location?.longitude ?? 76.9558,
+              ),
+              initialZoom: 17.0,
             ),
+            children: [
+              TileLayer(
+                urlTemplate: Theme.of(context).brightness == Brightness.dark
+                    ? MapsConfig.darkTileUrlTemplate
+                    : MapsConfig.tileUrlTemplate,
+                userAgentPackageName: 'com.vectra.rider',
+              ),
+              if (state.route?.polylinePoints != null && state.route!.polylinePoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: state.route!.polylinePoints,
+                      color: AppColors.primary,
+                      strokeWidth: 4,
+                    ),
+                  ],
+                ),
+              MarkerLayer(
+                markers: [
+                  if (state.driver?.location != null)
+                    Marker(
+                      point: LatLng(
+                        state.driver!.location!.latitude,
+                        state.driver!.location!.longitude,
+                      ),
+                      width: 36,
+                      height: 36,
+                      child: const Icon(Icons.local_taxi, color: Colors.orange, size: 28),
+                    ),
+                  if (state.pickup?.location != null)
+                    Marker(
+                      point: LatLng(
+                        state.pickup!.location!.latitude,
+                        state.pickup!.location!.longitude,
+                      ),
+                      width: 36,
+                      height: 36,
+                      child: const Icon(Icons.circle, color: Colors.green, size: 16),
+                    ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -150,7 +201,7 @@ class _ArrivingDriverCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -159,8 +210,8 @@ class _ArrivingDriverCard extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F7FA),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.person_rounded,
@@ -173,10 +224,10 @@ class _ArrivingDriverCard extends StatelessWidget {
               children: [
                 Text(
                   driver?.name ?? 'Driver',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -221,7 +272,7 @@ class _ArrivingDriverCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F0FE),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.call_rounded,

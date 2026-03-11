@@ -15,7 +15,7 @@ class TripCancelledScreen extends StatelessWidget {
         final cancelledByDriver = state.driver != null;
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(28),
@@ -28,7 +28,7 @@ class TripCancelledScreen extends StatelessWidget {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
+                      color: AppColors.warning.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -40,12 +40,12 @@ class TripCancelledScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  const Text(
+                  Text(
                     'Trip Cancelled',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 
@@ -55,9 +55,9 @@ class TripCancelledScreen extends StatelessWidget {
                     cancelledByDriver
                         ? 'Your driver cancelled this trip.'
                         : 'You cancelled this trip.',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -69,7 +69,7 @@ class TripCancelledScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
+                      color: AppColors.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFFFFCC80)),
                     ),

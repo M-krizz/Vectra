@@ -10,7 +10,7 @@ class SessionExpiredScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -19,20 +19,20 @@ class SessionExpiredScreen extends StatelessWidget {
             children: [
               const Text('🔒', style: TextStyle(fontSize: 72)),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Session Expired',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Your session has expired for security reasons. Please log in again to continue.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   height: 1.6,
                 ),
                 textAlign: TextAlign.center,
@@ -43,7 +43,7 @@ class SessionExpiredScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     context.read<AuthBloc>().add(AuthLogoutRequested());
-                    context.go('/auth/login');
+                    context.go('/auth/phone-input');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

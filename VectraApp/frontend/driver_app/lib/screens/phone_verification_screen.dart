@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import 'otp_verification_screen.dart';
+import '../services/legacy_auth_service.dart';
+import '../features/auth/data/models/auth_tokens.dart';
 
 class PhoneVerificationScreen extends StatefulWidget {
   const PhoneVerificationScreen({super.key});
@@ -26,19 +28,35 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call to send OTP
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final phone = '+91${_phoneController.text.trim()}';
+        final result = await LegacyAuthService.sendOtp(
+          identifier: phone,
+          channel: 'phone',
+        );
 
-      setState(() => _isLoading = false);
-
-      if (mounted) {
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                OTPVerificationScreen(phoneNumber: _phoneController.text),
+            builder: (context) => OTPVerificationScreen(
+              identifier: phone,
+              devOtp: result.devOtp,
+            ),
           ),
         );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e is AuthError ? e.message : 'Failed to send OTP'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }

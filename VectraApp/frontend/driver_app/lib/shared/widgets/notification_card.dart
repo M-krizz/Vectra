@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 class NotificationCard extends StatelessWidget {
   final IconData icon;
@@ -36,15 +35,27 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final widget = Container(
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
+
+    final card = Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isRead ? AppColors.carbonGrey : AppColors.carbonGrey.withOpacity(0.8),
+        color: isDark
+            ? (isRead ? AppColors.carbonGrey : AppColors.carbonGrey.withValues(alpha: 0.8))
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isRead ? AppColors.white10 : AppColors.hyperLime.withOpacity(0.3),
+          color: isRead
+              ? (isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.2))
+              : accent.withValues(alpha: 0.3),
           width: isRead ? 1 : 2,
         ),
+        boxShadow: isDark
+            ? null
+            : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
       ),
       child: Material(
         color: Colors.transparent,
@@ -59,12 +70,12 @@ class NotificationCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (iconColor ?? AppColors.hyperLime).withOpacity(0.2),
+                    color: (iconColor ?? accent).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: iconColor ?? AppColors.hyperLime,
+                    color: iconColor ?? accent,
                     size: 24,
                   ),
                 ),
@@ -79,7 +90,7 @@ class NotificationCard extends StatelessWidget {
                             child: Text(
                               title,
                               style: GoogleFonts.outfit(
-                                color: Colors.white,
+                                color: colors.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -89,8 +100,8 @@ class NotificationCard extends StatelessWidget {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.hyperLime,
+                              decoration: BoxDecoration(
+                                color: accent,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -100,7 +111,7 @@ class NotificationCard extends StatelessWidget {
                       Text(
                         message,
                         style: GoogleFonts.dmSans(
-                          color: AppColors.white70,
+                          color: colors.onSurfaceVariant,
                           fontSize: 14,
                           height: 1.4,
                         ),
@@ -111,7 +122,7 @@ class NotificationCard extends StatelessWidget {
                       Text(
                         _getRelativeTime(timestamp),
                         style: GoogleFonts.dmSans(
-                          color: AppColors.white50,
+                          color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                           fontSize: 12,
                         ),
                       ),
@@ -139,10 +150,10 @@ class NotificationCard extends StatelessWidget {
           ),
           child: const Icon(Icons.delete, color: Colors.white),
         ),
-        child: widget,
+        child: card,
       );
     }
 
-    return widget;
+    return card;
   }
 }

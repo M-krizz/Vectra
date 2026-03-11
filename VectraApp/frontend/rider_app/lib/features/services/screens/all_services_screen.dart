@@ -5,34 +5,34 @@ import '../../ride/screens/location_search_screen.dart';
 class AllServicesScreen extends StatelessWidget {
   const AllServicesScreen({super.key});
 
-  static const List<_Service> _services = [
+  static final List<_Service> _services = [
     _Service(id: 'auto', label: 'Auto', emoji: '🛺', color: Color(0xFFFEF3E2)),
-    _Service(id: 'cab_economy', label: 'Cab Economy', emoji: '🚗', color: Color(0xFFE8F5E9)),
+    _Service(id: 'cab_economy', label: 'Cab Economy', emoji: '🚗', color: AppColors.success.withValues(alpha: 0.1)),
     _Service(id: 'bike', label: 'Bike', emoji: '🏍️', color: Color(0xFFE3F2FD)),
     _Service(id: 'bike_pink', label: 'Bike Pink', emoji: '🛵', color: Color(0xFFFCE4EC)),
-    _Service(id: 'cab_premium', label: 'Cab Premium', emoji: '🚙', color: Color(0xFFEDE7F6)),
+    _Service(id: 'cab_premium', label: 'Cab Premium', emoji: '🚙', color: AppColors.secondary.withValues(alpha: 0.1)),
     _Service(id: 'shared_auto', label: 'Shared Auto', emoji: '🚐', color: Color(0xFFF3E5F5)),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'All Services',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
+          child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
         ),
       ),
       body: Padding(
@@ -81,10 +81,10 @@ class _ServiceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             service.label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,

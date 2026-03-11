@@ -85,20 +85,52 @@ export class AuthService {
       });
       user = await this.usersRepo.save(user);
     } else {
-      // Mark as verified
+      // Update role if roleHint supplied and different (e.g. rider→driver)
+      let dirty = false;
+      if (roleHint && user.role !== roleHint) {
+        user.role = roleHint;
+        dirty = true;
+      }
       if (!user.isVerified) {
         user.isVerified = true;
+        dirty = true;
+      }
+      if (dirty) {
         await this.usersRepo.save(user);
       }
     }
 
-    // Check driver verification
     if (user.role === UserRole.DRIVER) {
-      const profile = await this.profilesRepo.findOne({
+      const existingProfile = await this.profilesRepo.findOne({
         where: { userId: user.id },
       });
-      if (!profile || profile.status !== DriverStatus.VERIFIED) {
-        throw new ForbiddenException('Driver account not verified');
+      if (!existingProfile) {
+        const profile = this.profilesRepo.create({
+          userId: user.id,
+          status: DriverStatus.PENDING_VERIFICATION,
+          licenseNumber: null,
+          licenseState: null,
+          licenseFileUrl: null,
+          rcFileUrl: null,
+          meta: {},
+        });
+        await this.profilesRepo.save(profile);
+      }
+    }
+
+    // Check driver verification (soft — don't block login, let app handle)
+    let driverVerified = true;
+    if (user.role === UserRole.DRIVER) {
+      try {
+        const profile = await this.profilesRepo.findOne({
+          where: { userId: user.id },
+        });
+        if (!profile || profile.status !== DriverStatus.VERIFIED) {
+          driverVerified = false;
+        }
+      } catch {
+        // Table may not exist yet or query failed — treat as unverified
+        driverVerified = false;
       }
     }
 
@@ -115,66 +147,21 @@ export class AuthService {
         email: user.email,
         phone: user.phone,
         fullName: user.fullName,
+        driverVerified,
       },
       ...tokens,
     };
   }
 
   /**
-   * Login with email/phone and password or OTP
+   * Complete profile after first OTP login (set fullName)
    */
-  async validateLogin(
-    email?: string,
-    phone?: string,
-    password?: string,
-    otp?: string,
-  ) {
-    if ((!email && !phone) || (!password && !otp)) {
-      throw new BadRequestException('Provide email/phone and password or otp');
-    }
-
-    const user = await this.usersRepo.findOne({
-      where: email ? { email } : { phone },
-    });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    // Check if user is suspended
-    if (user.isSuspended) {
-      throw new ForbiddenException(
-        `Account suspended: ${user.suspensionReason || 'Contact support'}`,
-      );
-    }
-
-    // Drivers must be VERIFIED
-    if (user.role === UserRole.DRIVER) {
-      const profile = await this.profilesRepo.findOne({
-        where: { userId: user.id },
-      });
-      if (!profile || profile.status !== DriverStatus.VERIFIED) {
-        throw new ForbiddenException('Driver account not verified');
-      }
-    }
-
-    if (password) {
-      if (!user.passwordHash)
-        throw new UnauthorizedException('Invalid credentials');
-      const ok = await bcrypt.compare(password, user.passwordHash);
-      if (!ok) throw new UnauthorizedException('Invalid credentials');
-      return user;
-    }
-
-    if (otp) {
-      const target = phone || email || '';
-      const verified = await this.otpService.verifyOtp(target, otp);
-      if (!verified) throw new UnauthorizedException('Invalid OTP');
-      if (!user.isVerified) {
-        user.isVerified = true;
-        await this.usersRepo.save(user);
-      }
-      return user;
-    }
-
-    throw new BadRequestException('Invalid login flow');
+  async completeProfile(userId: string, fullName: string) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User not found');
+    user.fullName = fullName;
+    await this.usersRepo.save(user);
+    return { success: true, fullName: user.fullName };
   }
 
   /**
@@ -338,5 +325,18 @@ export class AuthService {
     const user = await this.usersRepo.findOne({ where: { id: payload.sub } });
     if (!user || user.isSuspended) return null;
     return user;
+  }
+
+  /**
+   * Verify an access token and return the payload
+   */
+  async verifyAccessToken(token: string) {
+    try {
+      return this.jwtService.verify(token, {
+        secret: process.env.JWT_ACCESS_SECRET as string,
+      });
+    } catch (err) {
+      return null;
+    }
   }
 }

@@ -1,0 +1,1713 @@
+﻿
+  error - lib\driver\driver_onboarding_s
+creen.dart:211:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:212:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:213:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:215:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_onboarding_s
+creen.dart:218:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:219:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:220:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:222:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_onboarding_s
+creen.dart:226:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:227:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:228:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:230:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_onboarding_s
+creen.dart:234:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:235:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:236:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:238:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_onboarding_s
+creen.dart:289:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:290:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:291:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:293:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_onboarding_s
+creen.dart:296:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:297:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:298:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:300:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_onboarding_s
+creen.dart:303:11 - The named parameter 
+'onChanged' is required, but there's no 
+corresponding argument. Try adding the 
+required argument. - 
+missing_required_argument
+  error - lib\driver\driver_onboarding_s
+creen.dart:304:13 - The named parameter 
+'controller' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'controller'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:305:13 - The named parameter 
+'label' isn't defined. Try correcting 
+the name to an existing named 
+parameter's name, or defining a named 
+parameter with the name 'label'. - 
+undefined_named_parameter
+  error - lib\driver\driver_onboarding_s
+creen.dart:307:25 - The argument type 
+'IconData' can't be assigned to the 
+parameter type 'Widget?'.  - 
+argument_type_not_assignable
+  error - lib\driver\driver_request_list
+_screen.dart:149:11 - The named 
+parameter 'pickupLatLng' isn't defined. 
+Try correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'pickupLatLng'. - 
+undefined_named_parameter
+  error - lib\driver\driver_request_list
+_screen.dart:150:11 - The named 
+parameter 'dropLatLng' isn't defined. 
+Try correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'dropLatLng'. - 
+undefined_named_parameter
+  error - lib\driver\driver_request_list
+_screen.dart:151:11 - The named 
+parameter 'pickupAddress' isn't 
+defined. Try correcting the name to an 
+existing named parameter's name, or 
+defining a named parameter with the 
+name 'pickupAddress'. - 
+undefined_named_parameter
+  error - lib\driver\driver_request_list
+_screen.dart:152:11 - The named 
+parameter 'dropAddress' isn't defined. 
+Try correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'dropAddress'. - 
+undefined_named_parameter
+  error - lib\driver\driver_request_list
+_screen.dart:153:11 - The named 
+parameter 'riderName' isn't defined. 
+Try correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 
+'riderName'. - undefined_named_parameter
+  error - lib\driver\driver_request_list
+_screen.dart:154:11 - The named 
+parameter 'fare' isn't defined. Try 
+correcting the name to an existing 
+named parameter's name, or defining a 
+named parameter with the name 'fare'. - 
+undefined_named_parameter
+  error - lib\driver\driver_schedule_scr
+een.dart:4:8 - Target of URI doesn't 
+exist: 'package:table_calendar/table_cal
+endar.dart'. Try creating the file 
+referenced by the URI, or try using a 
+URI for a file that does exist. - 
+uri_does_not_exist
+  error - lib\driver\driver_schedule_scr
+een.dart:17:3 - Undefined class 
+'CalendarFormat'. Try changing the name 
+to the name of an existing class, or 
+creating a class with the name 
+'CalendarFormat'. - undefined_class
+  error - lib\driver\driver_schedule_scr
+een.dart:17:36 - Undefined name 
+'CalendarFormat'. Try correcting the 
+name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\driver\driver_schedule_scr
+een.dart:281:14 - The method 
+'TableCalendar' isn't defined for the 
+type '_DriverScheduleScreenState'. Try 
+correcting the name to the name of an 
+existing method, or defining a method 
+named 'TableCalendar'. - 
+undefined_method
+  error - lib\driver\driver_schedule_scr
+een.dart:285:40 - The method 
+'isSameDay' isn't defined for the type 
+'_DriverScheduleScreenState'. Try 
+correcting the name to the name of an 
+existing method, or defining a method 
+named 'isSameDay'. - undefined_method
+  error - lib\driver\driver_schedule_scr
+een.dart:301:24 - The method 
+'CalendarStyle' isn't defined for the 
+type '_DriverScheduleScreenState'. Try 
+correcting the name to the name of an 
+existing method, or defining a method 
+named 'CalendarStyle'. - 
+undefined_method
+  error - lib\driver\driver_schedule_scr
+een.dart:318:22 - The method 
+'HeaderStyle' isn't defined for the 
+type '_DriverScheduleScreenState'. Try 
+correcting the name to the name of an 
+existing method, or defining a method 
+named 'HeaderStyle'. - undefined_method
+  error - lib\driver\driver_schedule_scr
+een.dart:329:26 - The method 
+'DaysOfWeekStyle' isn't defined for the 
+type '_DriverScheduleScreenState'. Try 
+correcting the name to the name of an 
+existing method, or defining a method 
+named 'DaysOfWeekStyle'. - 
+undefined_method
+  error - lib\features\auth\guards\role_
+guard.dart:78:12 - Undefined name 
+'AuthState'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\features\auth\guards\role_
+guard.dart:79:12 - Undefined name 
+'AuthState'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\features\auth\guards\role_
+guard.dart:81:12 - Undefined name 
+'AuthState'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:40:28 - 
+Classes can only extend other classes. 
+Try specifying a different superclass, 
+or removing the extends clause. - 
+extends_non_class
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:49:15 - 
+Too many positional arguments: 0 
+expected, but 1 found. Try removing the 
+extra arguments. - 
+extra_positional_arguments
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:55:5 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:55:13 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:61:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:61:17 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:70:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:70:17 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:73:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:73:15 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:79:5 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:79:13 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:91:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:91:17 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:94:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:94:17 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:101:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:101:15 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:111:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:112:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:112:15 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:119:5 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:119:13 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:123:22 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:130:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:130:17 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:141:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:141:15 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:147:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:147:15 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:157:9 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:158:26 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:163:5 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:163:13 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:167:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:169:7 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:175:5 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:175:13 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:180:5 - 
+Undefined name 'state'. Try correcting 
+the name to one that is defined, or 
+defining the name. - 
+undefined_identifier
+  error - lib\features\auth\presentation
+\providers\auth_providers.dart:185:22 - 
+The function 'StateNotifierProvider' 
+isn't defined. Try importing the 
+library that defines 
+'StateNotifierProvider', correcting the 
+name to the name of an existing 
+function, or defining a function named 
+'StateNotifierProvider'. - 
+undefined_function
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:47:36 - Classes can only 
+extend other classes. Try specifying a 
+different superclass, or removing the 
+extends clause. - extends_non_class
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:59:15 - Too many positional 
+arguments: 0 expected, but 1 found. Try 
+removing the extra arguments. - 
+extra_positional_arguments
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:69:5 - Undefined name 'state'. 
+Try correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:69:13 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:75:7 - Undefined name 'state'. 
+Try correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:75:15 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:87:7 - Undefined name 'state'. 
+Try correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:87:15 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:96:9 - Undefined name 'state'. 
+Try correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:99:10 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:102:9 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:102:17 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:109:5 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:109:13 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:112:25 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:122:9 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:122:17 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:125:20 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:129:9 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:129:17 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:136:7 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:136:15 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:146:9 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:152:10 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:164:7 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:164:15 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:177:5 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:177:13 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:182:5 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:182:13 - Undefined name 
+'state'. Try correcting the name to one 
+that is defined, or defining the name. 
+- undefined_identifier
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:188:11 - The method 'dispose' 
+isn't defined in a superclass of 
+'DriverStatusNotifier'. Try correcting 
+the name to the name of an existing 
+method, or defining a method named 
+'dispose' in a superclass. - 
+undefined_super_member
+  error - lib\features\driver_status\pre
+sentation\providers\driver_status_provid
+ers.dart:194:5 - The function 
+'StateNotifierProvider' isn't defined. 
+Try importing the library that defines 
+'StateNotifierProvider', correcting the 
+name to the name of an existing 
+function, or defining a function named 
+'StateNotifierProvider'. - 
+undefined_function
+  error - lib\features\driver_status\pre
+sentation\widgets\online_toggle.dart:74:
+49 - The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\driver_status\pre
+sentation\widgets\online_toggle.dart:81:
+24 - Invalid constant value. - 
+invalid_constant
+  error - lib\features\driver_status\pre
+sentation\widgets\online_toggle.dart:81:
+34 - The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+14:31 - Classes can only extend other 
+classes. Try specifying a different 
+superclass, or removing the extends 
+clause. - extends_non_class
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+23:15 - Too many positional arguments: 
+0 expected, but 1 found. Try removing 
+the extra arguments. - 
+extra_positional_arguments
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+33:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+33:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+50:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+50:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+57:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:1
+57:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+28:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+28:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+28:46 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+33:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+33:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+33:45 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+38:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+38:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+43:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+44:20 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+45:17 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+46:24 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+47:23 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+48:24 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+50:18 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+51:14 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+57:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+57:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\map_home\presenta
+tion\providers\map_home_providers.dart:2
+68:5 - The function 
+'StateNotifierProvider' isn't defined. 
+Try importing the library that defines 
+'StateNotifierProvider', correcting the 
+name to the name of an existing 
+function, or defining a function named 
+'StateNotifierProvider'. - 
+undefined_function
+  error - lib\features\map_home\presenta
+tion\widgets\driver_map.dart:213:36 - 
+The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\map_home\presenta
+tion\widgets\heatmap_hexagon.dart:41:19 
+- The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\map_home\presenta
+tion\widgets\heatmap_hexagon.dart:48:29 
+- The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\map_home\presenta
+tion\widgets\heatmap_hexagon.dart:49:31 
+- The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\map_home\presenta
+tion\widgets\heatmap_hexagon.dart:60:7 
+- The named parameter 'isFilled' isn't 
+defined. Try correcting the name to an 
+existing named parameter's name, or 
+defining a named parameter with the 
+name 'isFilled'. - 
+undefined_named_parameter
+  error - lib\features\map_home\presenta
+tion\widgets\heatmap_hexagon.dart:106:70
+ - The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\map_home\presenta
+tion\widgets\heatmap_hexagon.dart:137:36
+ - The getter 'warningOrange' isn't 
+defined for the type 'AppColors'. Try 
+importing the library that defines 
+'warningOrange', correcting the name to 
+the name of an existing getter, or 
+defining a getter or field named 
+'warningOrange'. - undefined_getter
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+44:35 - Classes can only extend other 
+classes. Try specifying a different 
+superclass, or removing the extends 
+clause. - extends_non_class
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+47:49 - Too many positional arguments: 
+0 expected, but 1 found. Try removing 
+the extra arguments. - 
+extra_positional_arguments
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+50:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+50:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+54:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+56:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+56:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+58:49 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+59:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+59:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+62:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+62:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+70:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+72:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+72:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+74:36 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+75:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+75:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+77:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+77:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+85:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+85:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+91:5 - The function 
+'StateNotifierProvider' isn't defined. 
+Try importing the library that defines 
+'StateNotifierProvider', correcting the 
+name to the name of an existing 
+function, or defining a function named 
+'StateNotifierProvider'. - 
+undefined_function
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+125:34 - Classes can only extend other 
+classes. Try specifying a different 
+superclass, or removing the extends 
+clause. - extends_non_class
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+128:48 - Too many positional arguments: 
+0 expected, but 1 found. Try removing 
+the extra arguments. - 
+extra_positional_arguments
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+133:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+133:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+136:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+136:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+138:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+138:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+143:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+143:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+147:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+149:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+149:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+152:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+155:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+155:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+157:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+157:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+165:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+167:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+167:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+169:55 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+170:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+170:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+172:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+172:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+180:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+182:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+182:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+184:60 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+185:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+185:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+188:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+188:17 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+191:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+191:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+199:9 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+201:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+201:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+203:36 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+204:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+204:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+206:7 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+206:15 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+214:5 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+214:13 - Undefined name 'state'. Try 
+correcting the name to one that is 
+defined, or defining the name. - 
+undefined_identifier
+  error - lib\features\rides\presentatio
+n\providers\ride_request_providers.dart:
+220:5 - The function 
+'StateNotifierProvider' isn't defined. 
+Try importing the library that defines 
+'StateNotifierProvider', correcting the 
+name to the name of an existing 
+function, or defining a function named 
+'StateNotifierProvider'. - 
+undefined_function
+  error - lib\shared\widgets\alert_banne
+r.dart:4:8 - Target of URI doesn't 
+exist: '../theme/app_colors.dart'. Try 
+creating the file referenced by the 
+URI, or try using a URI for a file that 
+does exist. - uri_does_not_exist
+  error - lib\shared\widgets\alert_banne
+r.dart:55:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\alert_banne
+r.dart:57:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\alert_banne
+r.dart:61:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\alert_banne
+r.dart:68:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\alert_banne
+r.dart:70:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\alert_banne
+r.dart:74:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\alert_banne
+r.dart:126:24 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:4:8 - Target of URI 
+doesn't exist: 
+'../theme/app_colors.dart'. Try 
+creating the file referenced by the 
+URI, or try using a URI for a file that 
+does exist. - uri_does_not_exist
+  error - lib\shared\widgets\document_up
+load_zone.dart:50:18 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:54:19 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:55:19 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:83:34 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:86:38 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:105:36 - Invalid 
+constant value. - invalid_constant
+  error - lib\shared\widgets\document_up
+load_zone.dart:105:36 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:113:38 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:122:48 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:124:33 - Invalid 
+constant value. - invalid_constant
+  error - lib\shared\widgets\document_up
+load_zone.dart:124:33 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:135:36 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:142:38 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\document_up
+load_zone.dart:170:17 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:3:8 - Target of URI doesn't 
+exist: '../theme/app_colors.dart'. Try 
+creating the file referenced by the 
+URI, or try using a URI for a file that 
+does exist. - uri_does_not_exist
+  error - lib\shared\widgets\fare_breakd
+own.dart:28:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:30:35 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:53:58 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:56:26 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:76:30 - Invalid constant 
+value. - invalid_constant
+  error - lib\shared\widgets\fare_breakd
+own.dart:76:30 - The values in a const 
+list literal must be constants. Try 
+removing the keyword 'const' from the 
+list literal. - 
+non_constant_list_element
+  error - lib\shared\widgets\fare_breakd
+own.dart:76:30 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:76:51 - The values in a const 
+list literal must be constants. Try 
+removing the keyword 'const' from the 
+list literal. - 
+non_constant_list_element
+  error - lib\shared\widgets\fare_breakd
+own.dart:76:51 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:106:20 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:141:16 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:143:35 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:152:24 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\fare_breakd
+own.dart:161:22 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:4:8 - Target of URI doesn't 
+exist: '../theme/app_colors.dart'. Try 
+creating the file referenced by the 
+URI, or try using a URI for a file that 
+does exist. - uri_does_not_exist
+  error - lib\shared\widgets\notificatio
+n_card.dart:42:25 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:42:48 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:45:27 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:45:47 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:62:42 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:67:41 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:93:40 - Invalid constant 
+value. - invalid_constant
+  error - lib\shared\widgets\notificatio
+n_card.dart:93:40 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:103:34 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:114:34 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\notificatio
+n_card.dart:137:20 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\premium_tex
+t_field.dart:4:8 - Target of URI 
+doesn't exist: 
+'../theme/app_colors.dart'. Try 
+creating the file referenced by the 
+URI, or try using a URI for a file that 
+does exist. - uri_does_not_exist
+  error - lib\shared\widgets\premium_tex
+t_field.dart:39:34 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\premium_tex
+t_field.dart:41:34 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\premium_tex
+t_field.dart:43:34 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\premium_tex
+t_field.dart:58:26 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\premium_tex
+t_field.dart:84:30 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+  error - lib\shared\widgets\premium_tex
+t_field.dart:103:22 - Invalid constant 
+value. - invalid_constant
+  error - lib\shared\widgets\premium_tex
+t_field.dart:103:22 - Undefined name 
+'AppColors'. Try correcting the name to 
+one that is defined, or defining the 
+name. - undefined_identifier
+
+

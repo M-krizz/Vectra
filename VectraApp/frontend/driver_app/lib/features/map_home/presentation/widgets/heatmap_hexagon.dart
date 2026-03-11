@@ -5,81 +5,64 @@ import 'package:latlong2/latlong.dart';
 import '../../../../theme/app_colors.dart';
 import '../providers/map_home_providers.dart';
 
-/// Heatmap hexagon layer widget for FlutterMap
-class HeatmapHexagonLayer extends StatelessWidget {
-  final List<HeatmapHexagon> hexagons;
-  final bool showDemand;
-  final bool showSurge;
-  final double hexagonRadius; // in meters
+List<Polygon> buildHeatmapPolygons({
+  required List<HeatmapHexagon> hexagons,
+  bool showDemand = true,
+  bool showSurge = true,
+  double hexagonRadius = 500,
+}) {
+  return hexagons.map((hex) => _buildHexagon(hex, showDemand, showSurge, hexagonRadius)).toList();
+}
 
-  const HeatmapHexagonLayer({
-    super.key,
-    required this.hexagons,
-    this.showDemand = true,
-    this.showSurge = true,
-    this.hexagonRadius = 500, // 500m default
-  });
+Polygon _buildHexagon(HeatmapHexagon hex, bool showDemand, bool showSurge, double hexagonRadius) {
+  final points = _generateHexagonPoints(hex.center, hexagonRadius);
 
-  @override
-  Widget build(BuildContext context) {
-    return PolygonLayer(
-      polygons: hexagons.map((hex) => _buildHexagon(hex)).toList(),
-    );
+  Color fillColor;
+  Color borderColor;
+
+  if (showSurge && hex.hasSurge) {
+    // Surge color (red-orange gradient based on multiplier)
+    final surgeIntensity = ((hex.surgeMultiplier - 1.0) / 1.0).clamp(0.0, 1.0);
+    fillColor = Color.lerp(
+      AppColors.warningOrange,
+      AppColors.errorRed,
+      surgeIntensity,
+    )!.withValues(alpha: 0.4);
+    borderColor = AppColors.errorRed.withValues(alpha: 0.6);
+  } else if (showDemand) {
+    // Demand color (orange gradient based on demand level)
+    fillColor = AppColors.warningOrange.withValues(alpha: 0.2 + hex.demandLevel * 0.4);
+    borderColor = AppColors.warningOrange.withValues(alpha: 0.4 + hex.demandLevel * 0.4);
+  } else {
+    fillColor = Colors.transparent;
+    borderColor = Colors.transparent;
   }
 
-  Polygon _buildHexagon(HeatmapHexagon hex) {
-    final points = _generateHexagonPoints(hex.center, hexagonRadius);
+  return Polygon(
+    points: points,
+    color: fillColor,
+    borderColor: borderColor,
+    borderStrokeWidth: 2,
+  );
+}
 
-    // Determine color based on demand and surge
-    Color fillColor;
-    Color borderColor;
+List<LatLng> _generateHexagonPoints(LatLng center, double radiusMeters) {
+  const int sides = 6;
+  final points = <LatLng>[];
 
-    if (showSurge && hex.hasSurge) {
-      // Surge color (red-orange gradient based on multiplier)
-      final surgeIntensity = ((hex.surgeMultiplier - 1.0) / 1.0).clamp(0.0, 1.0);
-      fillColor = Color.lerp(
-        AppColors.warningOrange,
-        AppColors.errorRed,
-        surgeIntensity,
-      )!.withOpacity(0.4);
-      borderColor = AppColors.errorRed.withOpacity(0.6);
-    } else if (showDemand) {
-      // Demand color (orange gradient based on demand level)
-      fillColor = AppColors.warningOrange.withOpacity(0.2 + hex.demandLevel * 0.4);
-      borderColor = AppColors.warningOrange.withOpacity(0.4 + hex.demandLevel * 0.4);
-    } else {
-      fillColor = Colors.transparent;
-      borderColor = Colors.transparent;
-    }
+  // Convert radius from meters to approximate degrees
+  // At equator: 1 degree ≈ 111km
+  final latRadius = radiusMeters / 111000;
+  final lngRadius = radiusMeters / (111000 * math.cos(center.latitude * math.pi / 180));
 
-    return Polygon(
-      points: points,
-      color: fillColor,
-      borderColor: borderColor,
-      borderStrokeWidth: 2,
-      isFilled: true,
-    );
+  for (int i = 0; i < sides; i++) {
+    final angle = (math.pi / 3) * i + (math.pi / 6); // Flat-top hexagon
+    final lat = center.latitude + latRadius * math.sin(angle);
+    final lng = center.longitude + lngRadius * math.cos(angle);
+    points.add(LatLng(lat, lng));
   }
 
-  /// Generate hexagon vertices around a center point
-  List<LatLng> _generateHexagonPoints(LatLng center, double radiusMeters) {
-    const int sides = 6;
-    final points = <LatLng>[];
-
-    // Convert radius from meters to approximate degrees
-    // At equator: 1 degree ≈ 111km
-    final latRadius = radiusMeters / 111000;
-    final lngRadius = radiusMeters / (111000 * math.cos(center.latitude * math.pi / 180));
-
-    for (int i = 0; i < sides; i++) {
-      final angle = (math.pi / 3) * i + (math.pi / 6); // Flat-top hexagon
-      final lat = center.latitude + latRadius * math.sin(angle);
-      final lng = center.longitude + lngRadius * math.cos(angle);
-      points.add(LatLng(lat, lng));
-    }
-
-    return points;
-  }
+  return points;
 }
 
 /// Single hexagon info card widget
@@ -100,7 +83,7 @@ class HexagonInfoCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.carbonGrey.withOpacity(0.95),
+          color: AppColors.carbonGrey.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: hexagon.hasSurge ? AppColors.errorRed : AppColors.warningOrange,
@@ -108,7 +91,7 @@ class HexagonInfoCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -159,9 +142,9 @@ class HexagonInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

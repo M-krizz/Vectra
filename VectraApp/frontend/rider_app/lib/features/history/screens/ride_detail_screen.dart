@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../config/maps_config.dart';
 import '../models/ride_history_model.dart';
 
 /// Screen showing detailed information about a specific ride
@@ -19,17 +23,14 @@ class RideDetailScreen extends StatelessWidget {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text('Ride on ${DateFormat('dd MMM').format(ride.rideDate)}'),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.receipt_long),
             onPressed: () {
-              // TODO: Show receipt
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Receipt feature coming soon')),
-              );
+              context.push('/trip/${ride.id}/receipt');
             },
           ),
         ],
@@ -41,34 +42,37 @@ class RideDetailScreen extends StatelessWidget {
             Container(
               height: 200,
               decoration: BoxDecoration(color: Colors.grey.shade200),
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(
                     (ride.pickupLat + ride.destinationLat) / 2,
                     (ride.pickupLng + ride.destinationLng) / 2,
                   ),
-                  zoom: 13,
+                  initialZoom: 13,
+                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                 ),
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('pickup'),
-                    position: LatLng(ride.pickupLat, ride.pickupLng),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueGreen,
-                    ),
+                children: [
+                  TileLayer(
+                    urlTemplate: MapsConfig.tileUrlTemplate,
+                    userAgentPackageName: 'com.vectra.rider',
                   ),
-                  Marker(
-                    markerId: const MarkerId('destination'),
-                    position: LatLng(ride.destinationLat, ride.destinationLng),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueRed,
-                    ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: LatLng(ride.pickupLat, ride.pickupLng),
+                        width: 40,
+                        height: 40,
+                        child: const Icon(Icons.location_on, color: Colors.green, size: 40),
+                      ),
+                      Marker(
+                        point: LatLng(ride.destinationLat, ride.destinationLng),
+                        width: 40,
+                        height: 40,
+                        child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                      ),
+                    ],
                   ),
-                },
-                zoomControlsEnabled: false,
-                scrollGesturesEnabled: false,
-                rotateGesturesEnabled: false,
-                tiltGesturesEnabled: false,
+                ],
               ),
             ),
 
@@ -320,6 +324,33 @@ class RideDetailScreen extends StatelessWidget {
                               ],
                             ),
                           ),
+                          IconButton(
+                            onPressed: () async {
+                              if (ride.driverPhone.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Driver phone number is unavailable'),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final uri = Uri(
+                                scheme: 'tel',
+                                path: ride.driverPhone.trim(),
+                              );
+                              final launched = await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                              if (!launched && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Unable to open dialer')),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.phone_outlined),
+                          ),
                           if (ride.rating != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -412,7 +443,7 @@ class RideDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Open rating dialog
+                          context.push('/trip/${ride.id}/rating');
                         },
                         icon: const Icon(Icons.star_outline),
                         label: const Text('Rate this ride'),
@@ -433,12 +464,7 @@ class RideDetailScreen extends StatelessWidget {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        // TODO: Get help
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Support feature coming soon'),
-                          ),
-                        );
+                        context.push('/safety/incident');
                       },
                       icon: const Icon(Icons.help_outline),
                       label: const Text('Get help'),

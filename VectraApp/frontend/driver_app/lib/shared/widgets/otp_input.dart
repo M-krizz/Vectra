@@ -56,7 +56,6 @@ class _OtpInputState extends State<OtpInput> {
         _focusNodes[index + 1].requestFocus();
       } else {
         _focusNodes[index].unfocus();
-        // Check if all filled
         final otp = _controllers.map((c) => c.text).join();
         if (otp.length == widget.length) {
           widget.onCompleted(otp);
@@ -65,28 +64,36 @@ class _OtpInputState extends State<OtpInput> {
     }
   }
 
-  void _onBackspace(int index) {
-    if (_controllers[index].text.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(widget.length, (index) {
-        return _buildOtpBox(index);
-      }),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final spacing = 8.0;
+        final totalSpacing = spacing * (widget.length - 1);
+        final boxWidth = ((availableWidth - totalSpacing) / widget.length).clamp(40.0, 60.0);
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(widget.length, (index) {
+            return Padding(
+              padding: EdgeInsets.only(left: index > 0 ? spacing : 0),
+              child: _buildOtpBox(index, boxWidth),
+            );
+          }),
+        );
+      },
     );
   }
 
-  Widget _buildOtpBox(int index) {
+  Widget _buildOtpBox(int index, double boxWidth) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppColors.hyperLime : colors.primary;
+
     final hasFocus = _hasFocus[index];
     final hasValue = _controllers[index].text.isNotEmpty;
-    final width = MediaQuery.of(context).size.width;
-    // Responsive width: 15% of screen, capped between 45 and 60
-    final boxWidth = (width * 0.15).clamp(45.0, 60.0);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -94,33 +101,23 @@ class _OtpInputState extends State<OtpInput> {
       width: boxWidth,
       height: 70,
       decoration: BoxDecoration(
-        color: AppColors.voidBlack,
+        color: isDark ? AppColors.voidBlack : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: hasFocus
-              ? AppColors.hyperLime
+              ? accent
               : hasValue
                   ? AppColors.successGreen
-                  : AppColors.white10,
+                  : (isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.2)),
           width: 2,
         ),
         boxShadow: hasFocus
-            ? [
-                BoxShadow(
-                  color: AppColors.hyperLime.withOpacity(0.4),
-                  blurRadius: 25,
-                  spreadRadius: 0,
-                ),
-              ]
+            ? [BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 25, spreadRadius: 0)]
             : hasValue
-                ? [
-                    BoxShadow(
-                      color: AppColors.successGreen.withOpacity(0.2),
-                      blurRadius: 15,
-                      spreadRadius: 0,
-                    ),
-                  ]
-                : [],
+              ? [BoxShadow(color: AppColors.successGreen.withValues(alpha: 0.2), blurRadius: 15, spreadRadius: 0)]
+              : isDark
+                ? []
+                : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
       ),
       child: Center(
         child: TextField(
@@ -129,12 +126,12 @@ class _OtpInputState extends State<OtpInput> {
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: colors.onSurface,
             fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
-          cursorColor: AppColors.hyperLime,
+          cursorColor: accent,
           decoration: const InputDecoration(
             border: InputBorder.none,
             enabledBorder: InputBorder.none,

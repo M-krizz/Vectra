@@ -121,15 +121,15 @@ class RidePooledAutoConfirmed extends RideEvent {
   const RidePooledAutoConfirmed();
 }
 
-/// Generate unique OTP for rider to show driver (after driver arrival)
+/// OTP received from backend via socket for rider to show driver
 class RideOTPGenerated extends RideEvent {
-  const RideOTPGenerated();
+  final String otp;
+  const RideOTPGenerated(this.otp);
 }
 
-/// Driver verifies the rider's OTP
+/// OTP verified by driver successfully
 class RideOTPVerified extends RideEvent {
-  final String otp;
-  const RideOTPVerified(this.otp);
+  const RideOTPVerified();
 }
 
 /// No drivers found after search timeout
@@ -151,12 +151,21 @@ class RideSocketStatusReceived extends RideEvent {
 
 /// A location_update event received from the WebSocket
 class RideSocketLocationReceived extends RideEvent {
+  final String tripId;
   final double lat;
   final double lng;
   final int? etaSeconds;
   const RideSocketLocationReceived({
+    required this.tripId,
     required this.lat,
     required this.lng,
     this.etaSeconds,
   });
+}
+
+/// Server signalled that pool-matching window expired with no match found.
+class RidePoolTimedOut extends RideEvent {
+  final String requestId;
+  final String message;
+  const RidePoolTimedOut({required this.requestId, required this.message});
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/app_theme.dart';
 import '../models/ride_history_model.dart';
+import '../bloc/history_bloc.dart';
 
 class RideHistoryScreen extends StatefulWidget {
   const RideHistoryScreen({super.key});
@@ -13,144 +15,47 @@ class RideHistoryScreen extends StatefulWidget {
 
 class _RideHistoryScreenState extends State<RideHistoryScreen> {
   String _selectedFilter = 'All';
-  bool _isLoading = true;
-  List<RideHistoryModel> _allRides = [];
 
   final List<String> _filters = ['All', 'Auto', 'Bike', 'Cab Economy', 'Cab Premium'];
 
   @override
   void initState() {
     super.initState();
-    _loadRides();
+    context.read<HistoryBloc>().add(LoadHistoryRequested());
   }
 
   Future<void> _loadRides() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    setState(() {
-      _allRides = [
-        RideHistoryModel(
-          id: 'ride_001',
-          pickupAddress: 'RS Puram, Coimbatore',
-          destinationAddress: 'Brookefields Mall',
-          pickupLat: 11.0123, pickupLng: 76.9456,
-          destinationLat: 11.0234, destinationLng: 76.9567,
-          vehicleType: 'auto',
-          fare: 0.0,
-          status: 'cancelled',
-          rideDate: DateTime(2026, 2, 19, 9, 18),
-          driverName: 'Cancelled',
-          driverPhone: '',
-          vehicleNumber: '',
-          distance: 3.2,
-          durationMinutes: 0,
-          paymentMethod: 'cash',
-        ),
-        RideHistoryModel(
-          id: 'ride_002',
-          pickupAddress: 'Gandhipuram',
-          destinationAddress: '256, Race Course Rd',
-          pickupLat: 11.0178, pickupLng: 76.9678,
-          destinationLat: 11.0145, destinationLng: 76.9712,
-          vehicleType: 'bike',
-          fare: 35.0,
-          status: 'completed',
-          rideDate: DateTime(2026, 2, 15, 11, 59),
-          driverName: 'Suresh M',
-          driverPhone: '+91 98765 11111',
-          vehicleNumber: 'TN-38-CD-5678',
-          rating: 4.0,
-          distance: 2.1,
-          durationMinutes: 12,
-          paymentMethod: 'upi',
-        ),
-        RideHistoryModel(
-          id: 'ride_003',
-          pickupAddress: 'Coimbatore Junction',
-          destinationAddress: 'East, 11',
-          pickupLat: 11.0017, pickupLng: 76.9669,
-          destinationLat: 11.0089, destinationLng: 76.9723,
-          vehicleType: 'auto',
-          fare: 33.0,
-          status: 'completed',
-          rideDate: DateTime(2025, 12, 7, 17, 33),
-          driverName: 'Karthik R',
-          driverPhone: '+91 98765 22222',
-          vehicleNumber: 'TN-38-EF-9012',
-          rating: 5.0,
-          distance: 1.8,
-          durationMinutes: 10,
-          paymentMethod: 'cash',
-        ),
-        RideHistoryModel(
-          id: 'ride_004',
-          pickupAddress: 'PSG College of Technology',
-          destinationAddress: 'Coimbatore Junction',
-          pickupLat: 11.0245, pickupLng: 77.0028,
-          destinationLat: 11.0017, destinationLng: 76.9669,
-          vehicleType: 'auto',
-          fare: 0.0,
-          status: 'cancelled',
-          rideDate: DateTime(2025, 12, 7, 17, 20),
-          driverName: 'Cancelled',
-          driverPhone: '',
-          vehicleNumber: '',
-          distance: 6.8,
-          durationMinutes: 0,
-          paymentMethod: 'cash',
-        ),
-        RideHistoryModel(
-          id: 'ride_005',
-          pickupAddress: 'Gandhipuram Bus Stand',
-          destinationAddress: 'H, 12/20, South Road',
-          pickupLat: 11.0178, pickupLng: 76.9678,
-          destinationLat: 11.0112, destinationLng: 76.9634,
-          vehicleType: 'bike',
-          fare: 36.0,
-          status: 'completed',
-          rideDate: DateTime(2025, 12, 7, 10, 27),
-          driverName: 'Vijay S',
-          driverPhone: '+91 98765 33333',
-          vehicleNumber: 'TN-38-GH-3456',
-          rating: 5.0,
-          distance: 2.4,
-          durationMinutes: 14,
-          paymentMethod: 'cash',
-        ),
-      ];
-      _isLoading = false;
-    });
+    context.read<HistoryBloc>().add(LoadHistoryRequested());
   }
 
-  List<RideHistoryModel> get _filteredRides {
-    if (_selectedFilter == 'All') return _allRides;
-    return _allRides.where((r) =>
+  List<RideHistoryModel> _filteredRides(List<RideHistoryModel> rides) {
+    if (_selectedFilter == 'All') return rides;
+    return rides.where((r) =>
         r.vehicleType.toLowerCase().replaceAll(' ', '_') ==
-        _selectedFilter.toLowerCase().replaceAll(' ', '_')).toList();
+        _selectedFilter.toLowerCase().replaceAll(' ', '_') || r.vehicleType.toLowerCase() == _selectedFilter.toLowerCase()).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Ride History',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
+          child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      body: Column(
               children: [
                 // Filter chips
                 SizedBox(
@@ -159,7 +64,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     scrollDirection: Axis.horizontal,
                     itemCount: _filters.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (context, index) => const SizedBox(width: 8),
                     itemBuilder: (_, i) {
                       final f = _filters[i];
                       final selected = f == _selectedFilter;
@@ -172,7 +77,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                             color: selected ? AppColors.primary : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: selected ? AppColors.primary : AppColors.border,
+                              color: selected ? AppColors.primary : Theme.of(context).colorScheme.outline,
                               width: 1.5,
                             ),
                           ),
@@ -181,7 +86,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: selected ? Colors.white : AppColors.textSecondary,
+                              color: selected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -192,24 +97,36 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
 
                 // Ride list
                 Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadRides,
-                    color: AppColors.primary,
-                    child: _filteredRides.isEmpty
-                        ? _EmptyState()
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: _filteredRides.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 1, color: AppColors.divider),
-                            itemBuilder: (_, i) => _RideHistoryTile(
-                              ride: _filteredRides[i],
-                              onTap: () => context.push(
-                                '/trips/${_filteredRides[i].id}',
-                                extra: _filteredRides[i],
-                              ),
-                            ),
-                          ),
+                  child: BlocBuilder<HistoryBloc, HistoryState>(
+                    builder: (context, state) {
+                      if (state is HistoryLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (state is HistoryError) {
+                        return Center(child: Text(state.message));
+                      } else if (state is HistoryLoaded) {
+                        final rides = _filteredRides(state.rides);
+                        return RefreshIndicator(
+                          onRefresh: _loadRides,
+                          color: AppColors.primary,
+                          child: rides.isEmpty
+                              ? _EmptyState()
+                              : ListView.separated(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  itemCount: rides.length,
+                                  separatorBuilder: (context, index) =>
+                                      const Divider(height: 1, color: AppColors.divider),
+                                  itemBuilder: (_, i) => _RideHistoryTile(
+                                    ride: rides[i],
+                                    onTap: () => context.push(
+                                      '/trips/${rides[i].id}',
+                                      extra: rides[i],
+                                    ),
+                                  ),
+                                ),
+                        );
+                      }
+                      return const SizedBox();
+                    },
                   ),
                 ),
 
@@ -221,19 +138,19 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.help_outline_rounded, size: 18, color: AppColors.textSecondary),
+                      Icon(Icons.help_outline_rounded, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Looking for rides older than 90 days?',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ),
                       OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textPrimary,
-                          side: const BorderSide(color: AppColors.border),
+                          foregroundColor: Theme.of(context).colorScheme.onSurface,
+                          side: BorderSide(color: Theme.of(context).colorScheme.outline),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -282,7 +199,7 @@ class _RideHistoryTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Vehicle icon
-            Icon(_vehicleIcon, size: 30, color: AppColors.textPrimary),
+            Icon(_vehicleIcon, size: 30, color: Theme.of(context).colorScheme.onSurface),
             const SizedBox(width: 16),
 
             // Details
@@ -292,16 +209,16 @@ class _RideHistoryTile extends StatelessWidget {
                 children: [
                   Text(
                     ride.destinationAddress,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     dateStr,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -309,7 +226,7 @@ class _RideHistoryTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isCompleted ? AppColors.textSecondary : AppColors.error,
+                      color: isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : AppColors.error,
                     ),
                   ),
                 ],

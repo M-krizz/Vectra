@@ -12,25 +12,28 @@ class ReceiptScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<RideBloc, RideState>(
       builder: (context, state) {
-        final total =
-            (state.finalFare ?? state.selectedVehicle?.fare ?? 85.0) + 8.5;
+        final total = state.finalFare ?? 
+            ((state.selectedVehicle?.fare ?? 85.0) + 8.5);
+        final distance = state.tripDistanceKm ?? (state.route?.distanceValue ?? 4200) / 1000.0;
+        final duration = state.tripDurationMinutes ?? (state.route?.durationValue ?? 900) ~/ 60;
+
         final now = DateTime.now();
         final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(now);
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FA),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           appBar: AppBar(
-            title: const Text('Receipt',
-                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            backgroundColor: Colors.white,
+            title: Text('Receipt',
+                style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+            backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => context.pop(),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary),
+                icon: Icon(Icons.share_outlined, color: Theme.of(context).colorScheme.onSurface),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Receipt sharing coming soon!')),
@@ -40,7 +43,7 @@ class ReceiptScreen extends StatelessWidget {
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
-              child: Container(height: 1, color: AppColors.border),
+              child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
             ),
           ),
           body: ListView(
@@ -49,9 +52,9 @@ class ReceiptScreen extends StatelessWidget {
               // Receipt card
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(children: [
                   // Header
@@ -68,11 +71,11 @@ class ReceiptScreen extends StatelessWidget {
                       const Text('Trip Receipt',
                           style: TextStyle(fontSize: 14, color: Colors.white70)),
                       const SizedBox(height: 4),
-                      Text('₹${total.toStringAsFixed(0)}',
-                          style: const TextStyle(
+                        Text('₹${total.toStringAsFixed(0)}',
+                          style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white)),
+                              color: Theme.of(context).colorScheme.surface)),
                       const SizedBox(height: 4),
                       Text('Paid · $dateStr',
                           style: const TextStyle(fontSize: 12, color: Colors.white70)),
@@ -98,9 +101,9 @@ class ReceiptScreen extends StatelessWidget {
                         _ReceiptRow('Vehicle No.', state.driver!.vehicleNumber),
                       ],
                       const SizedBox(height: 12),
-                      _ReceiptRow('Distance', '4.2 km'),
+                      _ReceiptRow('Distance', '${distance.toStringAsFixed(1)} km'),
                       const SizedBox(height: 12),
-                      _ReceiptRow('Duration', '14 min'),
+                      _ReceiptRow('Duration', '$duration min'),
                       const SizedBox(height: 12),
                       _ReceiptRow('Ride Type',
                           state.rideType == 'pool' ? 'Pool (-30%)' : 'Solo'),
@@ -116,11 +119,11 @@ class ReceiptScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total Paid',
+                      Text('Total Paid',
                             style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary)),
+                                color: Theme.of(context).colorScheme.onSurface)),
                         Text('₹${total.toStringAsFixed(0)}',
                             style: const TextStyle(
                                 fontSize: 18,
@@ -143,25 +146,25 @@ class ReceiptScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline),
                   ),
-                  child: const Row(children: [
-                    Text('⭐', style: TextStyle(fontSize: 24)),
-                    SizedBox(width: 12),
+                  child: Row(children: [
+                    const Text('⭐', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('Rate your ride',
                             style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary)),
+                                color: Theme.of(context).colorScheme.onSurface)),
                         Text('Help us improve with your feedback',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       ]),
                     ),
-                    Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                    Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ]),
                 ),
               ),
@@ -177,8 +180,8 @@ class ReceiptScreen extends StatelessWidget {
                     context.go('/home');
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    side: BorderSide(color: Theme.of(context).colorScheme.outline),
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -206,11 +209,11 @@ class _ReceiptRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         const SizedBox(width: 16),
         Flexible(
           child: Text(value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
               textAlign: TextAlign.right,
               maxLines: 2),
         ),

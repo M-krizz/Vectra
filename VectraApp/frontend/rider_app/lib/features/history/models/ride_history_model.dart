@@ -43,6 +43,20 @@ class RideHistoryModel {
   });
 
   factory RideHistoryModel.fromJson(Map<String, dynamic> json) {
+    // Backend may return distance in meters as 'distanceMeters'
+    final double rawDistance = (json['distanceMeters'] ?? json['distance'] ?? 0).toDouble();
+    final double distanceKm = rawDistance > 100 ? rawDistance / 1000 : rawDistance;
+
+    // Backend returns nested driver info
+    final driverInfo = json['driver'] as Map<String, dynamic>?;
+
+    // Backend returns tripRiders array for fare
+    final riders = json['tripRiders'] as List<dynamic>?;
+    double parsedFare = (json['fare'] ?? 0).toDouble();
+    if (parsedFare == 0 && riders != null && riders.isNotEmpty) {
+      parsedFare = (riders.first['fareShare'] ?? 0).toDouble();
+    }
+
     return RideHistoryModel(
       id: json['id'] ?? '',
       pickupAddress: json['pickupAddress'] ?? '',
@@ -52,17 +66,19 @@ class RideHistoryModel {
       destinationLat: (json['destinationLat'] ?? 0).toDouble(),
       destinationLng: (json['destinationLng'] ?? 0).toDouble(),
       vehicleType: json['vehicleType'] ?? 'sedan',
-      fare: (json['fare'] ?? 0).toDouble(),
-      status: json['status'] ?? 'completed',
-      rideDate: json['rideDate'] != null
-          ? DateTime.parse(json['rideDate'])
-          : DateTime.now(),
-      driverName: json['driverName'] ?? '',
-      driverPhone: json['driverPhone'] ?? '',
-      vehicleNumber: json['vehicleNumber'] ?? '',
+      fare: parsedFare,
+      status: json['status']?.toString().toLowerCase() ?? 'completed',
+      rideDate: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : (json['rideDate'] != null
+              ? DateTime.parse(json['rideDate'])
+              : DateTime.now()),
+      driverName: driverInfo?['fullName'] ?? json['driverName'] ?? 'Unknown Driver',
+      driverPhone: driverInfo?['phone'] ?? json['driverPhone'] ?? '',
+      vehicleNumber: json['vehicleNumber'] ?? '', // Often not eagerly loaded
       rating: json['rating']?.toDouble(),
       review: json['review'],
-      distance: (json['distance'] ?? 0).toDouble(),
+      distance: distanceKm,
       durationMinutes: json['durationMinutes'] ?? 0,
       paymentMethod: json['paymentMethod'] ?? 'cash',
     );

@@ -1,234 +1,271 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../config/app_theme.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/bloc/auth_bloc.dart';
-import 'settings_screen.dart';
+import 'payment_methods_screen.dart';
+import 'profile_details_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final user = state is AuthAuthenticated ? state.user : null;
-        final memberSince = 'February 2026';
+        final displayName = user?.fullName ?? 'Vectra User';
+        final phone = user?.phone ?? '';
 
         return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Row(
-              children: [
-                Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-                SizedBox(width: 8),
-                Text(
+          backgroundColor: colors.surface,
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: colors.surface,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                automaticallyImplyLeading: false,
+                title: Text(
                   'Profile',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: colors.onSurface,
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(1),
-              child: Container(height: 1, color: AppColors.border),
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.settings_outlined, size: 16),
-                  label: const Text('Settings'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.border),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                  ),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(1),
+                  child: Container(height: 1, color: colors.outline.withValues(alpha: 0.3)),
                 ),
               ),
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: [
-              // ── Profile fields ─────────────────────────────────────────
-              _ProfileTile(
-                icon: Icons.person_outline_rounded,
-                title: 'Name',
-                value: user?.fullName ?? 'User',
-                editable: true,
-                onTap: () {},
+
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+
+                    // User card
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? colors.surfaceContainerHighest : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          InkWell(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileDetailsScreen())),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 52, height: 52,
+                                    decoration: BoxDecoration(
+                                      color: colors.primary.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        displayName.isNotEmpty ? displayName[0].toUpperCase() : 'V',
+                                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colors.primary),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(displayName, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.onSurface)),
+                                        if (phone.isNotEmpty) Text(phone, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.chevron_right_rounded, color: colors.onSurfaceVariant),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Divider(height: 1, color: colors.outline.withValues(alpha: 0.2)),
+                          InkWell(
+                            onTap: () {},
+                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 22),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Text('5.0  My Rating', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colors.onSurface))),
+                                  Icon(Icons.chevron_right_rounded, color: colors.onSurfaceVariant),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Menu items
+                    _MenuSection(items: [
+                      _MenuItem(icon: Icons.account_balance_wallet_outlined, label: 'Payment', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()))),
+                      _MenuItem(icon: Icons.history_rounded, label: 'My Rides', onTap: () => context.go('/trips')),
+                      _MenuItem(icon: Icons.shield_outlined, label: 'Safety', onTap: () => context.go('/safety')),
+                      _MenuItem(icon: Icons.card_giftcard_rounded, label: 'Refer and Earn', subtitle: 'Get ?50', onTap: () => _showReferSheet(context)),
+                      _MenuItem(icon: Icons.settings_outlined, label: 'Settings', showDivider: false, onTap: () => context.push('/profile/settings')),
+                    ]),
+
+                    const SizedBox(height: 20),
+
+                    // Driver promo banner
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2D2B1F) : const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isDark ? const Color(0xFF5C5833) : const Color(0xFFFFE082), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Earn money with Vectra', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.onSurface)),
+                                const SizedBox(height: 4),
+                                Text('Become a Captain!', style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 64, height: 64,
+                            decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.15), shape: BoxShape.circle),
+                            child: Icon(Icons.directions_car_rounded, color: colors.primary, size: 32),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
-              _ProfileTile(
-                icon: Icons.phone_outlined,
-                title: 'Phone Number',
-                value: user?.phone ?? '+91 XXXXX XXXXX',
-                editable: false,
-              ),
-              _ProfileTile(
-                icon: Icons.mail_outline_rounded,
-                title: 'Email',
-                value: user?.email ?? 'user@example.com',
-                editable: true,
-                onTap: () {},
-              ),
-              _ProfileTile(
-                icon: Icons.person_pin_outlined,
-                title: 'Gender',
-                value: 'Not set',
-                editable: false,
-              ),
-              _ProfileTile(
-                icon: Icons.calendar_today_outlined,
-                title: 'Date of Birth',
-                value: 'Not set',
-                editable: true,
-                onTap: () {},
-              ),
-              _ProfileTile(
-                icon: Icons.verified_user_outlined,
-                title: 'Member Since',
-                value: memberSince,
-                editable: false,
-              ),
-              _EmergencyContactTile(),
             ],
           ),
         );
       },
     );
   }
-}
 
-// ─── Profile tile ──────────────────────────────────────────────────────────
-
-class _ProfileTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final bool editable;
-  final VoidCallback? onTap;
-
-  const _ProfileTile({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.editable,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: editable ? onTap : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
-              children: [
-                Icon(icon, size: 22, color: AppColors.textSecondary),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        value,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (editable)
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 20),
-              ],
-            ),
-          ),
-        ),
-        const Divider(height: 1, indent: 58, endIndent: 0, color: AppColors.divider),
-      ],
-    );
-  }
-}
-
-// ─── Emergency contact tile ────────────────────────────────────────────────
-
-class _EmergencyContactTile extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Emergency contact — coming soon!')),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
+  void _showReferSheet(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.warning_amber_rounded, size: 22, color: AppColors.textSecondary),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: colors.outline.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
+            Icon(Icons.card_giftcard_rounded, size: 48, color: colors.primary),
+            const SizedBox(height: 16),
+            Text('Refer & Earn ?50', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface)),
+            const SizedBox(height: 8),
+            Text('Share your referral code with friends.\nBoth get ?50 on their first ride!', textAlign: TextAlign.center, style: TextStyle(color: colors.onSurfaceVariant)),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(color: colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Emergency contact',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Required',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.warning,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Text('VECTRA2025', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2, color: colors.onSurface)),
+                  GestureDetector(
+                    onTap: () { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code copied!'))); },
+                    child: Text('COPY', style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
             ),
-            Text(
-              'Add',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MenuSection extends StatelessWidget {
+  final List<_MenuItem> items;
+  const _MenuSection({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(children: items),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final bool showDivider;
+  const _MenuItem({required this.icon, required this.label, this.subtitle, required this.onTap, this.showDivider = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, size: 22, color: colors.onSurfaceVariant),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colors.onSurface)),
+                  if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle!, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant))],
+                ])),
+                Icon(Icons.chevron_right_rounded, color: colors.onSurfaceVariant, size: 20),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider) Divider(height: 1, indent: 54, endIndent: 0, color: colors.outline.withValues(alpha: 0.2)),
+      ],
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 /// Model representing a place/location
 class PlaceModel {
@@ -13,6 +13,17 @@ class PlaceModel {
     required this.address,
     this.location,
   });
+
+  factory PlaceModel.fromJson(Map<String, dynamic> json) {
+    return PlaceModel(
+      placeId: json['placeId'] ?? '',
+      name: json['name'] ?? '',
+      address: json['address'] ?? '',
+      location: json['lat'] != null && json['lng'] != null
+          ? LatLng((json['lat'] as num).toDouble(), (json['lng'] as num).toDouble())
+          : null,
+    );
+  }
 
   PlaceModel copyWith({
     String? placeId,
@@ -62,6 +73,9 @@ class RouteModel {
     required this.distanceText,
     required this.durationText,
   });
+
+  double get distanceValue => distanceMeters;
+  int get durationValue => durationSeconds;
 
   @override
   String toString() =>

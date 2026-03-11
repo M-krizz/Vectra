@@ -23,8 +23,8 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Skip auth header for auth endpoints
-    if (_isAuthEndpoint(options.path)) {
+    // Skip auth header only for public auth endpoints.
+    if (_shouldSkipAuthHeader(options.path)) {
       return handler.next(options);
     }
 
@@ -46,8 +46,8 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode == 401) {
       final requestOptions = err.requestOptions;
 
-      // Skip refresh for auth endpoints
-      if (_isAuthEndpoint(requestOptions.path)) {
+      // Skip refresh for public auth endpoints.
+      if (_shouldSkipAuthHeader(requestOptions.path)) {
         return handler.next(err);
       }
 
@@ -92,22 +92,37 @@ class AuthInterceptor extends Interceptor {
   Future<bool> _refreshToken() async {
     try {
       final refreshToken = await _storage.getRefreshToken();
+      final refreshTokenId = await _storage.getRefreshTokenId();
       if (refreshToken == null) return false;
+      if (refreshTokenId == null || refreshTokenId.isEmpty) return false;
 
       final response = await _dio.post(
-        '${ApiEndpoints.baseUrl}${ApiEndpoints.refreshToken}',
-        data: {'refresh_token': refreshToken},
+        ApiEndpoints.refreshToken,
+        data: {'refreshToken': refreshToken},
         options: Options(
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'x-refresh-token-id': refreshTokenId,
+          },
         ),
       );
 
       if (response.statusCode == 200) {
         final data = response.data;
+        final accessToken = data['accessToken'] as String?;
+        final nextRefreshToken = data['refreshToken'] as String?;
+        if (accessToken == null || nextRefreshToken == null) return false;
+
         await _storage.saveTokens(
-          accessToken: data['access_token'],
-          refreshToken: data['refresh_token'],
+          accessToken: accessToken,
+          refreshToken: nextRefreshToken,
         );
+
+        final nextRefreshTokenId = data['refreshTokenId'] as String?;
+        if (nextRefreshTokenId != null && nextRefreshTokenId.isNotEmpty) {
+          await _storage.saveRefreshTokenId(nextRefreshTokenId);
+        }
+
         return true;
       }
 
@@ -132,7 +147,9 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
-  bool _isAuthEndpoint(String path) {
-    return path.contains('/auth/');
+  bool _shouldSkipAuthHeader(String path) {
+    return path.endsWith(ApiEndpoints.requestOtp) ||
+        path.endsWith(ApiEndpoints.verifyOtp) ||
+        path.endsWith(ApiEndpoints.refreshToken);
   }
 }

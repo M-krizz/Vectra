@@ -1,12 +1,9 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
 
-/// Set to true to bypass the real backend and use mock data.
-/// Flip to false when the backend API is reachable.
-const bool kUseMockAuth = true;
-
-/// Repository for authentication operations
+/// Repository for authentication operations — OTP-only
 class AuthRepository {
   final ApiClient _apiClient;
   final StorageService _storageService;
@@ -17,28 +14,16 @@ class AuthRepository {
   }) : _apiClient = apiClient,
        _storageService = storageService;
 
-  // ─── Mock helpers ────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
+  // Public API
+  // ──────────────────────────────────────────────────────────
 
-  static UserModel _mockUser(String email) => UserModel(
-    id: 'mock_user_001',
-    email: email,
-    fullName: email.split('@').first.replaceAll('.', ' ').replaceAll('_', ' ').trim(),
-    phone: '+91 9876543210',
-    role: 'rider',
-  );
-
-  static const String _mockAccessToken = 'mock_access_token';
-  static const String _mockRefreshToken = 'mock_refresh_token';
-  static const String _mockRefreshTokenId = 'mock_refresh_token_id';
-
-  // ─── Public API ──────────────────────────────────────────────────────────
-
-  /// Check if user is logged in
+  /// Check if user is logged in (has valid access token)
   Future<bool> isLoggedIn() async {
     return await _storageService.isLoggedIn();
   }
 
-  /// Get current user from storage
+  /// Get current user from local storage
   Future<UserModel?> getCurrentUser() async {
     final userData = await _storageService.getUserData();
     if (userData != null) {
@@ -52,125 +37,114 @@ class AuthRepository {
     return null;
   }
 
-  /// Login with email and password
-  Future<UserModel> login({
-    required String email,
-    required String password,
+  /// Step 1 – Request OTP for a phone number or email address.
+  /// Returns the raw response map (includes devOtp in dev mode).
+  Future<Map<String, dynamic>> requestOtp({
+    required String identifier,
+    String channel = 'phone', // 'phone' or 'email'
   }) async {
-    if (kUseMockAuth) {
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // Mock validation — any non-empty credentials work
-      if (email.isEmpty || password.isEmpty) {
-        throw ApiException(
-          message: 'Email and password are required',
-          statusCode: 400,
-        );
-      }
-
-      final user = _mockUser(email);
-
-      await _storageService.saveTokens(
-        accessToken: _mockAccessToken,
-        refreshToken: _mockRefreshToken,
-        refreshTokenId: _mockRefreshTokenId,
-      );
-      await _storageService.saveUserData(jsonEncode(user.toJson()));
-
-      return user;
-    }
-
-    // ── Real backend path ──────────────────────────────────────────────────────
     final response = await _apiClient.post(
-      ApiConstants.login,
+      ApiConstants.requestOtp,
       data: {
-        'email': email,
-        'password': password,
-        'deviceInfo': 'Vectra Rider App - Android',
+        'channel': channel,
+        'identifier': identifier,
       },
     );
-
-    final authResponse = AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
-
-    await _storageService.saveTokens(
-      accessToken: authResponse.accessToken,
-      refreshToken: authResponse.refreshToken,
-      refreshTokenId: authResponse.refreshTokenId,
-    );
-    await _storageService.saveUserData(jsonEncode(authResponse.user.toJson()));
-
-    return authResponse.user;
+    return response.data as Map<String, dynamic>;
   }
 
-  /// Register new rider
-  Future<UserModel> register({
-    required String email,
-    required String phone,
-    required String fullName,
-    required String password,
+  /// Step 2 – Verify OTP and login/create user.
+  /// On success, stores JWT tokens and user data locally and returns [UserModel].
+  Future<UserModel> verifyOtpAndLogin({
+    required String identifier,
+    required String code,
+    String roleHint = 'RIDER',
   }) async {
-    if (kUseMockAuth) {
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      if (email.isEmpty || password.isEmpty || fullName.isEmpty) {
-        throw ApiException(
-          message: 'All fields are required',
-          statusCode: 400,
-        );
-      }
-
-      final user = UserModel(
-        id: 'mock_user_${DateTime.now().millisecondsSinceEpoch}',
-        email: email,
-        fullName: fullName,
-        phone: phone,
-        role: 'rider',
-      );
-
-      await _storageService.saveTokens(
-        accessToken: _mockAccessToken,
-        refreshToken: _mockRefreshToken,
-        refreshTokenId: _mockRefreshTokenId,
-      );
-      await _storageService.saveUserData(jsonEncode(user.toJson()));
-
-      return user;
-    }
-
-    // ── Real backend path ──────────────────────────────────────────────────────
     final response = await _apiClient.post(
-      ApiConstants.registerRider,
+      ApiConstants.verifyOtp,
       data: {
-        'email': email,
-        'phone': phone,
-        'fullName': fullName,
-        'password': password,
+        'identifier': identifier,
+        'code': code,
       },
+      options: Options(headers: {'x-role-hint': roleHint}),
     );
 
-    final authResponse = AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
+    final data = response.data as Map<String, dynamic>;
+
     await _storageService.saveTokens(
-      accessToken: authResponse.accessToken,
-      refreshToken: authResponse.refreshToken,
-      refreshTokenId: authResponse.refreshTokenId,
+      accessToken: data['accessToken'] as String,
+      refreshToken: data['refreshToken'] as String,
+      refreshTokenId: data['refreshTokenId'] as String,
     );
-    await _storageService.saveUserData(jsonEncode(authResponse.user.toJson()));
-    return authResponse.user;
+
+    final userJson = data['user'] as Map<String, dynamic>;
+    final user = UserModel.fromJson(userJson);
+    await _storageService.saveUserData(jsonEncode(user.toJson()));
+
+    return user;
+  }
+
+  /// Set the user's display name after first-time OTP login.
+  Future<void> completeProfile({required String fullName}) async {
+    await _apiClient.patch(
+      ApiConstants.completeProfile,
+      data: {'fullName': fullName},
+    );
+    // Update locally too
+    final currentUser = await getCurrentUser();
+    if (currentUser != null) {
+      final updated = UserModel(
+        id: currentUser.id,
+        email: currentUser.email,
+        fullName: fullName,
+        phone: currentUser.phone,
+        role: currentUser.role,
+      );
+      await _storageService.saveUserData(jsonEncode(updated.toJson()));
+    }
+  }
+
+  /// Update the user's profile
+  Future<void> updateProfile({
+    String? fullName,
+    String? email,
+    String? gender,
+  }) async {
+    final Map<String, dynamic> data = {};
+    if (fullName != null) data['fullName'] = fullName;
+    if (email != null) data['email'] = email;
+    if (gender != null) data['gender'] = gender;
+
+    await _apiClient.patch('/api/v1/profile', data: data);
+
+    // Update locally
+    final currentUser = await getCurrentUser();
+    if (currentUser != null) {
+      final updated = UserModel(
+        id: currentUser.id,
+        email: email ?? currentUser.email,
+        fullName: fullName ?? currentUser.fullName,
+        phone: currentUser.phone,
+        role: currentUser.role,
+        gender: gender ?? currentUser.gender,
+        profilePicture: currentUser.profilePicture,
+      );
+      await _storageService.saveUserData(jsonEncode(updated.toJson()));
+    }
   }
 
   /// Logout user
   Future<void> logout() async {
     try {
-      if (!kUseMockAuth) {
-        final refreshTokenId = await _storageService.getRefreshTokenId();
-        if (refreshTokenId != null) {
-          await _apiClient.post(
-            ApiConstants.logout,
-            data: {'refreshTokenId': refreshTokenId},
-          );
-        }
+      final refreshTokenId = await _storageService.getRefreshTokenId();
+      if (refreshTokenId != null) {
+        await _apiClient.post(
+          ApiConstants.logout,
+          data: {'refreshTokenId': refreshTokenId},
+        );
       }
+    } catch (_) {
+      // Ignore network errors on logout, clear local data anyway
     } finally {
       await _storageService.clearAll();
     }
@@ -178,8 +152,6 @@ class AuthRepository {
 
   /// Refresh access token
   Future<void> refreshToken() async {
-    if (kUseMockAuth) return; // No-op in mock mode
-
     final refreshToken = await _storageService.getRefreshToken();
     final refreshTokenId = await _storageService.getRefreshTokenId();
 
@@ -193,23 +165,10 @@ class AuthRepository {
     );
 
     final data = response.data as Map<String, dynamic>;
-
     await _storageService.saveTokens(
       accessToken: data['accessToken'],
       refreshToken: data['refreshToken'],
       refreshTokenId: data['refreshTokenId'],
     );
-  }
-
-  /// Get user profile
-  Future<UserModel> getProfile() async {
-    if (kUseMockAuth) {
-      final user = await getCurrentUser();
-      if (user != null) return user;
-      throw ApiException(message: 'Not logged in', statusCode: 401);
-    }
-
-    final response = await _apiClient.get(ApiConstants.profileMe);
-    return UserModel.fromJson(response.data as Map<String, dynamic>);
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class SignUpData {
   // Phone & OTP
   String phoneNumber = '';
@@ -20,4 +22,10 @@ class SignUpData {
   String? rcBookPath;
   String? aadharPath;
   String? panCardPath;
+
+  // Web-safe document bytes captured at pick time.
+  Uint8List? licenseBytes;
+  Uint8List? rcBookBytes;
+  String? licenseFileName;
+  String? rcBookFileName;
 }

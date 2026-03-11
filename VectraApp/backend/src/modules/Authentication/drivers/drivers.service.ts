@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,7 +19,7 @@ export class DriversService {
     @InjectRepository(VehicleEntity)
     private vehicleRepo: Repository<VehicleEntity>,
     @InjectRepository(UserEntity) private usersRepo: Repository<UserEntity>,
-  ) {}
+  ) { }
 
   async getProfile(userId: string) {
     const profile = await this.profileRepo.findOne({
@@ -28,15 +30,29 @@ export class DriversService {
     return profile;
   }
 
-  async updateLicense(
+  async uploadDocument(
     userId: string,
-    licenseNumber: string,
-    licenseState?: string,
+    docType: 'LICENSE' | 'RC',
+    filename: string,
   ) {
     const profile = await this.getProfile(userId);
-    profile.licenseNumber = licenseNumber;
-    if (licenseState) profile.licenseState = licenseState;
-    profile.status = DriverStatus.DOCUMENTS_SUBMITTED;
+    const fileUrl = `/uploads/drivers/${filename}`;
+
+    if (docType === 'LICENSE') {
+      profile.licenseFileUrl = fileUrl;
+    } else if (docType === 'RC') {
+      profile.rcFileUrl = fileUrl;
+    }
+
+    // Auto-update status if both are submitted and currently pending
+    if (
+      profile.licenseFileUrl &&
+      profile.rcFileUrl &&
+      profile.status === DriverStatus.PENDING_VERIFICATION
+    ) {
+      profile.status = DriverStatus.DOCUMENTS_SUBMITTED;
+    }
+
     return this.profileRepo.save(profile);
   }
 
@@ -56,11 +72,70 @@ export class DriversService {
   }
 
   async addVehicle(userId: string, vehicleData: Partial<VehicleEntity>) {
+    const input = vehicleData as Partial<VehicleEntity> & {
+      type?: string;
+      brand?: string;
+      vehicleNumber?: string;
+    };
+
+    const plateNumber = (
+      input.plateNumber ?? input.vehicleNumber ?? ''
+    ).trim().toUpperCase();
+    const vehicleType = (input.vehicleType ?? input.type ?? '').trim();
+
+    if (!plateNumber) {
+      throw new BadRequestException('plateNumber is required');
+    }
+    if (!vehicleType) {
+      throw new BadRequestException('vehicleType is required');
+    }
+
+    const make = input.make ?? input.brand ?? null;
+    const seatingCapacity =
+      input.seatingCapacity ?? this.getDefaultSeatingCapacity(vehicleType);
+
+    const existingByPlate = await this.vehicleRepo.findOne({
+      where: { plateNumber },
+    });
+
+    if (existingByPlate && existingByPlate.driverUserId !== userId) {
+      throw new ConflictException('Vehicle already registered');
+    }
+
+    if (existingByPlate) {
+      existingByPlate.vehicleType = vehicleType;
+      existingByPlate.make = make;
+      existingByPlate.model = input.model ?? existingByPlate.model;
+      existingByPlate.year = input.year ?? existingByPlate.year;
+      existingByPlate.color = input.color ?? existingByPlate.color;
+      existingByPlate.seatingCapacity = seatingCapacity;
+      existingByPlate.isActive = input.isActive ?? true;
+      return this.vehicleRepo.save(existingByPlate);
+    }
+
     const vehicle = this.vehicleRepo.create({
-      ...vehicleData,
       driverUserId: userId,
+      plateNumber,
+      vehicleType,
+      make,
+      model: input.model ?? null,
+      year: input.year ?? null,
+      color: input.color ?? null,
+      seatingCapacity,
+      emissionFactorGPerKm: input.emissionFactorGPerKm ?? null,
+      isActive: input.isActive ?? true,
     });
     return this.vehicleRepo.save(vehicle);
+  }
+
+  private getDefaultSeatingCapacity(vehicleType: string): number {
+    const normalized = vehicleType.trim().toUpperCase();
+    if (normalized.includes('BIKE') || normalized.includes('MOTOR')) return 2;
+    if (normalized.includes('AUTO') || normalized.includes('RICKSHAW')) {
+      return 3;
+    }
+    if (normalized.includes('SUV') || normalized.includes('VAN')) return 6;
+    return 4;
   }
 
   async verifyDriver(adminUserId: string, driverProfileId: string) {

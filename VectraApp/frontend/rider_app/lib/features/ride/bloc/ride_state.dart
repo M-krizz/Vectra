@@ -21,6 +21,19 @@ class PooledRiderRequest {
     required this.pickup,
     required this.destination,
   });
+
+  factory PooledRiderRequest.fromJson(Map<String, dynamic> json) {
+    return PooledRiderRequest(
+      id: json['id'] ?? '',
+      riderId: json['riderId'] ?? '',
+      riderName: json['riderName'] ?? '',
+      riderPhone: json['riderPhone'] ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
+      photoUrl: json['photoUrl'] ?? '',
+      pickup: PlaceModel.fromJson(json['pickupPoint']),
+      destination: PlaceModel.fromJson(json['dropPoint']),
+    );
+  }
 }
 /// Driver information
 class DriverInfo {
@@ -86,6 +99,8 @@ class RideState {
   final VehicleOption? selectedVehicle;
   final String? selectedVehicleType; // 'car', 'bike', etc
   final DriverInfo? driver;
+  final LatLng? driverLocation;
+  final List<LatLng>? routePoints;
   final String? rideId;
   final double? finalFare;
   final String? error;
@@ -97,6 +112,9 @@ class RideState {
   final PooledRiderRequest? selectedPooledRequest;
   final String? riderOtp; // Unique OTP generated for rider to show driver
   final bool otpVerified; // OTP verified by driver successfully
+  final double? tripDistanceKm;
+  final int? tripDurationMinutes;
+  final double? estimatedFare; // Server-confirmed fare returned after ride request
 
   const RideState({
     this.status = RideStatus.initial,
@@ -107,6 +125,8 @@ class RideState {
     this.selectedVehicle,
     this.selectedVehicleType,
     this.driver,
+    this.driverLocation,
+    this.routePoints,
     this.rideId,
     this.finalFare,
     this.error,
@@ -118,6 +138,9 @@ class RideState {
     this.selectedPooledRequest,
     this.riderOtp,
     this.otpVerified = false,
+    this.tripDistanceKm,
+    this.tripDurationMinutes,
+    this.estimatedFare,
   });
 
   RideState copyWith({
@@ -129,6 +152,8 @@ class RideState {
     VehicleOption? selectedVehicle,
     String? selectedVehicleType,
     DriverInfo? driver,
+    LatLng? driverLocation,
+    List<LatLng>? routePoints,
     String? rideId,
     double? finalFare,
     String? error,
@@ -140,6 +165,9 @@ class RideState {
     PooledRiderRequest? selectedPooledRequest,
     String? riderOtp,
     bool? otpVerified,
+    double? tripDistanceKm,
+    int? tripDurationMinutes,
+    double? estimatedFare,
     bool clearPickup = false,
     bool clearDestination = false,
     bool clearRoute = false,
@@ -159,6 +187,8 @@ class RideState {
           : (selectedVehicle ?? this.selectedVehicle),
       selectedVehicleType: selectedVehicleType ?? this.selectedVehicleType,
       driver: clearDriver ? null : (driver ?? this.driver),
+      driverLocation: driverLocation ?? this.driverLocation,
+      routePoints: routePoints ?? this.routePoints,
       rideId: rideId ?? this.rideId,
       finalFare: finalFare ?? this.finalFare,
       error: clearError ? null : (error ?? this.error),
@@ -174,6 +204,9 @@ class RideState {
           selectedPooledRequest ?? this.selectedPooledRequest,
       riderOtp: riderOtp ?? this.riderOtp,
       otpVerified: otpVerified ?? this.otpVerified,
+      tripDistanceKm: tripDistanceKm ?? this.tripDistanceKm,
+      tripDurationMinutes: tripDurationMinutes ?? this.tripDurationMinutes,
+      estimatedFare: estimatedFare ?? this.estimatedFare,
     );
   }
 
