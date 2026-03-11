@@ -1,41 +1,49 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../features/auth/presentation/providers/auth_providers.dart';
+import '../features/driver_status/presentation/providers/driver_status_providers.dart';
+import '../features/map_home/presentation/screens/driver_dashboard_screen.dart';
+import '../features/profile/repository/driver_profile_repository.dart';
 import '../shared/widgets/active_eco_background.dart';
 import '../shared/widgets/document_upload_zone.dart';
 import '../shared/widgets/premium_text_field.dart';
-import 'driver_home_screen.dart';
+import '../theme/app_colors.dart';
 
-
-/// Driver Onboarding Flow
-/// Collects driver profile, vehicle details, and documents
-class DriverOnboardingScreen extends StatefulWidget {
+class DriverOnboardingScreen extends ConsumerStatefulWidget {
   const DriverOnboardingScreen({super.key});
 
   @override
-  State<DriverOnboardingScreen> createState() => _DriverOnboardingScreenState();
+  ConsumerState<DriverOnboardingScreen> createState() => _DriverOnboardingScreenState();
 }
 
-class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
+class _DriverOnboardingScreenState extends ConsumerState<DriverOnboardingScreen> {
   int _currentStep = 0;
   final PageController _pageController = PageController();
-
-  // Form controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _licenseController = TextEditingController();
-  
   final TextEditingController _vehicleModelController = TextEditingController();
   final TextEditingController _vehiclePlateController = TextEditingController();
   final TextEditingController _vehicleColorController = TextEditingController();
-  
   String _selectedVehicleType = 'Sedan';
-  File? _licenseDocument;
-  File? _rcDocument;
-  File? _insuranceDocument;
+
+  final Map<String, bool> _uploadingDocs = {
+    'DRIVING_LICENSE': false,
+    'VEHICLE_RC': false,
+    'INSURANCE': false,
+  };
+
+  final Map<String, bool> _uploadedDocs = {
+    'DRIVING_LICENSE': false,
+    'VEHICLE_RC': false,
+    'INSURANCE': false,
+  };
 
   @override
   void dispose() {
@@ -51,26 +59,48 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   }
 
   void _nextStep() {
+    final validationError = _validateCurrentStep();
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(validationError), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
     if (_currentStep < 2) {
-      setState(() {
-        _currentStep++;
-      });
+      setState(() => _currentStep++);
       _pageController.animateToPage(
         _currentStep,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
       );
     } else {
-      // Submit onboarding
       _submitOnboarding();
+    }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0:
+        if (_nameController.text.trim().isEmpty) return 'Please enter your full name';
+        if (_phoneController.text.trim().isEmpty) return 'Please enter your phone number';
+        if (_licenseController.text.trim().isEmpty) return 'Please enter your license number';
+        return null;
+      case 1:
+        if (_vehicleModelController.text.trim().isEmpty) return 'Please enter your vehicle model';
+        if (_vehiclePlateController.text.trim().isEmpty) return 'Please enter your license plate';
+        if (_vehicleColorController.text.trim().isEmpty) return 'Please enter your vehicle color';
+        return null;
+      case 2:
+        return null; // Docs optional for now
+      default:
+        return null;
     }
   }
 
   void _previousStep() {
     if (_currentStep > 0) {
-      setState(() {
-        _currentStep--;
-      });
+      setState(() => _currentStep--);
       _pageController.animateToPage(
         _currentStep,
         duration: const Duration(milliseconds: 400),
@@ -80,36 +110,70 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   }
 
   void _submitOnboarding() {
-    // Show success dialog
-    showDialog(
-      context: context,
-      builder: (context) => _buildSuccessDialog(),
-    );
+    ref.read(authProvider.notifier).completeOnboarding();
+    showDialog(context: context, builder: (context) => _buildSuccessDialog());
+  }
+
+  Future<void> _pickAndUpload(String docType, String title) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    setState(() => _uploadingDocs[docType] = true);
+    try {
+      await ref.read(driverProfileRepositoryProvider).uploadDocument(
+            File(picked.path),
+            docType,
+          );
+      if (mounted) {
+        setState(() => _uploadedDocs[docType] = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$title uploaded successfully')),
+        );
+      }
+      await ref.read(driverStatusProvider.notifier).loadProfile();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploadingDocs[docType] = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppColors.hyperLime : AppColors.primary;
+
     return Scaffold(
+      backgroundColor: colors.surface,
       body: Stack(
         children: [
-          const ActiveEcoBackground(),
+          if (isDark) const ActiveEcoBackground(),
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(),
-                _buildProgressIndicator(),
+                _buildHeader(colors, isDark),
+                _buildProgressIndicator(colors, isDark, accent),
                 Expanded(
                   child: PageView(
                     controller: _pageController,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      _buildProfileStep(),
-                      _buildVehicleStep(),
-                      _buildDocumentsStep(),
+                      _buildProfileStep(colors, isDark),
+                      _buildVehicleStep(colors, isDark, accent),
+                      _buildDocumentsStep(colors, isDark, accent),
                     ],
                   ),
                 ),
-                _buildNavigationButtons(),
+                _buildNavigationButtons(colors, isDark, accent),
               ],
             ),
           ),
@@ -118,7 +182,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme colors, bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -126,9 +190,11 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
           if (_currentStep > 0)
             IconButton(
               onPressed: _previousStep,
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+              icon: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.white10,
+                backgroundColor: isDark
+                  ? AppColors.white10
+                  : colors.outline.withValues(alpha: 0.1),
                 padding: const EdgeInsets.all(12),
               ),
             ),
@@ -140,7 +206,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
                 Text(
                   'Driver Onboarding',
                   style: GoogleFonts.outfit(
-                    color: Colors.white,
+                    color: colors.onSurface,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -148,7 +214,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
                 Text(
                   'Step ${_currentStep + 1} of 3',
                   style: GoogleFonts.dmSans(
-                    color: AppColors.white70,
+                    color: colors.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
@@ -160,7 +226,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
     ).animate().fadeIn(duration: 600.ms);
   }
 
-  Widget _buildProgressIndicator() {
+  Widget _buildProgressIndicator(ColorScheme colors, bool isDark, Color accent) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -171,13 +237,15 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
               height: 4,
               margin: EdgeInsets.only(right: index < 2 ? 8 : 0),
               decoration: BoxDecoration(
-                color: isActive ? AppColors.hyperLime : AppColors.white10,
+                color: isActive
+                  ? accent
+                  : (isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.2)),
                 borderRadius: BorderRadius.circular(2),
               ),
             ).animate(target: isActive ? 1 : 0).scaleX(
                   begin: 0,
                   alignment: Alignment.centerLeft,
-                  duration: 400.ms,
+                  duration: 300.ms,
                 ),
           );
         }),
@@ -185,64 +253,64 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
     );
   }
 
-  Widget _buildProfileStep() {
+  Widget _buildProfileStep(ColorScheme colors, bool isDark) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Personal Information',
+            'Profile Details',
             style: GoogleFonts.outfit(
-              color: Colors.white,
+              color: colors.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
           const SizedBox(height: 8),
           Text(
-            'Tell us about yourself',
+            'Tell us about you',
             style: GoogleFonts.dmSans(
-              color: AppColors.white70,
+              color: colors.onSurfaceVariant,
               fontSize: 16,
             ),
           ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           PremiumTextField(
             controller: _nameController,
             label: 'Full Name',
-            hint: 'Enter your full name',
-            prefixIcon: Icons.person_outline,
+            hint: 'e.g., Alex Rider',
+            prefixIcon: Icon(Icons.person_outline, color: colors.onSurfaceVariant, size: 20),
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
             controller: _phoneController,
             label: 'Phone Number',
-            hint: '+91 XXXXX XXXXX',
-            prefixIcon: Icons.phone_outlined,
+            hint: '+91 98765 43210',
+            prefixIcon: Icon(Icons.phone_outlined, color: colors.onSurfaceVariant, size: 20),
             keyboardType: TextInputType.phone,
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
             controller: _emailController,
-            label: 'Email Address',
-            hint: 'your.email@example.com',
-            prefixIcon: Icons.email_outlined,
+            label: 'Email (optional)',
+            hint: 'you@example.com',
+            prefixIcon: Icon(Icons.email_outlined, color: colors.onSurfaceVariant, size: 20),
             keyboardType: TextInputType.emailAddress,
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
             controller: _licenseController,
-            label: 'License Number',
-            hint: 'DL-XXXXXXXXXX',
-            prefixIcon: Icons.badge_outlined,
+            label: 'Driving License Number',
+            hint: 'DL-XXXXXXXX',
+            prefixIcon: Icon(Icons.badge_outlined, color: colors.onSurfaceVariant, size: 20),
           ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
         ],
       ),
     );
   }
 
-  Widget _buildVehicleStep() {
+  Widget _buildVehicleStep(ColorScheme colors, bool isDark, Color accent) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -251,93 +319,81 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
           Text(
             'Vehicle Details',
             style: GoogleFonts.outfit(
-              color: Colors.white,
+              color: colors.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
           const SizedBox(height: 8),
           Text(
-            'Add your vehicle information',
+            'Your primary ride',
             style: GoogleFonts.dmSans(
-              color: AppColors.white70,
+              color: colors.onSurfaceVariant,
               fontSize: 16,
             ),
           ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
-          const SizedBox(height: 32),
-          
-          // Vehicle Type Selector
-          Text(
-            'Vehicle Type',
-            style: GoogleFonts.dmSans(
-              color: AppColors.white70,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              _buildVehicleTypeChip('Sedan'),
-              const SizedBox(width: 12),
-              _buildVehicleTypeChip('SUV'),
-              const SizedBox(width: 12),
-              _buildVehicleTypeChip('Hatchback'),
+              _buildVehicleTypeChip('Sedan', colors, isDark, accent),
+              _buildVehicleTypeChip('SUV', colors, isDark, accent),
+              _buildVehicleTypeChip('Hatchback', colors, isDark, accent),
+              _buildVehicleTypeChip('Auto', colors, isDark, accent),
             ],
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
           const SizedBox(height: 24),
-          
           PremiumTextField(
             controller: _vehicleModelController,
             label: 'Vehicle Model',
             hint: 'e.g., Honda City',
-            prefixIcon: Icons.directions_car_outlined,
+            prefixIcon: Icon(Icons.directions_car_outlined, color: colors.onSurfaceVariant, size: 20),
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
             controller: _vehiclePlateController,
             label: 'License Plate',
             hint: 'KA-01-AB-1234',
-            prefixIcon: Icons.pin_outlined,
+            prefixIcon: Icon(Icons.pin_outlined, color: colors.onSurfaceVariant, size: 20),
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
           PremiumTextField(
             controller: _vehicleColorController,
             label: 'Vehicle Color',
             hint: 'e.g., White',
-            prefixIcon: Icons.palette_outlined,
+            prefixIcon: Icon(Icons.palette_outlined, color: colors.onSurfaceVariant, size: 20),
           ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
         ],
       ),
     );
   }
 
-  Widget _buildVehicleTypeChip(String type) {
+  Widget _buildVehicleTypeChip(String type, ColorScheme colors, bool isDark, Color accent) {
     final isSelected = _selectedVehicleType == type;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedVehicleType = type;
-        });
-      },
+      onTap: () => setState(() => _selectedVehicleType = type),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [AppColors.hyperLime, AppColors.neonGreen],
-                )
+          gradient: isSelected && isDark
+              ? const LinearGradient(colors: [AppColors.hyperLime, AppColors.neonGreen])
               : null,
-          color: isSelected ? null : AppColors.white10,
+            color: isSelected
+              ? (isDark ? null : accent)
+              : (isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.transparent : AppColors.white20,
+            color: isSelected
+                ? Colors.transparent
+                : (isDark ? AppColors.white20 : colors.outline.withValues(alpha: 0.3)),
           ),
         ),
         child: Text(
           type,
           style: GoogleFonts.dmSans(
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected ? (isDark ? Colors.black : Colors.white) : colors.onSurface,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -346,7 +402,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
     );
   }
 
-  Widget _buildDocumentsStep() {
+  Widget _buildDocumentsStep(ColorScheme colors, bool isDark, Color accent) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -355,7 +411,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
           Text(
             'Upload Documents',
             style: GoogleFonts.outfit(
-              color: Colors.white,
+              color: colors.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
@@ -364,155 +420,45 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
           Text(
             'Required for verification',
             style: GoogleFonts.dmSans(
-              color: AppColors.white70,
+              color: colors.onSurfaceVariant,
               fontSize: 16,
             ),
           ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
           const SizedBox(height: 32),
-          
-          _buildDocumentUploadCard(
+          DocumentUploadZone(
             title: 'Driving License',
-            subtitle: 'Upload a clear photo of your license',
-            icon: Icons.badge_outlined,
-            file: _licenseDocument,
-            onUpload: (file) {
-              setState(() {
-                _licenseDocument = file;
-              });
-            },
+            subtitle: _uploadedDocs['DRIVING_LICENSE'] == true
+                ? 'Uploaded'
+                : 'Upload a clear photo of your license',
+            isUploading: _uploadingDocs['DRIVING_LICENSE'] ?? false,
+            onUpload: () => _pickAndUpload('DRIVING_LICENSE', 'Driving License'),
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
-          
-          _buildDocumentUploadCard(
+          DocumentUploadZone(
             title: 'Vehicle RC',
-            subtitle: 'Registration certificate',
-            icon: Icons.description_outlined,
-            file: _rcDocument,
-            onUpload: (file) {
-              setState(() {
-                _rcDocument = file;
-              });
-            },
+            subtitle: _uploadedDocs['VEHICLE_RC'] == true
+                ? 'Uploaded'
+                : 'Registration certificate',
+            isUploading: _uploadingDocs['VEHICLE_RC'] ?? false,
+            onUpload: () => _pickAndUpload('VEHICLE_RC', 'Vehicle RC'),
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
           const SizedBox(height: 20),
-          
-          _buildDocumentUploadCard(
+          DocumentUploadZone(
             title: 'Insurance',
-            subtitle: 'Valid vehicle insurance',
-            icon: Icons.shield_outlined,
-            file: _insuranceDocument,
-            onUpload: (file) {
-              setState(() {
-                _insuranceDocument = file;
-              });
-            },
+            subtitle: _uploadedDocs['INSURANCE'] == true
+                ? 'Uploaded'
+                : 'Valid vehicle insurance',
+            isUploading: _uploadingDocs['INSURANCE'] ?? false,
+            onUpload: () => _pickAndUpload('INSURANCE', 'Insurance'),
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
         ],
       ),
     );
   }
 
-  Widget _buildDocumentUploadCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required File? file,
-    required Function(File) onUpload,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.carbonGrey.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.white10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.hyperLime, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.dmSans(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.dmSans(
-                        color: AppColors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () {
-              // Mock file selection
-              // In real app, use image_picker package
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.white10,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: file != null ? AppColors.hyperLime : AppColors.white20,
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    file != null ? Icons.check_circle : Icons.cloud_upload_outlined,
-                    color: file != null ? AppColors.hyperLime : AppColors.white70,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    file != null ? 'Uploaded' : 'Tap to upload',
-                    style: GoogleFonts.dmSans(
-                      color: file != null ? AppColors.hyperLime : AppColors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavigationButtons() {
+  Widget _buildNavigationButtons(ColorScheme colors, bool isDark, Color accent) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            AppColors.voidBlack.withOpacity(0.8),
-          ],
-        ),
-      ),
       child: Row(
         children: [
           if (_currentStep > 0)
@@ -521,6 +467,8 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
                 label: 'Back',
                 onTap: _previousStep,
                 isPrimary: false,
+                colors: colors,
+                isDark: isDark,
               ),
             ),
           if (_currentStep > 0) const SizedBox(width: 16),
@@ -530,6 +478,8 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
               label: _currentStep == 2 ? 'Submit' : 'Continue',
               onTap: _nextStep,
               isPrimary: true,
+              colors: colors,
+              isDark: isDark,
             ),
           ),
         ],
@@ -541,28 +491,26 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
     required String label,
     required VoidCallback onTap,
     required bool isPrimary,
+    required ColorScheme colors,
+    required bool isDark,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          gradient: isPrimary
-              ? const LinearGradient(
-                  colors: [AppColors.hyperLime, AppColors.neonGreen],
-                )
-              : null,
-          color: isPrimary ? null : AppColors.white10,
+          gradient: isPrimary ? const LinearGradient(colors: [AppColors.hyperLime, AppColors.neonGreen]) : null,
+          color: isPrimary ? null : (isDark ? AppColors.white10 : colors.outline.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isPrimary ? Colors.transparent : AppColors.white20,
+            color: isPrimary ? Colors.transparent : (isDark ? AppColors.white20 : colors.outline.withValues(alpha: 0.3)),
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: GoogleFonts.dmSans(
-              color: isPrimary ? Colors.black : Colors.white,
+              color: isPrimary ? Colors.black : colors.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -573,32 +521,31 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   }
 
   Widget _buildSuccessDialog() {
+    final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.hyperLime : AppColors.primary;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.carbonGrey.withOpacity(0.95),
-              AppColors.voidBlack.withOpacity(0.95),
-            ],
-          ),
+          color: isDark ? AppColors.carbonGrey.withValues(alpha: 0.95) : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.hyperLime, width: 2),
+          border: Border.all(color: accent, width: 2),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.hyperLime,
+                color: accent,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check,
-                color: Colors.black,
+                color: isDark ? Colors.black : Colors.white,
                 size: 48,
               ),
             ).animate().scale(curve: Curves.elasticOut, duration: 800.ms),
@@ -606,28 +553,26 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
             Text(
               'Application Submitted!',
               style: GoogleFonts.outfit(
-                color: Colors.white,
+                color: colors.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Your application is under review. We\'ll notify you once approved.',
+              "Your application is under review. We'll notify you once approved.",
               textAlign: TextAlign.center,
               style: GoogleFonts.dmSans(
-                color: AppColors.white70,
+                color: colors.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 24),
             GestureDetector(
               onTap: () {
-                // Close dialog
                 Navigator.of(context).pop();
-                // Navigate to driver home screen and clear all previous routes
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const DriverHomeScreen()),
+                  MaterialPageRoute(builder: (_) => const DriverDashboardScreen()),
                   (route) => false,
                 );
               },
@@ -635,9 +580,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.hyperLime, AppColors.neonGreen],
-                  ),
+                  gradient: const LinearGradient(colors: [AppColors.hyperLime, AppColors.neonGreen]),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
