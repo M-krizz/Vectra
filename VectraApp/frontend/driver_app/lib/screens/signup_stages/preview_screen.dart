@@ -1,11 +1,14 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../theme/app_colors.dart';
 import '../../models/signup_data.dart';
 import 'basic_details_screen.dart';
 import 'vehicle_details_screen.dart';
 import 'document_upload_screen.dart';
 import '../home_screen.dart';
+import '../../services/legacy_onboarding_service.dart';
 
 class PreviewScreen extends StatefulWidget {
   final SignUpData signUpData;
@@ -22,8 +25,36 @@ class _PreviewScreenState extends State<PreviewScreen> {
   void _submitRegistration() async {
     setState(() => _isSubmitting = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 3));
+    try {
+      await LegacyOnboardingService.submitSignUpData(widget.signUpData);
+    } catch (e) {
+      String message;
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          final apiMessage = data['message'];
+          if (apiMessage is String && apiMessage.trim().isNotEmpty) {
+            message = apiMessage;
+          } else {
+            message = 'Request failed. Please try again.';
+          }
+        } else {
+          message = 'Request failed. Please try again.';
+        }
+      } else {
+        message = e.toString().replaceFirst('Exception: ', '');
+      }
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = false);
 
@@ -522,6 +553,38 @@ class _DocumentImageRow extends StatefulWidget {
 }
 
 class _DocumentImageRowState extends State<_DocumentImageRow> {
+  Widget _buildDocumentImage({required BoxFit fit}) {
+    if (kIsWeb) {
+      return Image.network(
+        widget.imagePath!,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(
+              Icons.broken_image,
+              size: 48,
+              color: AppColors.textSecondary,
+            ),
+          );
+        },
+      );
+    }
+
+    return Image.file(
+      File(widget.imagePath!),
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) {
+        return const Center(
+          child: Icon(
+            Icons.broken_image,
+            size: 48,
+            color: AppColors.textSecondary,
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasImage = widget.imagePath != null;
@@ -602,32 +665,7 @@ class _DocumentImageRowState extends State<_DocumentImageRow> {
                               minScale: 0.5,
                               maxScale: 4.0,
                               child: Center(
-                                child: Image.file(
-                                  File(widget.imagePath!),
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            size: 48,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(height: 16),
-                                          Text(
-                                            'Failed to load image',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
+                                child: _buildDocumentImage(fit: BoxFit.contain),
                               ),
                             ),
                           ),
@@ -648,22 +686,7 @@ class _DocumentImageRowState extends State<_DocumentImageRow> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.file(
-                        File(widget.imagePath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppColors.grey.withValues(alpha: 0.3),
-                            child: const Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 48,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      _buildDocumentImage(fit: BoxFit.cover),
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(

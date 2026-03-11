@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme/app_colors.dart';
 import '../../models/signup_data.dart';
@@ -228,13 +229,23 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
       );
 
       if (image != null) {
+        final webBytes = kIsWeb ? await image.readAsBytes() : null;
+
         setState(() {
           switch (documentType) {
             case 'license':
               widget.signUpData.licensePath = image.path;
+              if (kIsWeb) {
+                widget.signUpData.licenseBytes = webBytes;
+                widget.signUpData.licenseFileName = image.name;
+              }
               break;
             case 'rc':
               widget.signUpData.rcBookPath = image.path;
+              if (kIsWeb) {
+                widget.signUpData.rcBookBytes = webBytes;
+                widget.signUpData.rcBookFileName = image.name;
+              }
               break;
             case 'aadhar':
               widget.signUpData.aadharPath = image.path;
@@ -285,9 +296,13 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
       switch (documentType) {
         case 'license':
           widget.signUpData.licensePath = null;
+          widget.signUpData.licenseBytes = null;
+          widget.signUpData.licenseFileName = null;
           break;
         case 'rc':
           widget.signUpData.rcBookPath = null;
+          widget.signUpData.rcBookBytes = null;
+          widget.signUpData.rcBookFileName = null;
           break;
         case 'aadhar':
           widget.signUpData.aadharPath = null;
