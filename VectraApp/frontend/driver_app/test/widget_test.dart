@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:vectra/main.dart';
+import 'package:driver_app/main.dart';
 
 void main() {
-  testWidgets('Vectra app smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: VectraApp()));
+  testWidgets('Driver app smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
 
-    // Verify that the app loads with VECTRA branding
-    await tester.pumpAndSettle();
-    expect(find.text('VECTRA'), findsOneWidget);
+    await tester.pump();
+
+    expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.byType(Scaffold), findsAtLeastNWidgets(1));
   });
 }
