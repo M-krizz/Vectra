@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../config/app_theme.dart';
 import '../bloc/ride_bloc.dart';
-import 'receipt_screen.dart';
 
 class PaymentSelectionScreen extends StatefulWidget {
   const PaymentSelectionScreen({super.key});
@@ -22,10 +22,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   ];
 
   void _pay() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const ReceiptScreen()),
-    );
+    final tripId = context.read<RideBloc>().state.rideId ?? 'current';
+    context.go('/trip/$tripId/receipt');
   }
 
   @override
@@ -34,11 +32,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       builder: (context, state) {
         final total = (state.finalFare ?? state.selectedVehicle?.fare ?? 85.0) + 8.5;
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
             title: const Text('Select Payment',
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
@@ -75,10 +73,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                       ],
                     ),
                     Text('₹${total.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                      style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white)),
+                            color: Theme.of(context).colorScheme.surface)),
                   ],
                 ),
               ),
@@ -90,7 +88,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
                 ),
@@ -111,7 +109,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: selected ? const Color(0xFFE8F0FE) : const Color(0xFFF5F7FA),
+                                color: selected ? AppColors.primary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(m.icon,
@@ -140,7 +138,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                                 color: selected ? AppColors.primary : Colors.transparent,
                               ),
                               child: selected
-                                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                                  ? Icon(Icons.check, size: 12, color: Theme.of(context).colorScheme.surface)
                                   : null,
                             ),
                           ]),

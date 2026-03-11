@@ -17,7 +17,6 @@ class _SearchingScreenState extends State<SearchingScreen>
   late AnimationController _pulseController;
   int _dots = 0;
   Timer? _dotsTimer;
-  bool _cancelled = false;
 
 
   @override
@@ -57,7 +56,6 @@ class _SearchingScreenState extends State<SearchingScreen>
       ),
       builder: (_) => _CancelSheet(
         onCancel: (reason) {
-          _cancelled = true;
           context.read<RideBloc>().add(RideCancelled(reason));
           // Pop sheet, then navigate home
           Navigator.of(context).pop();
@@ -79,7 +77,7 @@ class _SearchingScreenState extends State<SearchingScreen>
         }
       },
       child: Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -93,7 +91,7 @@ class _SearchingScreenState extends State<SearchingScreen>
             // Pulse animation
             AnimatedBuilder(
               animation: _pulseController,
-              builder: (_, __) {
+              builder: (context, child) {
                 final scale = 1.0 + (_pulseController.value * 0.12);
                 return Transform.scale(
                   scale: scale,
@@ -113,8 +111,8 @@ class _SearchingScreenState extends State<SearchingScreen>
                           shape: BoxShape.circle,
                           color: AppColors.primary,
                         ),
-                        child: const Icon(Icons.search_rounded,
-                            size: 36, color: Colors.white),
+                        child: Icon(Icons.search_rounded,
+                            size: 36, color: Theme.of(context).colorScheme.surface),
                       ),
                     ),
                   ),
@@ -126,21 +124,45 @@ class _SearchingScreenState extends State<SearchingScreen>
 
             Text(
               'Finding a driver$dots',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Please wait while we match you\nwith the nearest driver.',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            BlocBuilder<RideBloc, RideState>(
+              buildWhen: (prev, curr) => prev.estimatedFare != curr.estimatedFare,
+              builder: (_, state) {
+                final fare = state.estimatedFare;
+                if (fare == null) return const SizedBox.shrink();
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    'Estimated fare  ₹${fare.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                );
+              },
             ),
 
             const Spacer(),
@@ -151,7 +173,7 @@ class _SearchingScreenState extends State<SearchingScreen>
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F7FA),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
@@ -229,7 +251,7 @@ class _SearchingScreenState extends State<SearchingScreen>
               ctx.read<RideBloc>().add(const RideRequested());
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('Try Again', style: TextStyle(color: Colors.white)),
+            child: Text('Try Again', style: TextStyle(color: Theme.of(context).colorScheme.surface)),
           ),
         ],
       ),
@@ -254,10 +276,10 @@ class _RouteBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF5F7FA),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         border:
-            Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+            Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1)),
       ),
       child: Row(
         children: [
@@ -284,20 +306,20 @@ class _RouteBar extends StatelessWidget {
               children: [
                 Text(
                   state.pickup?.name ?? 'Current Location',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary),
+                      color: Theme.of(context).colorScheme.onSurface),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 20),
                 Text(
                   state.destination?.name ?? 'Destination',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary),
+                      color: Theme.of(context).colorScheme.onSurface),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -308,7 +330,7 @@ class _RouteBar extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F0FE),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -354,30 +376,42 @@ class _CancelSheetState extends State<_CancelSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Why are you cancelling?',
             style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary),
+                color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'This helps us improve our service.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          ..._reasons.map((r) => RadioListTile<String>(
-                value: r,
-                groupValue: _reason,
-                onChanged: (v) => setState(() => _reason = v),
-                title: Text(r,
-                    style: const TextStyle(
-                        fontSize: 14, color: AppColors.textPrimary)),
-                activeColor: AppColors.primary,
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              )),
+          RadioGroup<String>(
+            groupValue: _reason,
+            onChanged: (value) => setState(() => _reason = value),
+            child: Column(
+              children: _reasons
+                  .map(
+                    (r) => RadioListTile<String>(
+                      value: r,
+                      title: Text(
+                        r,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      activeColor: AppColors.primary,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../config/app_theme.dart';
 import '../bloc/ride_bloc.dart';
-import '../models/place_model.dart';
-import 'driver_assigned_screen.dart';
 
 class PoolPreviewScreen extends StatefulWidget {
   const PoolPreviewScreen({super.key});
@@ -15,207 +14,182 @@ class PoolPreviewScreen extends StatefulWidget {
 class _PoolPreviewScreenState extends State<PoolPreviewScreen> {
   String? _selectedRequestId;
 
-  static final _mockPooledRiders = [
-    PooledRiderRequest(
-      id: 'pr_001',
-      riderId: 'r_001',
-      riderName: 'Ananya S',
-      riderPhone: '+91 98765 11111',
-      rating: 4.7,
-      photoUrl: '',
-      pickup: const PlaceModel(
-        placeId: 'p1',
-        name: 'RS Puram',
-        address: 'RS Puram, Coimbatore',
-      ),
-      destination: const PlaceModel(
-        placeId: 'd1',
-        name: 'Gandhipuram',
-        address: 'Gandhipuram, Coimbatore',
-      ),
-    ),
-    PooledRiderRequest(
-      id: 'pr_002',
-      riderId: 'r_002',
-      riderName: 'Priya K',
-      riderPhone: '+91 98765 22222',
-      rating: 4.9,
-      photoUrl: '',
-      pickup: const PlaceModel(
-        placeId: 'p2',
-        name: 'Peelamedu',
-        address: 'Peelamedu, Coimbatore',
-      ),
-      destination: const PlaceModel(
-        placeId: 'd2',
-        name: 'Town Hall',
-        address: 'Town Hall, Coimbatore',
-      ),
-    ),
-  ];
-
   void _confirmPool() {
-    if (_selectedRequestId == null) {
+    final state = context.read<RideBloc>().state;
+    if (_selectedRequestId == null && state.pooledRequests.isNotEmpty) {
       // Auto-select first
-      setState(() => _selectedRequestId = _mockPooledRiders[0].id);
+      setState(() => _selectedRequestId = state.pooledRequests[0].id);
     }
+    
+    if (_selectedRequestId == null) return;
 
-    final rider = _mockPooledRiders
-        .firstWhere((r) => r.id == (_selectedRequestId ?? _mockPooledRiders[0].id));
+    final rider = state.pooledRequests.firstWhere((r) => r.id == _selectedRequestId);
 
-    context.read<RideBloc>()
-      ..add(RidePooledRequestSelected(rider))
-      ..add(const RideDriverFound(DriverInfo(
-        id: 'drv_001',
-        name: 'Karthik R',
-        phone: '+91 98765 43210',
-        vehicleNumber: 'TN-38-AB-1234',
-        vehicleModel: 'TVS Jupiter',
-        vehicleColor: 'Black',
-        rating: 4.8,
-      )));
+    context.read<RideBloc>().add(RidePooledRequestSelected(rider));
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const DriverAssignedScreen()),
-    );
+    // Navigate to searching screen — GoRouter route (don't use Navigator.pop)
+    context.go('/home/searching');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Pool Preview',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // Pool benefit card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
-              borderRadius: BorderRadius.circular(14),
+    return BlocBuilder<RideBloc, RideState>(
+      builder: (context, state) {
+        final riders = state.pooledRequests;
+
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: AppBar(
+            title: Text(
+              'Pool Preview',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            child: const Row(
-              children: [
-                Text('💚', style: TextStyle(fontSize: 28)),
-                SizedBox(width: 12),
-                Expanded(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface),
+              onPressed: () => context.go('/home'),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
+            ),
+          ),
+          body: riders.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      Icon(Icons.people_outline_rounded, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                      const SizedBox(height: 16),
                       Text(
-                        'You\'re saving 30%!',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2E7D32),
+                        'No pool matches yet',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        state.isLoading
+                            ? 'Searching for riders going your way...'
+                            : 'No riders are heading in your direction right now. You can wait or go back to choose a solo ride.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                      if (state.isLoading) ...[
+                        const SizedBox(height: 20),
+                        const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
+                      ],
+                      const SizedBox(height: 24),
+                      if (!state.isLoading)
+                        OutlinedButton(
+                          onPressed: () => context.go('/home'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                            side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Go Back'),
                         ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Sharing a ride is better for your wallet and the environment.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF388E3C)),
-                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              )
+            : ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  // Pool benefit card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      children: [
+                        Text('💚', style: TextStyle(fontSize: 28)),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'You\'re saving 30%!',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Sharing a ride is better for your wallet and the environment.',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF388E3C)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-          const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-          // Detour info
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFCC80)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.timer_outlined, size: 18, color: Color(0xFFE65100)),
-                SizedBox(width: 10),
-                Text(
-                  'Estimated detour: +4 min for your pickup',
-                  style:
-                      TextStyle(fontSize: 13, color: Color(0xFFE65100)),
-                ),
-              ],
-            ),
-          ),
+                  Text(
+                    'Fellow Riders',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You\'ll be matched with one of these riders going your way.',
+                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
 
-          const SizedBox(height: 24),
+                  ...riders.map((rider) => _RiderCard(
+                        rider: rider,
+                        selected: _selectedRequestId == rider.id,
+                        onTap: () =>
+                            setState(() => _selectedRequestId = rider.id),
+                      )),
 
-          const Text(
-            'Fellow Riders',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'You\'ll be matched with one of these riders going your way.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-
-          ..._mockPooledRiders.map((rider) => _RiderCard(
-                rider: rider,
-                selected: _selectedRequestId == rider.id,
-                onTap: () =>
-                    setState(() => _selectedRequestId = rider.id),
-              )),
-
-          const SizedBox(height: 100),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-          child: SizedBox(
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _confirmPool,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 0,
+                  const SizedBox(height: 100),
+                ],
               ),
-              child: const Text(
-                'Confirm Pool Ride',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: riders.isEmpty ? null : _confirmPool,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Confirm Pool Ride',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -238,10 +212,10 @@ class _RiderCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE8F0FE) : Colors.white,
+          color: selected ? AppColors.primary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : Theme.of(context).colorScheme.outline,
             width: selected ? 2 : 1,
           ),
         ),
@@ -250,12 +224,12 @@ class _RiderCard extends StatelessWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF5F7FA),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person_rounded,
-                  size: 26, color: AppColors.textSecondary),
+              child: Icon(Icons.person_rounded,
+                  size: 26, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -266,10 +240,10 @@ class _RiderCard extends StatelessWidget {
                     children: [
                       Text(
                         rider.riderName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -277,10 +251,10 @@ class _RiderCard extends StatelessWidget {
                           size: 14, color: Color(0xFFFFA000)),
                       Text(
                         rider.rating.toString(),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -293,8 +267,8 @@ class _RiderCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           rider.pickup.name,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -310,8 +284,8 @@ class _RiderCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           rider.destination.name,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),

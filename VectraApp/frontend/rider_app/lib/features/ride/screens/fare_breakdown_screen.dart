@@ -27,19 +27,19 @@ class FareBreakdownScreen extends StatelessWidget {
         ];
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
-            title: const Text('Fare Breakdown',
-                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            backgroundColor: Colors.white,
+            title: Text('Fare Breakdown',
+                style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+            backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
-              child: Container(height: 1, color: AppColors.border),
+              child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
             ),
           ),
           body: ListView(
@@ -49,7 +49,7 @@ class FareBreakdownScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F7FA),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(children: [
@@ -62,48 +62,48 @@ class FareBreakdownScreen extends StatelessWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(
                         state.selectedVehicle?.name ?? 'Vehicle',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
                       ),
-                      const Text(
+                      Text(
                         '4.2 km  •  14 min',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ]),
                   ),
                   Text(
                     '₹${total.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ]),
               ),
 
               const SizedBox(height: 24),
-              const Text('Fare Details',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              Text('Fare Details',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 12),
 
               // Line items
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(
                   children: [
                     ...items.asMap().entries.map((e) => Column(children: [
                       _FareRow(item: e.value),
                       if (e.key < items.length - 1)
-                        const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.divider),
+                        Divider(height: 1, indent: 16, endIndent: 16, color: Theme.of(context).colorScheme.outlineVariant),
                     ])),
-                    Container(height: 1, color: AppColors.border),
+                    Container(height: 1, color: Theme.of(context).colorScheme.outline),
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                          Text('Total',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                           Text('₹${total.toStringAsFixed(0)}',
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
                         ],
@@ -165,13 +165,13 @@ class _FareRow extends StatelessWidget {
           Text(item.label,
               style: TextStyle(
                   fontSize: 14,
-                  color: item.isDiscount ? const Color(0xFF2E7D32) : AppColors.textSecondary)),
+                  color: item.isDiscount ? const Color(0xFF2E7D32) : Theme.of(context).colorScheme.onSurfaceVariant)),
           Text(
             '${item.isDiscount ? '-' : ''}₹${item.amount.abs().toStringAsFixed(0)}',
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: item.isDiscount ? const Color(0xFF2E7D32) : AppColors.textPrimary),
+                color: item.isDiscount ? const Color(0xFF2E7D32) : Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),
