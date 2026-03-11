@@ -9,20 +9,23 @@ class SafetyCenterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       appBar: AppBar(
-        title: const Text('Safety Center',
-            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        backgroundColor: Colors.white,
+        title: Text('Safety Center',
+            style: TextStyle(fontWeight: FontWeight.w700, color: colors.onSurface)),
+        backgroundColor: colors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
+          child: Container(height: 1, color: colors.outline.withValues(alpha: 0.2)),
         ),
       ),
       body: ListView(
@@ -38,48 +41,49 @@ class SafetyCenterScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.error,
+                color: colors.error,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Row(children: [
+              child: Row(children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('SOS Emergency',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                    SizedBox(height: 4),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: colors.onError)),
+                    const SizedBox(height: 4),
                     Text('Tap to call emergency services',
-                        style: TextStyle(fontSize: 13, color: Colors.white70)),
+                        style: TextStyle(fontSize: 13, color: colors.onError.withValues(alpha: 0.7))),
                   ],
                 ),
-                Spacer(),
-                Icon(Icons.emergency_share_rounded, size: 40, color: Colors.white),
+                const Spacer(),
+                Icon(Icons.emergency_share_rounded, size: 40, color: colors.onError),
               ]),
             ),
           ),
 
           const SizedBox(height: 20),
 
-          const Text('During Your Ride',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+          Text('During Your Ride',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.onSurfaceVariant)),
           const SizedBox(height: 12),
 
           _SafetyTile(
             icon: Icons.report_problem_rounded,
-            iconColor: const Color(0xFFE65100),
-            iconBg: const Color(0xFFFFF3E0),
+            iconColor: AppColors.warning,
+            iconBg: AppColors.warning.withValues(alpha: 0.1),
             title: 'Report an Issue',
             subtitle: 'Report unsafe driver behaviour or route concerns',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const IncidentReportScreen()),
             ),
+            colors: colors,
           ),
 
           _SafetyTile(
             icon: Icons.share_location_rounded,
-            iconColor: AppColors.primary,
-            iconBg: const Color(0xFFE8F0FE),
+            iconColor: colors.primary,
+            iconBg: colors.primary.withValues(alpha: 0.1),
             title: 'Share My Trip',
             subtitle: 'Send live location to a trusted contact',
             onTap: () {
@@ -87,42 +91,44 @@ class SafetyCenterScreen extends StatelessWidget {
                 const SnackBar(content: Text('Trip share link copied to clipboard!')),
               );
             },
+            colors: colors,
           ),
 
           _SafetyTile(
             icon: Icons.contacts_rounded,
-            iconColor: const Color(0xFF6A1B9A),
-            iconBg: const Color(0xFFEDE7F6),
+            iconColor: AppColors.secondary,
+            iconBg: AppColors.secondary.withValues(alpha: 0.1),
             title: 'Emergency Contacts',
             subtitle: 'Manage your trusted emergency contacts',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const EmergencyContactsScreen()),
             ),
+            colors: colors,
           ),
 
           const SizedBox(height: 20),
 
-          const Text('Safety Tips',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+          Text('Safety Tips',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.onSurfaceVariant)),
           const SizedBox(height: 12),
 
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F7FA),
+              color: colors.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Tip('Verify the driver\'s name and vehicle plate before getting in.'),
-                SizedBox(height: 8),
-                _Tip('Always ride in the backseat.'),
-                SizedBox(height: 8),
-                _Tip('Share your trip status with a friend or family member.'),
-                SizedBox(height: 8),
-                _Tip('Keep your phone charged during the trip.'),
+                _Tip('Verify the driver\'s name and vehicle plate before getting in.', colors: colors),
+                const SizedBox(height: 8),
+                _Tip('Always ride in the backseat.', colors: colors),
+                const SizedBox(height: 8),
+                _Tip('Share your trip status with a friend or family member.', colors: colors),
+                const SizedBox(height: 8),
+                _Tip('Keep your phone charged during the trip.', colors: colors),
               ],
             ),
           ),
@@ -139,6 +145,7 @@ class _SafetyTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final ColorScheme colors;
 
   const _SafetyTile({
     required this.icon,
@@ -147,6 +154,7 @@ class _SafetyTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    required this.colors,
   });
 
   @override
@@ -158,7 +166,7 @@ class _SafetyTile extends StatelessWidget {
         contentPadding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
         ),
         leading: Container(
           width: 44,
@@ -167,10 +175,10 @@ class _SafetyTile extends StatelessWidget {
           child: Icon(icon, size: 22, color: iconColor),
         ),
         title: Text(title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.onSurface)),
         subtitle: Text(subtitle,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 22),
+            style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+        trailing: Icon(Icons.chevron_right_rounded, color: colors.onSurfaceVariant, size: 22),
       ),
     );
   }
@@ -178,15 +186,16 @@ class _SafetyTile extends StatelessWidget {
 
 class _Tip extends StatelessWidget {
   final String text;
-  const _Tip(this.text);
+  final ColorScheme colors;
+  const _Tip(this.text, {required this.colors});
 
   @override
   Widget build(BuildContext context) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('•', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+      Text('\u2022', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
       const SizedBox(width: 8),
       Expanded(child: Text(text,
-          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary))),
+          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant))),
     ]);
   }
 }

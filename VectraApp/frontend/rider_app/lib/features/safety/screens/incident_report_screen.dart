@@ -35,20 +35,23 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       appBar: AppBar(
-        title: const Text('Report Issue',
-            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-        backgroundColor: Colors.white,
+        title: Text('Report Issue',
+            style: TextStyle(fontWeight: FontWeight.w700, color: colors.onSurface)),
+        backgroundColor: colors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
+          child: Container(height: 1, color: colors.outline.withValues(alpha: 0.2)),
         ),
       ),
       body: _submitted
@@ -56,14 +59,14 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Text('✅', style: TextStyle(fontSize: 64)),
+                  const Text('\u2705', style: TextStyle(fontSize: 64)),
                   const SizedBox(height: 20),
-                  const Text('Report Submitted',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  Text('Report Submitted',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: colors.onSurface)),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Our team will review and follow up within 24 hours.',
-                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+                    style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant, height: 1.5),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
@@ -72,8 +75,8 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: colors.primary,
+                        foregroundColor: colors.onPrimary,
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
@@ -87,44 +90,53 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                const Text('What happened?',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                Text('What happened?',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.onSurface)),
                 const SizedBox(height: 4),
-                const Text('Select the category that best describes the issue.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                Text('Select the category that best describes the issue.',
+                    style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
                 const SizedBox(height: 16),
-
-                ..._categories.map((c) => RadioListTile<String>(
-                      value: c,
-                      groupValue: _category,
-                      onChanged: (v) => setState(() => _category = v),
-                      title: Text(c,
-                          style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
-                      activeColor: AppColors.primary,
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    )),
+                RadioGroup<String>(
+                  groupValue: _category,
+                  onChanged: (value) => setState(() => _category = value),
+                  child: Column(
+                    children: _categories
+                        .map(
+                          (c) => RadioListTile<String>(
+                            value: c,
+                            title: Text(
+                              c,
+                              style: TextStyle(fontSize: 14, color: colors.onSurface),
+                            ),
+                            activeColor: colors.primary,
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
 
                 const SizedBox(height: 20),
 
-                const Text('Describe the incident',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                Text('Describe the incident',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.onSurface)),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FA),
+                    color: colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
                   ),
                   child: TextField(
                     controller: _descController,
                     maxLines: 5,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: const InputDecoration(
-                      hintText: 'Provide as much detail as possible…',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 14, color: colors.onSurface),
+                    decoration: InputDecoration(
+                      hintText: 'Provide as much detail as possible\u2026',
+                      hintStyle: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(14),
+                      contentPadding: const EdgeInsets.all(14),
                     ),
                   ),
                 ),
@@ -135,7 +147,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                   child: ElevatedButton(
                     onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE65100),
+                      backgroundColor: AppColors.warning,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

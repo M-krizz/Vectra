@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../config/app_theme.dart';
 
 class SosScreen extends StatefulWidget {
   const SosScreen({super.key});
@@ -22,12 +21,11 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
       setState(() => _countdown--);
       if (_countdown == 0) {
         t.cancel();
-        // Mock: SOS sent
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🚨 SOS sent! Emergency services notified.'),
-            backgroundColor: AppColors.error,
-            duration: Duration(seconds: 4),
+          SnackBar(
+            content: const Text('\u{1F6A8} SOS sent! Emergency services notified.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 4),
           ),
         );
         Navigator.pop(context);
@@ -54,16 +52,22 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final normalBg = colors.surface;
+    final normalText = colors.onSurface;
+
     return Scaffold(
-      backgroundColor: _triggered ? AppColors.error : Colors.white,
+      backgroundColor: _triggered ? colors.error : normalBg,
       appBar: AppBar(
         title: Text('SOS Emergency',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: _triggered ? Colors.white : AppColors.textPrimary,
+              color: _triggered ? colors.onError : normalText,
             )),
-        backgroundColor: _triggered ? AppColors.error : Colors.white,
-        iconTheme: IconThemeData(color: _triggered ? Colors.white : AppColors.textPrimary),
+        backgroundColor: _triggered ? colors.error : normalBg,
+        iconTheme: IconThemeData(color: _triggered ? colors.onError : normalText),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
@@ -77,82 +81,78 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (!_triggered) ...[
-                const Text('🚨', style: TextStyle(fontSize: 64)),
+                const Text('\u{1F6A8}', style: TextStyle(fontSize: 64)),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Emergency SOS',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: normalText),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Tap the button below to alert emergency services and your emergency contacts with your live location.',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.6),
+                  style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant, height: 1.6),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
-
-                // SOS Button
                 GestureDetector(
                   onTap: _triggerSOS,
                   child: Container(
                     width: 160,
                     height: 160,
                     decoration: BoxDecoration(
-                      color: AppColors.error,
+                      color: colors.error,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.error.withValues(alpha: 0.4),
+                          color: colors.error.withValues(alpha: 0.4),
                           blurRadius: 30,
                           spreadRadius: 8,
                         ),
                       ],
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'SOS',
                         style: TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                          color: colors.onError,
                           letterSpacing: 2,
                         ),
                       ),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 48),
-
-                const Text(
-                  'Also contacts: Police (100) · Ambulance (108)',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                Text(
+                  'Also contacts: Police (100) \u00B7 Ambulance (108)',
+                  style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
                   textAlign: TextAlign.center,
                 ),
               ] else ...[
                 AnimatedBuilder(
                   animation: _pulseController,
-                  builder: (_, __) => Transform.scale(
+                  builder: (context, child) => Transform.scale(
                     scale: 1.0 + _pulseController.value * 0.08,
-                    child: const Text('🚨', style: TextStyle(fontSize: 80)),
+                    child: const Text('\u{1F6A8}', style: TextStyle(fontSize: 80)),
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'SOS ACTIVATED',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: colors.onError, letterSpacing: 2),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Sending alert in $_countdown seconds…',
-                  style: const TextStyle(fontSize: 16, color: Colors.white70),
+                  'Sending alert in $_countdown seconds\u2026',
+                  style: TextStyle(fontSize: 16, color: colors.onError.withValues(alpha: 0.7)),
                 ),
                 const SizedBox(height: 40),
                 ElevatedButton(
                   onPressed: _cancelSOS,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.error,
+                    backgroundColor: colors.surface,
+                    foregroundColor: colors.error,
                     minimumSize: const Size(200, 52),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
