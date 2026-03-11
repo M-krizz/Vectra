@@ -6,8 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/auth/bloc/auth_bloc.dart';
-import '../features/auth/screens/login_screen.dart';
-import '../features/auth/screens/register_screen.dart';
+import '../features/auth/screens/complete_profile_screen.dart';
+import '../features/auth/screens/otp_verification_screen.dart';
+import '../features/auth/screens/phone_input_screen.dart';
 import '../features/auth/screens/session_expired_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/history/screens/ride_history_screen.dart';
@@ -41,10 +42,10 @@ import '../features/safety/screens/sos_screen.dart';
 ///
 /// Structure:
 ///   /                        → SplashScreen (boot gate)
-///   /auth/login              → LoginScreen
-///   /auth/register           → RegisterScreen
+///   /auth/phone-input        → PhoneInputScreen (enter phone/email)
+///   /auth/verify-otp         → OtpVerificationScreen
 ///   /auth/session-expired    → SessionExpiredScreen
-///   /onboarding              → OnboardingScreen (shown once, after first login)
+///   /onboarding              → OnboardingScreen (shown once, after first registration)
 ///   /permissions             → PermissionsScreen
 ///
 ///   Shell (bottom-tab nav):
@@ -78,7 +79,13 @@ import '../features/safety/screens/sos_screen.dart';
 class AppRouter {
   AppRouter._();
 
+  static GoRouter? _cached;
+
   static GoRouter router(BuildContext context) {
+    return _cached ??= _createRouter(context);
+  }
+
+  static GoRouter _createRouter(BuildContext context) {
     return GoRouter(
       initialLocation: '/',
       debugLogDiagnostics: false,
@@ -89,34 +96,48 @@ class AppRouter {
 
         // ── Always let these through ────────────────────────────────────
         const openPaths = [
-          '/auth/login',
-          '/auth/register',
+          '/auth/phone-input',
+          '/auth/verify-otp',
+          '/auth/complete-profile',
           '/auth/session-expired',
         ];
         final isOpen = openPaths.any((p) => loc.startsWith(p));
 
-        // ── Auth loading → stay on splash ──────────────────────────────
+        // ── Auth loading → stay put if already on an auth screen ───────
         if (authState is AuthInitial || authState is AuthLoading) {
+          if (isOpen) return null; // Don't bounce to splash mid-flow
           return loc == '/' ? null : '/';
+        }
+
+        // ── OTP sent → go to verification screen ───────────────────────
+        if (authState is AuthOtpSent) {
+          if (loc == '/auth/verify-otp') return null;
+          return '/auth/verify-otp';
+        }
+
+        // ── OTP verified, first-time user needs to set their name ───────
+        if (authState is AuthOtpVerificationRequired) {
+          if (loc == '/auth/complete-profile') return null;
+          return '/auth/complete-profile';
         }
 
         // ── Unauthenticated ────────────────────────────────────────────
         if (authState is AuthUnauthenticated) {
           if (isOpen) return null;
-          return '/auth/login';
+          return '/auth/phone-input';
         }
 
         // ── Authenticated ──────────────────────────────────────────────
         if (authState is AuthAuthenticated) {
-          // Redirect away from auth screens
+          // Redirect away from all auth/splash screens to the app
           final isAuthScreen = isOpen || loc == '/';
           if (isAuthScreen) {
             final prefs = await SharedPreferences.getInstance();
-            final onboardingDone = prefs.getBool('onboarding_done') ?? false;
-            if (!onboardingDone) return '/onboarding';
+            final justRegistered = prefs.getBool('just_registered') ?? false;
+            if (justRegistered) return '/onboarding';
             return '/home';
           }
-          return null; // Allow wherever they are
+          return null; // Already in the app, stay there
         }
 
         return null;
@@ -143,28 +164,40 @@ class AppRouter {
           builder: (ctx, state) => const PermissionsScreen(),
         ),
 
-        // ── Auth stack ─────────────────────────────────────────────────
+        // ── Auth stack (OTP-only) ──────────────────────────────────────
         GoRoute(
-          path: '/auth/login',
-          name: 'login',
-          builder: (ctx, state) => const LoginScreen(),
-          routes: [
-            GoRoute(
-              path: 'register',
-              name: 'register',
-              builder: (ctx, state) => const RegisterScreen(),
-            ),
-          ],
+          path: '/auth/phone-input',
+          name: 'phone_input',
+          builder: (ctx, state) => const PhoneInputScreen(),
         ),
         GoRoute(
-          path: '/auth/register',
-          name: 'register-standalone',
-          builder: (ctx, state) => const RegisterScreen(),
+          path: '/auth/verify-otp',
+          name: 'verify_otp',
+          builder: (ctx, state) {
+            final authState = ctx.read<AuthBloc>().state;
+            String identifier = '';
+            String? devOtp;
+            if (authState is AuthOtpSent) {
+              identifier = authState.identifier;
+              devOtp = authState.devOtp;
+            } else if (authState is AuthOtpVerificationRequired) {
+              identifier = authState.user.phone ?? authState.user.email ?? '';
+            }
+            return OtpVerificationScreen(
+              identifier: identifier,
+              devOtp: devOtp,
+            );
+          },
         ),
         GoRoute(
           path: '/auth/session-expired',
           name: 'session-expired',
           builder: (ctx, state) => const SessionExpiredScreen(),
+        ),
+        GoRoute(
+          path: '/auth/complete-profile',
+          name: 'complete_profile',
+          builder: (ctx, state) => const CompleteProfileScreen(),
         ),
 
         // ── Main shell (bottom tabs) ───────────────────────────────────
@@ -355,18 +388,16 @@ class _AppShell extends StatefulWidget {
 
 class _AppShellState extends State<_AppShell> {
   // Ordered to match GoRouter route declaration
-  static const _tabs = ['/home', '/trips', '/safety', '/profile'];
-  static const _labels = ['Ride', 'Trips', 'Safety', 'Profile'];
+  static const _tabs = ['/home', '/trips', '/profile'];
+  static const _labels = ['Ride', 'Trips', 'Profile'];
   static const _activeIcons = [
     Icons.home_rounded,
     Icons.receipt_long_rounded,
-    Icons.security_rounded,
     Icons.person_rounded,
   ];
   static const _inactiveIcons = [
     Icons.home_outlined,
     Icons.receipt_long_outlined,
-    Icons.security_outlined,
     Icons.person_outline_rounded,
   ];
 
@@ -409,56 +440,66 @@ class _AppShellState extends State<_AppShell> {
             break;
         }
       },
-      child: Scaffold(
-        body: widget.child,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A2E),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: (i) {
-                if (i != _currentIndex) {
-                  context.go(_tabs[i]);
-                }
-              },
-              backgroundColor: const Color(0xFF1A1A2E),
-              selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.white54,
-              selectedLabelStyle: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w400,
-              ),
-              showUnselectedLabels: true,
-              type: BottomNavigationBarType.fixed,
-              elevation: 0,
-              items: List.generate(
-                _tabs.length,
-                (i) => BottomNavigationBarItem(
-                  icon: Icon(
-                    _currentIndex == i
-                        ? _activeIcons[i]
-                        : _inactiveIcons[i],
+      child: Builder(
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final isDark = theme.brightness == Brightness.dark;
+          final navBg = isDark ? const Color(0xFF1A1A2E) : Colors.white;
+          final selectedColor = isDark ? Colors.white : theme.colorScheme.primary;
+          final unselectedColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
+
+          return Scaffold(
+            body: widget.child,
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                color: navBg,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
                   ),
-                  label: _labels[i],
+                ],
+              ),
+              child: SafeArea(
+                child: BottomNavigationBar(
+                  currentIndex: _currentIndex,
+                  onTap: (i) {
+                    if (i != _currentIndex) {
+                      ctx.go(_tabs[i]);
+                    }
+                  },
+                  backgroundColor: navBg,
+                  selectedItemColor: selectedColor,
+                  unselectedItemColor: unselectedColor,
+                  selectedLabelStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  showUnselectedLabels: true,
+                  type: BottomNavigationBarType.fixed,
+                  elevation: 0,
+                  items: List.generate(
+                    _tabs.length,
+                    (i) => BottomNavigationBarItem(
+                      icon: Icon(
+                        _currentIndex == i
+                            ? _activeIcons[i]
+                            : _inactiveIcons[i],
+                      ),
+                      label: _labels[i],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
