@@ -85,4 +85,4 @@ import { RolesGuard } from './common/roles.guard';
     TypeOrmModule,
   ],
 })
-export class AuthenticationModule { }
+export class AuthenticationModule {}

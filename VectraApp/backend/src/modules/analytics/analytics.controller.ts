@@ -9,20 +9,20 @@ import { UserRole } from '../Authentication/users/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.COMMUNITY_ADMIN)
 export class AnalyticsController {
-    constructor(private readonly analyticsService: AnalyticsService) { }
+  constructor(private readonly analyticsService: AnalyticsService) {}
 
-    @Get('stats')
-    getDashboardStats() {
-        return this.analyticsService.getDashboardStats();
-    }
+  @Get('stats')
+  getDashboardStats() {
+    return this.analyticsService.getDashboardStats();
+  }
 
-    @Get('trends/revenue')
-    getRevenueTrend() {
-        return this.analyticsService.getRevenueTrend();
-    }
+  @Get('trends/revenue')
+  getRevenueTrend() {
+    return this.analyticsService.getRevenueTrend();
+  }
 
-    @Get('trends/trips')
-    getTripTrend() {
-        return this.analyticsService.getTripTrend();
-    }
+  @Get('trends/trips')
+  getTripTrend() {
+    return this.analyticsService.getTripTrend();
+  }
 }

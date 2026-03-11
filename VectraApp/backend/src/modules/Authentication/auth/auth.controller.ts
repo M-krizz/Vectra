@@ -20,7 +20,7 @@ import { CreateRiderDto, CreateDriverDto } from '../users/dto/users.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('request-otp')
   requestOtp(@Body() dto: RequestOtpDto) {
