@@ -39,32 +39,51 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
       eta: 2,
     ),
     _VehicleInfo(
-      id: 'cab_economy',
-      label: 'Cab Economy',
+      id: 'cab',
+      label: 'Cab',
       emoji: '🚗',
       desc: '4 seats • AC',
       baseFare: 65,
       perKm: 15,
       eta: 5,
     ),
-    _VehicleInfo(
-      id: 'cab_premium',
-      label: 'Cab Premium',
-      emoji: '🚙',
-      desc: '4 seats • Premium AC',
-      baseFare: 90,
-      perKm: 20,
-      eta: 6,
-    ),
   ];
 
-  int _fareFor(String vehicleId) {
-    final v = _vehicles.firstWhere((v) => v.id == vehicleId);
-    final dist = 4.2; // mock distance km
-    int fare = (v.baseFare + (v.perKm * dist)).round();
+  int _fareFor(String vehicleId, RideState state) {
+    final backendOption = state.vehicleOptions
+        .where((option) => option.id == vehicleId)
+        .cast<VehicleOption?>()
+        .firstWhere((option) => option != null, orElse: () => null);
+
+    if (backendOption != null) {
+      var fare = backendOption.fare.round();
+      if (_promoApplied) fare = (fare * 0.9).round();
+      return fare;
+    }
+
+    final v = _vehicles.firstWhere((vehicle) => vehicle.id == vehicleId);
+    final distKm = state.route?.distanceMeters != null
+        ? state.route!.distanceMeters / 1000
+        : 4.2;
+    var fare = (v.baseFare + (v.perKm * distKm)).round();
     if (_rideType == 'pool') fare = (fare * 0.7).round();
     if (_promoApplied) fare = (fare * 0.9).round();
     return fare;
+  }
+
+  _VehicleInfo _resolveVehicleInfo(VehicleOption option) {
+    for (final vehicle in _vehicles) {
+      if (vehicle.id == option.id) return vehicle;
+    }
+    return _VehicleInfo(
+      id: option.id,
+      label: option.name,
+      emoji: '🚗',
+      desc: option.description,
+      baseFare: 0,
+      perKm: 0,
+      eta: option.etaMinutes,
+    );
   }
 
   void _applyPromo() {
@@ -82,7 +101,7 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
     );
   }
 
-  void _requestRide() {
+  void _requestRide(RideState state) {
     if (_selectedVehicleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a vehicle type')),
@@ -91,17 +110,26 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
     }
 
     final rideBloc = context.read<RideBloc>();
-    final v = _vehicles.firstWhere((v) => v.id == _selectedVehicleId);
+    final selectedVehicle = state.vehicleOptions
+        .where((vehicle) => vehicle.id == _selectedVehicleId)
+        .cast<VehicleOption?>()
+        .firstWhere((vehicle) => vehicle != null, orElse: () => null);
+
+    final fallbackVehicle = _vehicles.firstWhere((vehicle) => vehicle.id == _selectedVehicleId);
+
     rideBloc.add(RideTypeSelected(_rideType));
-    rideBloc.add(RideVehicleSelected(VehicleOption(
-      id: v.id,
-      name: v.label,
-      imageUrl: '',
-      fare: _fareFor(v.id).toDouble(),
-      etaMinutes: v.eta,
-      description: v.desc,
-      capacity: 4,
-    )));
+    rideBloc.add(RideVehicleSelected(
+      selectedVehicle ??
+          VehicleOption(
+            id: fallbackVehicle.id,
+            name: fallbackVehicle.label,
+            imageUrl: '',
+            fare: _fareFor(fallbackVehicle.id, state).toDouble(),
+            etaMinutes: fallbackVehicle.eta,
+            description: fallbackVehicle.desc,
+            capacity: 4,
+          ),
+    ));
     rideBloc.add(const RideRequested());
 
     if (_rideType == 'pool') {
@@ -115,26 +143,26 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Choose Ride',
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 18,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           icon:
-              const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
+          child: Container(height: 1, color: Theme.of(context).colorScheme.outline),
         ),
       ),
       body: BlocBuilder<RideBloc, RideState>(
@@ -150,12 +178,12 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       'Ride Type',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -166,7 +194,7 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FA),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -192,7 +220,7 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Row(
@@ -213,35 +241,51 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                 ),
 
               // ── Vehicle options ──────────────────────────────────────
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Text(
                   'Available Vehicles',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
 
-              ..._vehicles.map((v) => _VehicleTile(
-                    info: v,
-                    fare: _fareFor(v.id),
-                    rideType: _rideType,
-                    selected: _selectedVehicleId == v.id,
-                    onTap: () => setState(() => _selectedVehicleId = v.id),
-                  )),
+              ...(state.vehicleOptions.isNotEmpty
+                      ? state.vehicleOptions
+                          .map(
+                            (vehicle) => _VehicleTile(
+                              info: _resolveVehicleInfo(vehicle),
+                              fare: _fareFor(vehicle.id, state),
+                              rideType: _rideType,
+                              selected: _selectedVehicleId == vehicle.id,
+                              onTap: () => setState(() => _selectedVehicleId = vehicle.id),
+                            ),
+                          )
+                          .toList()
+                      : _vehicles
+                          .map(
+                            (vehicle) => _VehicleTile(
+                              info: vehicle,
+                              fare: _fareFor(vehicle.id, state),
+                              rideType: _rideType,
+                              selected: _selectedVehicleId == vehicle.id,
+                              onTap: () => setState(() => _selectedVehicleId = vehicle.id),
+                            ),
+                          )
+                          .toList()),
 
               // ── Promo code ───────────────────────────────────────────
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Text(
                   'Promo Code',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -253,9 +297,9 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F7FA),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: Theme.of(context).colorScheme.outline),
                         ),
                         child: TextField(
                           controller: _promoController,
@@ -263,8 +307,8 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                           style: const TextStyle(fontSize: 14),
                           decoration: InputDecoration(
                             hintText: 'Enter promo code',
-                            hintStyle: const TextStyle(
-                                color: AppColors.textSecondary, fontSize: 14),
+                            hintStyle: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
                             border: InputBorder.none,
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 16),
@@ -280,8 +324,8 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
                     ElevatedButton(
                       onPressed: _promoApplied ? null : _applyPromo,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         minimumSize: const Size(80, 48),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -299,26 +343,30 @@ class _RideOptionsScreenState extends State<RideOptionsScreen> {
         },
       ),
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-          child: SizedBox(
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _requestRide,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+        child: BlocBuilder<RideBloc, RideState>(
+          builder: (context, state) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: () => _requestRide(state),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Request Ride',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                elevation: 0,
               ),
-              child: const Text(
-                'Request Ride',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -341,7 +389,7 @@ class _RouteSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: const Color(0xFFF5F7FA),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Row(
         children: [
           Column(
@@ -358,8 +406,8 @@ class _RouteSummary extends StatelessWidget {
               Container(
                 width: 10,
                 height: 10,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -372,10 +420,10 @@ class _RouteSummary extends StatelessWidget {
               children: [
                 Text(
                   state.pickup?.name ?? 'Pickup location',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -383,10 +431,10 @@ class _RouteSummary extends StatelessWidget {
                 const SizedBox(height: 22),
                 Text(
                   state.destination?.name ?? 'Destination',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -396,18 +444,18 @@ class _RouteSummary extends StatelessWidget {
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
-              Text('4.2 km',
+            children: [
+              Text(state.route?.distanceText ?? '--',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary)),
-              SizedBox(height: 16),
-              Text('~14 min',
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 16),
+              Text(state.route?.durationText ?? '--',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary)),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
         ],
@@ -426,6 +474,7 @@ class _TypeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -433,7 +482,7 @@ class _TypeTab extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
+            color: selected ? colors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: selected
                 ? [
@@ -453,8 +502,8 @@ class _TypeTab extends StatelessWidget {
                 fontWeight:
                     selected ? FontWeight.w700 : FontWeight.w500,
                 color: selected
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
+                    ? colors.onSurface
+                    : colors.onSurfaceVariant,
               ),
             ),
           ),
@@ -483,6 +532,7 @@ class _VehicleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -490,10 +540,10 @@ class _VehicleTile extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE8F0FE) : Colors.white,
+          color: selected ? colors.primary.withValues(alpha: 0.1) : colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? colors.primary : colors.outline,
             width: selected ? 2 : 1,
           ),
         ),
@@ -507,17 +557,17 @@ class _VehicleTile extends StatelessWidget {
                 children: [
                   Text(
                     info.label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${info.desc}  •  ${info.eta} min away',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                        fontSize: 12, color: colors.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -527,10 +577,10 @@ class _VehicleTile extends StatelessWidget {
               children: [
                 Text(
                   '₹$fare',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: colors.onSurface,
                   ),
                 ),
                 if (rideType == 'pool')
